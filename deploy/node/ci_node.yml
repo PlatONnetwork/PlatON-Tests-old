@@ -1,0 +1,22 @@
+collusion:
+- host: 192.168.9.160
+  username: juzhen
+  password: Platon123!
+- host: 192.168.9.161
+  username: juzhen
+  password: Platon123!
+- host: 192.168.9.162
+  username: juzhen
+  password: Platon123!
+- host: 192.168.9.163
+  username: juzhen
+  password: Platon123!
+
+
+nocollusion:
+- host: 192.168.120.164
+  username: juzhen
+  password: Platon123!
+- host: 192.168.120.165
+  username: juzhen
+  password: Platon123!

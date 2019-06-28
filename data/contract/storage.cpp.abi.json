@@ -1,0 +1,101 @@
+[
+    {
+        "name": "setStateInt",
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string"
+            },
+            {
+                "name": "value",
+                "type": "uint64"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "getStateInt",
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint64"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "setStateString",
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string"
+            },
+            {
+                "name": "value",
+                "type": "string"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "getStateString",
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "notify",
+        "inputs": [
+            {
+                "type": "int32"
+            }
+        ],
+        "type": "event"
+    },
+    {
+        "name": "SET_INT",
+        "inputs": [
+            {
+                "type": "string"
+            },
+            {
+                "type": "uint64"
+            }
+        ],
+        "type": "event"
+    },
+    {
+        "name": "SET_STRING",
+        "inputs": [
+            {
+                "type": "string"
+            },
+            {
+                "type": "string"
+            }
+        ],
+        "type": "event"
+    }
+]

@@ -1,0 +1,141 @@
+[
+    {
+        "name": "setAddr",
+        "inputs": [
+            {
+                "name": "addr",
+                "type": "string"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "getAddr",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "testCall",
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string"
+            },
+            {
+                "name": "value",
+                "type": "string"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "testCallInt64",
+        "inputs": [
+            {
+                "name": "value",
+                "type": "int64"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "int64"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "testCallString",
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string"
+            },
+            {
+                "name": "value",
+                "type": "string"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "testDCall",
+        "inputs": [
+            {
+                "name": "key",
+                "type": "string"
+            },
+            {
+                "name": "value",
+                "type": "string"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "testDCallInt64",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "int64"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "testDCallString",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "ContractInvoke",
+        "inputs": [
+            {
+                "type": "string"
+            },
+            {
+                "type": "uint8"
+            }
+        ],
+        "type": "event"
+    },
+    {
+        "name": "SetContractAddr",
+        "inputs": [
+            {
+                "type": "string"
+            }
+        ],
+        "type": "event"
+    }
+]

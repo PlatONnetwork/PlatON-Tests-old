@@ -1,0 +1,7 @@
+nollusion:
+  - host: 192.168.9.179
+    port: 16789
+    rpcport: 6789
+    mpcactor: 0x2fd96b410e4472a687fc1a872ef70abbb658bb9a
+    username: juzhen
+    password: juzhen

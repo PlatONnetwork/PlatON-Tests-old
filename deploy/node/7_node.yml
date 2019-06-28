@@ -1,0 +1,9 @@
+collusion:
+- host: 192.168.18.181
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: Platon123!
+  id: d483f6bfd37027ba626b84dd8c7d43708a657920e9a1712290bff188bf1558833892aa19a535233d786b138dbf67410909ff2b0ac441d870d3170ade5b8ec4f9
+  nodekey: 4a3965bc1a93ffbb4e713976bb28dee2afca12c6d700f762dd719c5fc00b3b42
+  url: ws://192.168.18.181:6789
