@@ -1,0 +1,20 @@
+collusion:
+- host: 192.168.9.201
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: cbft@juzix123!
+  nodekey: ef188278fdbbcc6095e51918c8b6aa5db74a8f1a75dd61cda0e49e434da6521b
+  url: http://192.168.9.201:6789
+  id: dec37e2651ade755ee8fef69f379f64902da7b25d330ae5678790523bfd457909d8513786eb1233e9c9841f0966225f0a1b35b5c7b313dd3641875b0930c8ef9
+nocollusion:
+- host: 192.168.112.205
+  port: 16788
+  rpcport: 6788
+  username: juzhen
+  password: cbft@juzix123!
+  nodekey: b09885ed6e148dc5932bc451ba20983674bfd175bedd9e10ad323a1c5d9b242d
+  url: http://192.168.112.205:6788
+  id: 8282d2cb698092d4e9579bbe4478a76d4551e35aba5c6861c34bce7a240cd1f33baf3f4e232b127e5dcf51b9aa576ed5869a3fe8a4a4abd9b51576d6b30cab9b
+
+

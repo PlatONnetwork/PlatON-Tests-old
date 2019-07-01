@@ -1,0 +1,9 @@
+collusion:
+- host: 10.10.8.16
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+  id: 5ba46b5a0dab5170eaed9c0583ecd52f8dc3d7d69f568bc6fe74a11b6c6058688e20e8b07ca81d16d41dbe2be1f0e00c4ee18d20d93ec0fdb8abdb0c0dbc86fa
+  nodekey: a7de49341c3ff78dd0ed285618a4555c793c1ee05be69c1ceb8cf05dc15f21d3
+  url: http://10.10.8.16:6789

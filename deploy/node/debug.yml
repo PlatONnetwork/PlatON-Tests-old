@@ -1,0 +1,46 @@
+collusion:
+- host: 192.168.112.120
+  username: juzhen
+  password: juzhen
+  id: b2c2d4c663c1959e4ade4640715d08429de26823f06baf97c6473e6011d5d057813c2a2ef4b561ada243f002a07b256f22e521c72c39674487f755eb5c8d2738
+  nodekey: 4819b0139876ebd34883469cbd663bfdd4e55b1d28e1ee9d44a48c438e7a3636
+  port: 16789
+  rpcport: 6789
+  url: http://192.168.112.120:6789
+- host: 192.168.112.121
+  username: juzhen
+  password: juzhen
+  id: 712be0db6a7eb6ba667f504b167af91c1a08e45a695e2fde79b9762c25856ff9fc68d8f3ac78e44b1321f550f611d4f82c12044da3bf8dcad9b95bb9b1aacf15
+  nodekey: ca37e272ae3bc24cc123377b7b1f8445b5da31f4448f96a64dade2465d2b1762
+  port: 16789
+  rpcport: 6789
+  url: http://192.168.112.121:6789
+- host: 192.168.112.122
+  username: juzhen
+  password: juzhen
+  id: 5b068ef1cfeef626d9ad131d08b889002a2f5c7306ff34c3032ad04fcc92fd234d0c7272014068eb998dae2abfe9f10271ed6731963b1cf22ec944abd8fb0f9e
+  nodekey: 3314532da43158885d8db07e0b25dc0c194c8382c4fa5ce8c28a0b7c86cdec16
+  port: 16789
+  rpcport: 6789
+  url: http://192.168.112.122:6789
+
+
+- host: 192.168.112.123
+  username: juzhen
+  password: juzhen
+  id: 0bb52ab990a687784d12e8fb8c95a7722c949a9982d5858b370db47ee9595044b7af7a6ddfe9e9423f4acdab92f8c75ebb11bbf9d52cc26b57b83d7b4847218d
+  nodekey: 03a07edbbe8bc533ebfb967d248e39146a1f8b92fe8226a19513c689e1f3136d
+  port: 16789
+  rpcport: 6789
+  url: http://192.168.112.123:6789
+
+
+nocollusion:
+- host: 192.168.112.124
+  username: juzhen
+  password: juzhen
+  id: b44dd4483dbbefc8357abcd05b05caad4b6b571371222f45165b6c8d4a17bf20f969cc414d0058439f22f560b6f43a4cc4ca8a1d1f3310512421fdd8233019d7
+  nodekey: 0e773fba5f72d49b693b181fbba8e20830c380dbca43a26dccffe1d4b7e56f35
+  port: 16789
+  rpcport: 6789
+  url: http://192.168.112.124:6789

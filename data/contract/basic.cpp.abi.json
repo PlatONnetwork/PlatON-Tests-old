@@ -1,0 +1,572 @@
+[
+    {
+        "name": "test_set_arr_int8",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "int8"
+            },
+            {
+                "name": "b",
+                "type": "int8"
+            },
+            {
+                "name": "c",
+                "type": "int8"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_get_arr_int8",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "int8"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_set_arr_uint8",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "uint8"
+            },
+            {
+                "name": "b",
+                "type": "uint8"
+            },
+            {
+                "name": "c",
+                "type": "uint8"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_get_arr_uint8",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "int8"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_set_arr_int16",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "int16"
+            },
+            {
+                "name": "b",
+                "type": "int16"
+            },
+            {
+                "name": "c",
+                "type": "int16"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_get_arr_int16",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "int16"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_set_arr_uint16",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "uint16"
+            },
+            {
+                "name": "b",
+                "type": "uint16"
+            },
+            {
+                "name": "c",
+                "type": "uint16"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_get_arr_uint16",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint16"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_set_arr_int32",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "int32"
+            },
+            {
+                "name": "b",
+                "type": "int32"
+            },
+            {
+                "name": "c",
+                "type": "int32"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_get_arr_int32",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "int32"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_set_arr_uint32",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "uint32"
+            },
+            {
+                "name": "b",
+                "type": "uint32"
+            },
+            {
+                "name": "c",
+                "type": "uint32"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_get_arr_uint32",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint32"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_set_arr_int64",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "int64"
+            },
+            {
+                "name": "b",
+                "type": "int64"
+            },
+            {
+                "name": "c",
+                "type": "int64"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_get_arr_int64",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "int64"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_set_arr_uint64",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "uint64"
+            },
+            {
+                "name": "b",
+                "type": "uint64"
+            },
+            {
+                "name": "c",
+                "type": "uint64"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_get_arr_uint64",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint64"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_set_stack_double",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "float64"
+            },
+            {
+                "name": "b",
+                "type": "float64"
+            },
+            {
+                "name": "c",
+                "type": "float64"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_get_stack_double",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "float64"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_set_queue_double",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "float64"
+            },
+            {
+                "name": "b",
+                "type": "float64"
+            },
+            {
+                "name": "c",
+                "type": "float64"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_get_queue_double",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "float64"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_set_map_char",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "int8"
+            },
+            {
+                "name": "b",
+                "type": "int8"
+            },
+            {
+                "name": "c",
+                "type": "int8"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_get_map_char",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "int8"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_set_vector_int",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "int32"
+            },
+            {
+                "name": "b",
+                "type": "int32"
+            },
+            {
+                "name": "c",
+                "type": "int32"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_get_vector_int",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "int32"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_set_set_uint32",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "uint32"
+            },
+            {
+                "name": "b",
+                "type": "uint32"
+            },
+            {
+                "name": "c",
+                "type": "uint32"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_get_set_uint32",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint32"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_list_long",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "int32"
+            },
+            {
+                "name": "b",
+                "type": "int32"
+            },
+            {
+                "name": "c",
+                "type": "int32"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "int32"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_arithmetic_operation",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "int32"
+            },
+            {
+                "name": "b",
+                "type": "int32"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_relational_operation",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "int32"
+            },
+            {
+                "name": "b",
+                "type": "int32"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_logic_operation",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "int32"
+            },
+            {
+                "name": "b",
+                "type": "int32"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_bit_operation",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "int32"
+            },
+            {
+                "name": "b",
+                "type": "int32"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_assignment_operation",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "int32"
+            }
+        ],
+        "outputs": [],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_calc",
+        "inputs": [
+            {
+                "name": "a",
+                "type": "uint64"
+            },
+            {
+                "name": "b",
+                "type": "uint64"
+            },
+            {
+                "name": "c",
+                "type": "uint64"
+            },
+            {
+                "name": "p",
+                "type": "uint64"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "int32"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "test_false_loop",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "int32"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "notify",
+        "inputs": [
+            {
+                "type": "uint64"
+            },
+            {
+                "type": "string"
+            }
+        ],
+        "type": "event"
+    }
+]

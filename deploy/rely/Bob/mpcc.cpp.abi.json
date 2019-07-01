@@ -1,0 +1,200 @@
+[
+    {
+        "name": "get_owner",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "constant": "true",
+        "type": "function"
+    },
+    {
+        "name": "start_calc",
+        "inputs": [
+            {
+                "name": "method",
+                "type": "string"
+            },
+            {
+                "name": "extra",
+                "type": "string"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "void"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "set_result",
+        "inputs": [
+            {
+                "name": "taskId",
+                "type": "string"
+            },
+            {
+                "name": "status",
+                "type": "uint64"
+            },
+            {
+                "name": "data",
+                "type": "string"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "void"
+            }
+        ],
+        "constant": "false",
+        "type": "function"
+    },
+    {
+        "name": "get_ir_data",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "constant": "true",
+        "type": "function"
+    },
+    {
+        "name": "get_participants",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "constant": "true",
+        "type": "function"
+    },
+    {
+        "name": "get_urls",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "constant": "true",
+        "type": "function"
+    },
+    {
+        "name": "get_url_by_id",
+        "inputs": [
+            {
+                "name": "id",
+                "type": "string"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "constant": "true",
+        "type": "function"
+    },
+    {
+        "name": "get_result",
+        "inputs": [
+            {
+                "name": "task_id",
+                "type": "string"
+            }
+        ],
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "constant": "true",
+        "type": "function"
+    },
+    {
+        "name": "get_invitor",
+        "inputs": [],
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "constant": "true",
+        "type": "function"
+    },
+	{
+        "name": "get_fee",
+        "inputs": [
+			{
+                "name": "method",
+                "type": "string"
+            }
+		],
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint64"
+            }
+        ],
+        "constant": "true",
+        "type": "function"
+    },
+	{
+        "name": "get_status",
+        "inputs": [
+			{
+				"name":"taskid",
+				"type":"string"
+			}
+		],
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint64"
+            }
+        ],
+        "constant": "true",
+        "type": "function"
+    },
+    {
+        "name": "start_calc",
+        "inputs": [
+            {
+                "type": "uint64"
+            },
+            {
+                "type": "string"
+            }
+        ],
+        "type": "event"
+    },
+    {
+        "name": "set_result",
+        "inputs": [
+            {
+                "type": "uint64"
+            },
+            {
+                "type": "string"
+            }
+        ],
+        "type": "event"
+    }
+]

@@ -1,0 +1,14 @@
+[
+    {
+        "name": "contracta_event",
+        "inputs": [
+            {
+                "type": "string"
+            },
+            {
+                "type": "string"
+            }
+        ],
+        "type": "event"
+    }
+]

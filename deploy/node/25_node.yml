@@ -1,0 +1,182 @@
+collusion:
+- host: 10.10.8.11
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+
+- host: 10.10.8.18
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+
+- host: 10.10.8.21
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+
+- host: 10.10.8.22
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+
+- host: 10.10.8.24
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+
+- host: 10.10.8.25
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+
+- host: 10.10.8.26
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+
+- host: 10.10.8.27
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+
+- host: 10.10.8.28
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+
+- host: 10.10.8.30
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+
+- host: 10.10.8.31
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+
+- host: 10.10.8.33
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+
+- host: 10.10.8.34
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+
+- host: 10.10.8.36
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+
+- host: 192.168.16.200
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: Platon123!
+
+- host: 192.168.16.201
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: Platon123!
+
+- host: 192.168.16.202
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: Platon123!
+
+- host: 192.168.16.203
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: Platon123!
+
+- host: 192.168.16.204
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: Platon123!
+
+- host: 10.10.8.234
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: Platon123!
+
+- host: 10.10.8.235
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: Platon123!
+
+- host: 10.10.8.236
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: Platon123!
+
+- host: 10.10.8.237
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: Platon123!
+
+- host: 10.10.8.239
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: Platon123!
+
+- host: 10.10.8.38
+  port: 16789
+  rpcport: 6789
+  username: juzhen
+  password: '123456'
+
+nocollusion:
+- host: 10.10.8.38
+  port: 16788
+  rpcport: 6788
+  username: juzhen
+  password: '123456'
+
+- host: 192.168.16.201
+  port: 16788
+  rpcport: 6788
+  username: juzhen
+  password: Platon123!
+
+- host: 192.168.16.202
+  port: 16788
+  rpcport: 6788
+  username: juzhen
+  password: Platon123!
+
+- host: 192.168.16.203
+  port: 16788
+  rpcport: 6788
+  username: juzhen
+  password: Platon123!
+
+- host: 192.168.16.204
+  port: 16788
+  rpcport: 6788
+  username: juzhen
+  password: Platon123!
+
