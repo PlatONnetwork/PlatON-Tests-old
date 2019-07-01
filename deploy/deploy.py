@@ -356,10 +356,11 @@ class BaseDeploy:
         :return:
         """
         ip = nodedict['host']
+        sshport = nodedict.get("sshport", 22)
         username = nodedict['username']
         password = nodedict['password']
         port = nodedict.get("port", "6789")
-        ssh, _, t = connect_linux(ip, username, password)
+        ssh, _, t = connect_linux(ip, username, password, sshport)
         self.run_ssh(
             ssh, "ps -ef|grep platon|grep %s|grep -v grep|awk {'print $2'}|xargs kill -9" % port)
         t.close()
@@ -390,10 +391,11 @@ class BaseDeploy:
         :return:
         """
         ip = nodedict['host']
+        sshport = nodedict.get("sshport", 22)
         username = nodedict['username']
         password = nodedict['password']
         port = nodedict.get("port", "16789")
-        ssh, _, t = connect_linux(ip, username, password)
+        ssh, _, t = connect_linux(ip, username, password, sshport)
         self.run_ssh(
             ssh, "ps -ef|grep platon|grep %s|grep -v grep|awk {'print $2'}|xargs kill" % port)
         time.sleep(5)
@@ -428,9 +430,10 @@ class BaseDeploy:
         :return:
         """
         ip = nodedict.get('host')
+        sshport = nodedict.get("sshport", 22)
         username = nodedict.get('username')
         password = nodedict.get('password')
-        ssh, _, t = connect_linux(ip, username, password)
+        ssh, _, t = connect_linux(ip, username, password, sshport)
         self.run_ssh(ssh, "killall -9 platon")
         t.close()
 
@@ -452,7 +455,7 @@ class BaseDeploy:
         """
         try:
             ssh, sftp, t = connect_linux(
-                nodedict["host"], nodedict["username"], nodedict["password"])
+                nodedict["host"], nodedict["username"], nodedict["password"], nodedict["sshport"])
         except Exception as e:
             raise e
         self.run_ssh(
@@ -644,12 +647,13 @@ class BaseDeploy:
         ip = nodedict['host']
         port = nodedict.get("port", "16789")
         rpcport = nodedict.get("rpcport", "6789")
+        sshport = nodedict.get("sshport", 22)
         username = nodedict["username"]
         password = nodedict["password"]
         mpcactor = nodedict.get("mpcactor", None)
         vcactor = nodedict.get("vcactor", None)
         url = nodedict["url"]
-        ssh, sftp, t = connect_linux(ip, username, password)
+        ssh, sftp, t = connect_linux(ip, username, password, sshport)
         if clean or is_init:
             self.clean_blockchain(ssh, port, password)
         self.clean_log(ssh, port)
@@ -711,8 +715,7 @@ class AutoDeployPlaton(BaseDeploy):
         tmp = os.path.join(tmp_dir, "supervisord.conf")
         print(tmp)
         self.update_conf(node, self.sup_template, tmp)
-        ssh, sftp, t = connect_linux(
-            node["host"], node["username"], node["password"])
+        ssh, sftp, t = connect_linux(node["host"], node["username"], node["password"], node["sshport"])
         self.run_ssh(ssh, "mkdir -p ./tmp")
         sftp.put(tmp, "./tmp/supervisord.conf")
         supervisor_pid_str = self.run_ssh(
@@ -778,8 +781,7 @@ class AutoDeployPlaton(BaseDeploy):
         """
         port = str(node["port"])
         node_name = "node-" + port
-        ssh, sftp, t = connect_linux(
-            node["host"], node["username"], node["password"])
+        ssh, sftp, t = connect_linux(node["host"], node["username"], node["password"], node["sshport"])
         pwd_list = self.run_ssh(ssh, "pwd")
         pwd = pwd_list[0].strip("\r\n")
         with open(gen_node_tmp(self.sup_tmp, node["host"], port) + "/" + node_name + ".conf", "w") as fp:
@@ -891,7 +893,8 @@ class AutoDeployPlaton(BaseDeploy):
         ip = nodedict['host']
         username = nodedict['username']
         password = nodedict['password']
-        ssh, _, t = connect_linux(ip, username, password)
+        sshport = nodedict.get('sshport', 22)
+        ssh, _, t = connect_linux(ip, username, password, sshport)
         self.run_ssh(
             ssh, "supervisorctl stop node-{}".format(nodedict["port"]))
         t.close()
@@ -911,7 +914,8 @@ class AutoDeployPlaton(BaseDeploy):
         port = str(node.get("port", "16789"))
         username = node["username"]
         password = node["password"]
-        ssh, sftp, t = connect_linux(ip, username, password)
+        sshport = node.get('sshport', 22)
+        ssh, sftp, t = connect_linux(ip, username, password, sshport)
         node_name = "node-" + str(port)
         if clean or is_init:
             self.clean_blockchain(ssh, port, password)
@@ -980,7 +984,8 @@ class AutoDeployPlaton(BaseDeploy):
         port = str(node.get("port", "16789"))
         username = node["username"]
         password = node["password"]
-        ssh, sftp, t = connect_linux(ip, username, password)
+        sshport = node.get("sshport", 22)
+        ssh, sftp, t = connect_linux(ip, username, password, sshport)
         node_name = "node-" + str(port)
         self.run_ssh(ssh, "supervisorctl stop {}".format(node_name))
         self.run_ssh(ssh, "supervisorctl start {}".format(node_name))
@@ -1016,7 +1021,8 @@ class AutoDeployPlaton(BaseDeploy):
         port = str(node.get("port", "16789"))
         username = node["username"]
         password = node["password"]
-        ssh, sftp, t = connect_linux(ip, username, password)
+        sshport = node.get("sshport", 22)
+        ssh, sftp, t = connect_linux(ip, username, password, sshport)
         self.upload_platon(ssh, sftp, port)
         node_name = "node-" + str(port)
         self.run_ssh(ssh, "supervisorctl restart {}".format(node_name))
@@ -1053,7 +1059,8 @@ class AutoDeployPlaton(BaseDeploy):
         port = str(node.get("port", "16789"))
         username = node["username"]
         password = node["password"]
-        ssh, sftp, t = connect_linux(ip, username, password)
+        sshport = node.get("sshport", 22)
+        ssh, sftp, t = connect_linux(ip, username, password, sshport)
         node_name = "node-" + str(port)
         self.clean_blockchain(ssh, port, password)
         self.clean_log(ssh, port)
