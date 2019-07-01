@@ -23,7 +23,7 @@ def connect_web3(url):
     return w3
 
 
-def connect_linux(ip, username='root', password='Juzhen123!'):
+def connect_linux(ip, username='root', password='Juzhen123!', prot=22):
     '''
     使用账号密码连接linux服务器
     params:
@@ -35,7 +35,7 @@ def connect_linux(ip, username='root', password='Juzhen123!'):
         @sftp:文件传输实例，用于上传下载文件 sftp.get(a,b)将a下载到b,sftp.put(a,b)把a上传到b
         @t:连接实例，用于关闭连接 t.close()
     '''
-    t = paramiko.Transport((ip, 22))
+    t = paramiko.Transport((ip, prot))
     t.connect(username=username, password=password)
     ssh = paramiko.SSHClient()
     ssh._transport = t

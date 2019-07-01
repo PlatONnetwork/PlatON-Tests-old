@@ -1,4 +1,4 @@
-# PN_AutoTest
+# PlatON-Tests
 This project is an automated test project of the PaltON-Go. see: https://github.com/PlatONnetwork/PlatON-Go
 
 ### Run test:
