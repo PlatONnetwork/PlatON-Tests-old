@@ -54,10 +54,6 @@ def setup(node_yml=None, collusion_number=0):
         conf.NODE_YML = abspath(node_yml)
     auto = AutoDeployPlaton()
     auto.check_node_yml(conf.NODE_YML)
-    # auto.booms(conf.NODE_YML)
-    # auto.kill_of_yaml(conf.NODE_YML)
-    # auto.booms(conf.VC_NODE_YML)
-    auto.kill_of_yaml(conf.VC_NODE_YML)
     conf.NODE_NUMBER = collusion_number
     auto.start_all_node(conf.NODE_YML)
 
@@ -65,7 +61,6 @@ def setup(node_yml=None, collusion_number=0):
 def teardown():
     auto = AutoDeployPlaton()
     auto.kill_of_yaml(conf.NODE_YML)
-    auto.kill_of_yaml(conf.VC_NODE_YML)
 
 
 if __name__ == "__main__":
@@ -73,16 +68,12 @@ if __name__ == "__main__":
         raise Exception("当前机器正在执行测试，请稍后再试")
     opt = parse_options()
     node_yml = opt.node
-    node_yml = "./deploy/node/cbft_4.yml"
     url = opt.url
-    # url = "http://192.168.18.31:8085/ci/packages/PlatON_Go/318/PlatON_Go_linux_[ppos_optimize]_b318.04172003.tar.gz"
     if url:
         download_platon(download_url=url)
     setup(node_yml, 0)
     version = opt.type
-    # version = "pangu"
     module = opt.module
-    module = "blockchain"
     case = opt.case
     run(version=version, module=module, case=case)
     teardown()
