@@ -39,8 +39,7 @@ def run_thread(data: list, func, *args):
         param = [p for p in args]
         param.insert(0, d)
         param = tuple(param)
-        t = threading.Thread(
-            target=func, args=param)
+        t = threading.Thread(target=func, args=param)
         t.start()
         threads.append(t)
         i += 1
@@ -82,8 +81,14 @@ def generate_init_node(collusion_list):
 
 
 class BaseDeploy:
-    def __init__(self, platon=conf.PLATON_BIN, cbft=conf.CBFT, keystore=conf.KEYSTORE, genesis=conf.GENESIS_TEMPLATE,
-                 deploy_path=conf.DEPLOY_PATH, net_type=None, syncmode="full"):
+    def __init__(self,
+                 platon=conf.PLATON_BIN,
+                 cbft=conf.CBFT,
+                 keystore=conf.KEYSTORE,
+                 genesis=conf.GENESIS_TEMPLATE,
+                 deploy_path=conf.DEPLOY_PATH,
+                 net_type=None,
+                 syncmode="full"):
         """
         部署节点
         :param platon:本地platon二进制文件路径
@@ -115,7 +120,14 @@ class BaseDeploy:
         """
         return run_ssh(ssh, cmd, password)
 
-    def start(self, ssh, url, port=16789, rpcport=6789, cmd=None, mpcactor=None, vcactor=None) -> bool:
+    def start(self,
+              ssh,
+              url,
+              port=16789,
+              rpcport=6789,
+              cmd=None,
+              mpcactor=None,
+              vcactor=None) -> bool:
         """
         启动一个节点;
         :param ssh:ssh连接对象
@@ -138,38 +150,39 @@ class BaseDeploy:
             if parse.splittype(url)[0] == "ws":
                 if mpcactor:
                     cmd = '''nohup {}/node-{}/platon {} --datadir {}/node-{}/data --port {} --wsport {} --mpc --mpc.actor {} > {}/node-{}/nohup.out 2>&1 &'''.format(
-                        self.deploy_path, port, base_ws, self.deploy_path, port, port, rpcport, "0x" +
-                        str(mpcactor),
+                        self.deploy_path, port, base_ws, self.deploy_path,
+                        port, port, rpcport, "0x" + str(mpcactor),
                         self.deploy_path, port)
                 elif vcactor:
                     cmd = '''nohup {}/node-{}/platon {} --datadir {}/node-{}/data --port {} --wsport {} --vc --vc.actor {} --vc.password 88888888 > {}/node-{}/nohup.out 2>&1 &'''.format(
-                        self.deploy_path, port, base_ws, self.deploy_path, port, port, rpcport, "0x" +
-                        str(vcactor),
+                        self.deploy_path, port, base_ws, self.deploy_path,
+                        port, port, rpcport, "0x" + str(vcactor),
                         self.deploy_path, port)
                 else:
                     cmd = '''nohup {}/node-{}/platon {} --datadir {}/node-{}/data --port {} --wsport {} > {}/node-{}/nohup.out 2>&1 &'''.format(
-                        self.deploy_path, port, base_ws, self.deploy_path, port, port, rpcport, self.deploy_path, port)
+                        self.deploy_path, port, base_ws, self.deploy_path,
+                        port, port, rpcport, self.deploy_path, port)
             elif parse.splittype(url)[0] == "http":
                 if mpcactor:
                     cmd = '''nohup {}/node-{}/platon {} --datadir {}/node-{}/data --port {} --rpcport {} --mpc --mpc.actor {} > {}/node-{}/nohup.out 2>&1 &'''.format(
-                        self.deploy_path, port, base_http, self.deploy_path, port, port, rpcport, "0x" +
-                        str(mpcactor),
+                        self.deploy_path, port, base_http, self.deploy_path,
+                        port, port, rpcport, "0x" + str(mpcactor),
                         self.deploy_path, port)
                 elif vcactor:
                     cmd = '''nohup {}/node-{}/platon {} --datadir {}/node-{}/data --port {} --rpcport {} --vc --vc.actor {} --vc.password 88888888 > {}/node-{}/nohup.out 2>&1 &'''.format(
-                        self.deploy_path, port, base_http, self.deploy_path, port, port, rpcport, "0x" +
-                        str(vcactor),
+                        self.deploy_path, port, base_http, self.deploy_path,
+                        port, port, rpcport, "0x" + str(vcactor),
                         self.deploy_path, port)
                 else:
                     cmd = '''nohup {}/node-{}/platon {} --datadir {}/node-{}/data --port {} --rpcport {} > {}/node-{}/nohup.out 2>&1 &'''.format(
-                        self.deploy_path, port, base_http, self.deploy_path, port, port, rpcport, self.deploy_path,
-                        port)
+                        self.deploy_path, port, base_http, self.deploy_path,
+                        port, port, rpcport, self.deploy_path, port)
             else:
                 raise Exception("url连接类型不正确")
         self.run_ssh(ssh, cmd)
         result = self.run_ssh(
-            ssh, "ps -ef|grep platon|grep %s|grep -v grep|awk {'print $2'}" % str(
-                rpcport))
+            ssh, "ps -ef|grep platon|grep %s|grep -v grep|awk {'print $2'}" %
+            str(rpcport))
         if not result:
             return False
         else:
@@ -184,7 +197,8 @@ class BaseDeploy:
         :return:
         """
         cmd = '{}/node-{}/platon --datadir {}/node-{}/data init {}/node-{}/genesis.json'.format(
-            self.deploy_path, port, self.deploy_path, port, self.deploy_path, port)
+            self.deploy_path, port, self.deploy_path, port, self.deploy_path,
+            port)
         s = self.run_ssh(ssh, cmd)
         return s
 
@@ -196,7 +210,9 @@ class BaseDeploy:
         :return:
         """
         self.run_ssh(
-            ssh, "sudo -S -p '' rm -rf {}/node-{}".format(self.deploy_path, port), password)
+            ssh,
+            "sudo -S -p '' rm -rf {}/node-{}".format(self.deploy_path,
+                                                     port), password)
         self.run_ssh(ssh, "mkdir -p {}/node-{}".format(self.deploy_path, port))
 
     def clean_log(self, ssh, port):
@@ -208,10 +224,10 @@ class BaseDeploy:
         """
         self.run_ssh(
             ssh, "rm -rf {}/node-{}/nohup.out".format(self.deploy_path, port))
-        self.run_ssh(
-            ssh, "rm -rf {}/node-{}/log".format(self.deploy_path, port))
-        self.run_ssh(
-            ssh, 'mkdir -p {}/node-{}/log'.format(self.deploy_path, port))
+        self.run_ssh(ssh,
+                     "rm -rf {}/node-{}/log".format(self.deploy_path, port))
+        self.run_ssh(ssh,
+                     'mkdir -p {}/node-{}/log'.format(self.deploy_path, port))
 
     def upload_platon(self, ssh, sftp, port):
         """
@@ -221,9 +237,10 @@ class BaseDeploy:
         :param port:
         :return:
         """
-        self.run_ssh(
-            ssh, "rm -rf {}/node-{}/platon".format(self.deploy_path, port))
-        sftp.put(self.platon, '{}/node-{}/platon'.format(self.deploy_path, port))
+        self.run_ssh(ssh,
+                     "rm -rf {}/node-{}/platon".format(self.deploy_path, port))
+        sftp.put(self.platon,
+                 '{}/node-{}/platon'.format(self.deploy_path, port))
         self.run_ssh(
             ssh, 'chmod +x {}/node-{}/platon'.format(self.deploy_path, port))
 
@@ -241,7 +258,7 @@ class BaseDeploy:
         if not os.path.exists(nodekey_dir):
             os.makedirs(nodekey_dir)
         nodekey_file = os.path.join(nodekey_dir, "nodekey")
-        with open(nodekey_file, 'w', encoding="utf-8")as f:
+        with open(nodekey_file, 'w', encoding="utf-8") as f:
             f.write(nodekey)
         self.run_ssh(
             ssh, 'mkdir -p {}/node-{}/data/'.format(self.deploy_path, port))
@@ -258,7 +275,8 @@ class BaseDeploy:
         :return:
         """
         self.run_ssh(
-            ssh, 'mkdir -p {}/node-{}/data/keystore'.format(self.deploy_path, port))
+            ssh,
+            'mkdir -p {}/node-{}/data/keystore'.format(self.deploy_path, port))
         remote_keystore = '{}/node-{}/data/keystore/UTC--2018-10-04T09-02-39.439063439Z--493301712671ada506ba6ca7891f436d29185821'.format(
             self.deploy_path, port)
         sftp.put(self.keystore, remote_keystore)
@@ -271,8 +289,8 @@ class BaseDeploy:
         :param password:
         :return:
         """
-        cmd = "{}/node-{}/platon account new --datadir {}/node-{}/data".format(self.deploy_path, port, self.deploy_path,
-                                                                               port)
+        cmd = "{}/node-{}/platon account new --datadir {}/node-{}/data".format(
+            self.deploy_path, port, self.deploy_path, port)
         stdin, stdout, _ = ssh.exec_command("source /etc/profile;%s" % cmd)
         stdin.write(str(password) + "\n")
         stdin.write(str(password) + "\n")
@@ -362,7 +380,9 @@ class BaseDeploy:
         port = nodedict.get("port", "6789")
         ssh, _, t = connect_linux(ip, username, password, sshport)
         self.run_ssh(
-            ssh, "ps -ef|grep platon|grep %s|grep -v grep|awk {'print $2'}|xargs kill -9" % port)
+            ssh,
+            "ps -ef|grep platon|grep %s|grep -v grep|awk {'print $2'}|xargs kill -9"
+            % port)
         t.close()
 
     def kill_of_yaml(self, node_yaml):
@@ -397,10 +417,13 @@ class BaseDeploy:
         port = nodedict.get("port", "16789")
         ssh, _, t = connect_linux(ip, username, password, sshport)
         self.run_ssh(
-            ssh, "ps -ef|grep platon|grep %s|grep -v grep|awk {'print $2'}|xargs kill" % port)
+            ssh,
+            "ps -ef|grep platon|grep %s|grep -v grep|awk {'print $2'}|xargs kill"
+            % port)
         time.sleep(5)
-        result = self.run_ssh(ssh,
-                              "ps -ef|grep platon|grep %s|grep -v grep|awk {'print $2'}" % port)
+        result = self.run_ssh(
+            ssh,
+            "ps -ef|grep platon|grep %s|grep -v grep|awk {'print $2'}" % port)
         t.close()
         if result:
             raise Exception("进程关闭失败")
@@ -453,20 +476,28 @@ class BaseDeploy:
         :param file:
         :return:
         """
+        global lock
+        lock.acquire()
         try:
-            ssh, sftp, t = connect_linux(
-                nodedict["host"], nodedict["username"], nodedict["password"], nodedict["sshport"])
+            ssh, sftp, t = connect_linux(nodedict["host"],
+                                         nodedict["username"],
+                                         nodedict["password"],
+                                         nodedict["sshport"])
         except Exception as e:
             raise e
-        self.run_ssh(
-            ssh, "sudo -S -p '' ntpdate 0.centos.pool.ntp.org", nodedict["password"])
+        self.run_ssh(ssh, "sudo -S -p '' ntpdate 0.centos.pool.ntp.org",
+                     nodedict["password"])
         pwd_list = self.run_ssh(ssh, "pwd")
         pwd = pwd_list[0].strip("\r\n")
         cmd = r"sudo -S -p '' sed -i '$a export LD_LIBRARY_PATH={}/mpclib' /etc/profile".format(
             pwd)
         is_have_mpclib = self.run_ssh(ssh, 'ls|grep "mpclib"')
-        self.run_ssh(
-            ssh, "sudo -S -p '' apt-get install libgmpxx4ldbl libgmp-dev libprocps4-dev", nodedict["password"])
+
+        # self.run_ssh(
+        #     ssh,
+        #     "sudo -S -p '' apt-get install libgmpxx4ldbl libgmp-dev libprocps4-dev",
+        #     nodedict["password"])
+
         if not is_have_mpclib:
             sftp.put(file, os.path.basename(file))
             self.run_ssh(ssh, "tar -zxvf ./{}".format(os.path.basename(file)))
@@ -478,8 +509,11 @@ class BaseDeploy:
             # self.run_ssh(
             #     ssh, "sudo -S -p '' apt-get install llvm-6.0-dev llvm-6.0 libclang-6.0-dev -y", nodedict["password"])
             self.run_ssh(
-                ssh, "sudo -S -p '' apt-get install libgmpxx4ldbl libgmp-dev libprocps4-dev", nodedict["password"])
+                ssh,
+                "sudo -S -p '' apt-get install libgmpxx4ldbl libgmp-dev libprocps4-dev",
+                nodedict["password"])
         t.close()
+        lock.release()
 
     def generate_genesis_json(self, genesis_json, init_node):
         """
@@ -494,11 +528,13 @@ class BaseDeploy:
         genesis_data['config']['cbft']["initialNodes"] = init_node
         if not os.path.exists(os.path.dirname(genesis_file)):
             os.makedirs(os.path.dirname(genesis_file))
-        with open(genesis_file, 'w', encoding='utf-8')as f:
+        with open(genesis_file, 'w', encoding='utf-8') as f:
             f.write(json.dumps(genesis_data))
         return genesis_file
 
-    def generate_static_node_json(self, static_nodes, static_node_file=conf.STATIC_NODE_FILE):
+    def generate_static_node_json(self,
+                                  static_nodes,
+                                  static_node_file=conf.STATIC_NODE_FILE):
         """
         生成节点互连文件
         :param static_nodes: 共识节点enode
@@ -506,7 +542,7 @@ class BaseDeploy:
         """
         log.info("生成static-node.json")
         num = 0
-        with open(static_node_file, 'w', encoding='utf-8')as f:
+        with open(static_node_file, 'w', encoding='utf-8') as f:
             f.write('[\n')
             for i in static_nodes:
                 num += 1
@@ -570,16 +606,21 @@ class BaseDeploy:
         if not nodedict.get("url"):
             update = 1
             if nodedict.get("protocol") == "ws":
-                nodedict["url"] = "ws://{}:{}".format(
-                    nodedict["host"], nodedict["rpcport"])
+                nodedict["url"] = "ws://{}:{}".format(nodedict["host"],
+                                                      nodedict["rpcport"])
             else:
                 nodedict["url"] = "http://{}:{}".format(
                     nodedict["host"], nodedict["rpcport"])
         return nodedict, update
 
-    def start_of_list(self, collusion_list, nocollusion_list=None, genesis_file=None, static_node_file=None,
+    def start_of_list(self,
+                      collusion_list,
+                      nocollusion_list=None,
+                      genesis_file=None,
+                      static_node_file=None,
                       is_need_init=True,
-                      genesis_path=conf.GENESIS_TMP, clean=False):
+                      genesis_path=conf.GENESIS_TMP,
+                      clean=False):
         """
         根据节点列表，启动节点
         :param collusion_list: 共识节点列表，当共识节点为空且is_need_init=True，genesis_file不能为空
@@ -599,8 +640,7 @@ class BaseDeploy:
             node_list = nocollusion_list
         else:
             node_list = collusion_list + nocollusion_list
-        static_nodes, init_node = generate_init_node(
-            collusion_list)
+        static_nodes, init_node = generate_init_node(collusion_list)
         if is_need_init:
             if not genesis_file:
                 genesis_file = self.generate_genesis_json(
@@ -612,12 +652,17 @@ class BaseDeploy:
             self.stop_of_list(node_list)
         else:
             self.kill_of_list(node_list)
-        run_thread(node_list, self.start_node, genesis_file,
-                   static_node_file, is_need_init, clean)
+        run_thread(node_list, self.start_node, genesis_file, static_node_file,
+                   is_need_init, clean)
         self.check_deploy_status(node_list)
 
-    def start_all_node(self, node_yml, genesis_file=None, static_node_file=None, is_need_init=True,
-                       genesis_path=conf.GENESIS_TMP, clean=False):
+    def start_all_node(self,
+                       node_yml,
+                       genesis_file=None,
+                       static_node_file=None,
+                       is_need_init=True,
+                       genesis_path=conf.GENESIS_TMP,
+                       clean=False):
         """
         根据节点配置文件，启动节点
         :param node_yml: 节点配置文件
@@ -630,11 +675,20 @@ class BaseDeploy:
         """
         self.check_node_yml(node_yml)
         collusion_list, nocollusion_list = get_node_list(node_yml)
-        self.start_of_list(collusion_list, nocollusion_list, genesis_file=genesis_file,
+        self.start_of_list(collusion_list,
+                           nocollusion_list,
+                           genesis_file=genesis_file,
                            static_node_file=static_node_file,
-                           is_need_init=is_need_init, genesis_path=genesis_path, clean=clean)
+                           is_need_init=is_need_init,
+                           genesis_path=genesis_path,
+                           clean=clean)
 
-    def start_node(self, nodedict, genesis_file, static_node_file, is_init=True, clean=False):
+    def start_node(self,
+                   nodedict,
+                   genesis_file,
+                   static_node_file,
+                   is_init=True,
+                   clean=False):
         """
         启动节点
         :param nodedict: 节点信息
@@ -671,16 +725,30 @@ class BaseDeploy:
         nodekey = nodedict["nodekey"]
         self.upload_nodekey(ssh, sftp, nodekey, ip, port)
         self.upload_keystore(ssh, sftp, port)
-        self.start(
-            ssh, url, port=port, rpcport=rpcport, cmd=nodedict.get("cmd", None), mpcactor=mpcactor, vcactor=vcactor)
+        self.start(ssh,
+                   url,
+                   port=port,
+                   rpcport=rpcport,
+                   cmd=nodedict.get("cmd", None),
+                   mpcactor=mpcactor,
+                   vcactor=vcactor)
         t.close()
 
 
 class AutoDeployPlaton(BaseDeploy):
-    def __init__(self, platon=conf.PLATON_BIN, cbft=conf.CBFT, keystore=conf.KEYSTORE, genesis=conf.GENESIS_TEMPLATE,
-                 deploy_path=conf.DEPLOY_PATH, net_type=None, syncmode="full", sup_template=conf.SUP_TEMPLATE,
-                 sup_tmp=conf.SUP_TMP, is_metrics=False,
-                 ):
+    def __init__(
+            self,
+            platon=conf.PLATON_BIN,
+            cbft=conf.CBFT,
+            keystore=conf.KEYSTORE,
+            genesis=conf.GENESIS_TEMPLATE,
+            deploy_path=conf.DEPLOY_PATH,
+            net_type=None,
+            syncmode="full",
+            sup_template=conf.SUP_TEMPLATE,
+            sup_tmp=conf.SUP_TMP,
+            is_metrics=False,
+    ):
         super(AutoDeployPlaton, self).__init__(platon, cbft, keystore, genesis,
                                                deploy_path, net_type, syncmode)
         self.sup_template = sup_template
@@ -713,9 +781,9 @@ class AutoDeployPlaton(BaseDeploy):
         if not os.path.exists(tmp_dir):
             os.makedirs(tmp_dir)
         tmp = os.path.join(tmp_dir, "supervisord.conf")
-        print(tmp)
         self.update_conf(node, self.sup_template, tmp)
-        ssh, sftp, t = connect_linux(node["host"], node["username"], node["password"], node["sshport"])
+        ssh, sftp, t = connect_linux(node["host"], node["username"],
+                                     node["password"], node["sshport"])
         self.run_ssh(ssh, "mkdir -p ./tmp")
         sftp.put(tmp, "./tmp/supervisord.conf")
         supervisor_pid_str = self.run_ssh(
@@ -724,37 +792,43 @@ class AutoDeployPlaton(BaseDeploy):
             self.judge_restart_supervisor(ssh, supervisor_pid_str, node)
         else:
             self.run_ssh(ssh, "sudo -S -p '' apt update", node["password"])
+            self.run_ssh(ssh, "sudo -S -p '' apt install -y supervisor",
+                         node["password"])
             self.run_ssh(
-                ssh, "sudo -S -p '' apt install -y supervisor", node["password"])
-            self.run_ssh(
-                ssh, "sudo -S -p '' cp ./tmp/supervisord.conf /etc/supervisor/", node["password"])
+                ssh,
+                "sudo -S -p '' cp ./tmp/supervisord.conf /etc/supervisor/",
+                node["password"])
             supervisor_pid_str = self.run_ssh(
                 ssh, "ps -ef|grep supervisord|grep -v grep|awk {'print $2'}")
             if len(supervisor_pid_str) > 0:
                 self.judge_restart_supervisor(ssh, supervisor_pid_str, node)
             else:
-                self.run_ssh(
-                    ssh, "sudo -S -p '' /etc/init.d/supervisor start", node["password"])
+                self.run_ssh(ssh, "sudo -S -p '' /etc/init.d/supervisor start",
+                             node["password"])
         t.close()
 
     def judge_restart_supervisor(self, ssh, supervisor_pid_str, node):
         supervisor_pid = supervisor_pid_str[0].strip("\n")
         result = self.run_ssh(
-            ssh, "sudo -S -p '' supervisorctl stop node-{}".format(node["port"]), node["password"])
+            ssh,
+            "sudo -S -p '' supervisorctl stop node-{}".format(node["port"]),
+            node["password"])
         if "node-{}".format(node["port"]) not in result[0]:
-            self.run_ssh(
-                ssh, "sudo -S -p '' kill {}".format(supervisor_pid), node["password"])
+            self.run_ssh(ssh, "sudo -S -p '' kill {}".format(supervisor_pid),
+                         node["password"])
             self.run_ssh(ssh, "sudo -S -p '' killall supervisord",
                          node["password"])
-            self.run_ssh(
-                ssh, "sudo -S -p '' sudo apt remove supervisor -y", node["password"])
+            self.run_ssh(ssh, "sudo -S -p '' sudo apt remove supervisor -y",
+                         node["password"])
             self.run_ssh(ssh, "sudo -S -p '' apt update", node["password"])
+            self.run_ssh(ssh, "sudo -S -p '' apt install -y supervisor",
+                         node["password"])
             self.run_ssh(
-                ssh, "sudo -S -p '' apt install -y supervisor", node["password"])
-            self.run_ssh(
-                ssh, "sudo -S -p '' cp ./tmp/supervisord.conf /etc/supervisor/", node["password"])
-            self.run_ssh(
-                ssh, "sudo -S -p '' /etc/init.d/supervisor start", node["password"])
+                ssh,
+                "sudo -S -p '' cp ./tmp/supervisord.conf /etc/supervisor/",
+                node["password"])
+            self.run_ssh(ssh, "sudo -S -p '' /etc/init.d/supervisor start",
+                         node["password"])
 
     def update_conf(self, node, sup_template, sup_tmp):
         """
@@ -781,10 +855,13 @@ class AutoDeployPlaton(BaseDeploy):
         """
         port = str(node["port"])
         node_name = "node-" + port
-        ssh, sftp, t = connect_linux(node["host"], node["username"], node["password"], node["sshport"])
+        ssh, sftp, t = connect_linux(node["host"], node["username"],
+                                     node["password"], node["sshport"])
         pwd_list = self.run_ssh(ssh, "pwd")
         pwd = pwd_list[0].strip("\r\n")
-        with open(gen_node_tmp(self.sup_tmp, node["host"], port) + "/" + node_name + ".conf", "w") as fp:
+        with open(
+                gen_node_tmp(self.sup_tmp, node["host"], port) + "/" +
+                node_name + ".conf", "w") as fp:
             fp.write("[program:" + node_name + "]\n")
             if not os.path.isabs(self.deploy_path):
                 cmd = "{}/{}/{}/platon --identity platon --datadir".format(
@@ -816,7 +893,8 @@ class AutoDeployPlaton(BaseDeploy):
                     str(node["rpcport"])
                 cmd = cmd + " --wsapi eth,debug,personal,admin,net,web3"
             else:
-                cmd = cmd + " --rpc --rpcaddr 0.0.0.0 --rpcport " + str(node["rpcport"])
+                cmd = cmd + " --rpc --rpcaddr 0.0.0.0 --rpcport " + str(
+                    node["rpcport"])
                 cmd = cmd + " --rpcapi platon,debug,personal,admin,net,web3"
             cmd = cmd + " --txpool.nolocals"
             if self.is_metrics:
@@ -846,11 +924,11 @@ class AutoDeployPlaton(BaseDeploy):
             fp.write("stopwaitsecs=10\n")
             fp.write("redirect_stderr=true\n")
             if os.path.isabs(self.deploy_path):
-                fp.write(
-                    "stdout_logfile={}/{}/log/platon.log\n".format(self.deploy_path, node_name))
+                fp.write("stdout_logfile={}/{}/log/platon.log\n".format(
+                    self.deploy_path, node_name))
             else:
-                fp.write(
-                    "stdout_logfile={}/{}/{}/log/platon.log\n".format(pwd, self.deploy_path, node_name))
+                fp.write("stdout_logfile={}/{}/{}/log/platon.log\n".format(
+                    pwd, self.deploy_path, node_name))
             fp.write("stdout_logfile_maxbytes=200MB\n")
             fp.write("stdout_logfile_backups=20\n")
         t.close()
@@ -867,18 +945,19 @@ class AutoDeployPlaton(BaseDeploy):
         """
         global lock
         self.run_ssh(ssh, "rm -rf ./tmp/{}.conf".format(node_name))
-        sftp.put(gen_node_tmp(self.sup_tmp, node["host"], str(port)) + "/" + node_name + ".conf",
-                 "./tmp/" + node_name + ".conf")
+        sftp.put(
+            gen_node_tmp(self.sup_tmp, node["host"], str(port)) + "/" +
+            node_name + ".conf", "./tmp/" + node_name + ".conf")
         lock.acquire()
         try:
-            self.run_ssh(ssh, "cd ./tmp/" + "; sudo -S -p '' cp " + node_name + ".conf /etc/supervisor/conf.d",
-                         node["password"])
-            self.run_ssh(ssh, "sudo -S -p '' supervisorctl update " + node_name,
-                         node["password"])
             self.run_ssh(
-                ssh, "sudo -S -p '' supervisorctl start " + node_name,
-                node["password"]
-            )
+                ssh, "cd ./tmp/" + "; sudo -S -p '' cp " + node_name +
+                ".conf /etc/supervisor/conf.d", node["password"])
+            self.run_ssh(ssh,
+                         "sudo -S -p '' supervisorctl update " + node_name,
+                         node["password"])
+            self.run_ssh(ssh, "sudo -S -p '' supervisorctl start " + node_name,
+                         node["password"])
         finally:
             lock.release()
 
@@ -895,11 +974,16 @@ class AutoDeployPlaton(BaseDeploy):
         password = nodedict['password']
         sshport = nodedict.get('sshport', 22)
         ssh, _, t = connect_linux(ip, username, password, sshport)
-        self.run_ssh(
-            ssh, "supervisorctl stop node-{}".format(nodedict["port"]))
+        self.run_ssh(ssh,
+                     "supervisorctl stop node-{}".format(nodedict["port"]))
         t.close()
 
-    def supervisor_deploy_platon(self, node, genesis_file, static_node_file, is_init=True, clean=False):
+    def supervisor_deploy_platon(self,
+                                 node,
+                                 genesis_file,
+                                 static_node_file,
+                                 is_init=True,
+                                 clean=False):
         """
         使用supervisor部署platon，灵活部署
         :param node:
@@ -935,9 +1019,14 @@ class AutoDeployPlaton(BaseDeploy):
         self.start_node_conf(ssh, sftp, port, node, node_name)
         t.close()
 
-    def start_of_list(self, collusion_list, nocollusion_list=None, genesis_file=None, static_node_file=None,
+    def start_of_list(self,
+                      collusion_list,
+                      nocollusion_list=None,
+                      genesis_file=None,
+                      static_node_file=None,
                       is_need_init=True,
-                      genesis_path=conf.GENESIS_TMP, clean=False):
+                      genesis_path=conf.GENESIS_TMP,
+                      clean=False):
         """
         根据节点列表，启动节点
         :param collusion_list: 共识节点列表，当共识节点为空且is_need_init=True，genesis_file不能为空
@@ -960,8 +1049,7 @@ class AutoDeployPlaton(BaseDeploy):
         self.stop_of_list(node_list)
         self.deploy_all_supervisor(node_list)
         self.dependency(node_list)
-        static_nodes, init_node = generate_init_node(
-            collusion_list)
+        static_nodes, init_node = generate_init_node(collusion_list)
         if is_need_init:
             if not genesis_file:
                 genesis_file = self.generate_genesis_json(
@@ -970,8 +1058,8 @@ class AutoDeployPlaton(BaseDeploy):
                 static_node_file = self.generate_static_node_json(static_nodes)
         # for node in node_list:
         #     self.supervisor_deploy_platon(node, genesis_file, static_node_file, is_need_init, clean)
-        run_thread(node_list, self.supervisor_deploy_platon,
-                   genesis_file, static_node_file, is_need_init, clean)
+        run_thread(node_list, self.supervisor_deploy_platon, genesis_file,
+                   static_node_file, is_need_init, clean)
         self.check_deploy_status(node_list)
 
     def restart(self, node):
@@ -1100,4 +1188,3 @@ if __name__ == "__main__":
     # s.deploy_default_yml(abspath("./deploy/node/25_cbft.yml"))
     # s.kill_of_yaml(abspath("./deploy/node/cbft_4.yml"))
     s.start_all_node(abspath("./deploy/node/cbft_4.yml"))
-
