@@ -42,7 +42,7 @@ class Ppos:
             data = data[2:]
         # print(data)
         data_bytes = rlp.decode(bytes.fromhex(data))[0]
-        event_data = (bytes.decode(data_bytes))
+        event_data = bytes.decode(data_bytes)
         return func_name ,event_data
 
     def send_raw_transaction(self, data, from_address, to_address, gasPrice, gas,value):
@@ -73,7 +73,7 @@ class Ppos:
         result = HexBytes(self.eth.sendRawTransaction(data)).hex()
         return result
 
-    def staking(self, typ, benifitAddress, nodeId,externalId, nodeName, website, details, amount,processVersion,
+    def staking(self, typ, benifitAddress, nodeId,externalId, nodeName, website, details, amount,programVersion,
                 from_address=None, gasPrice=None , gas=None):
         '''
         Description ：发起质押
@@ -85,7 +85,7 @@ class Ppos:
         :param website: string
         :param details: string
         :param amount: *big.Int(bytes)
-        :param processVersion: uint32
+        :param programVersion: uint32
         :param from_address:
         :param gasPrice:
         :param gas:
@@ -102,7 +102,7 @@ class Ppos:
                                     rlp.encode(bytes.fromhex(nodeId)),
                                     rlp.encode(externalId), rlp.encode(nodeName), rlp.encode(website),
                                     rlp.encode(details),rlp.encode(self.web3.toWei(amount, 'ether')),
-                                    rlp.encode(processVersion)])).hex()
+                                    rlp.encode(programVersion)])).hex()
         if not from_address:
             from_address = self.address
         if not gasPrice :
@@ -261,7 +261,7 @@ class Ppos:
             []:列表
             'NodeId': 被质押的节点Id(也叫候选人的节点Id)
             StakingAddress: 发起质押时使用的账户(后续操作质押信息只能用这个账户，撤销质押时，von会被退回该账户或者该账户的锁仓信息中)
-            BenifitAddress: 用于接受出块奖励和质押奖励的收益账户
+            BenefitAddress: 用于接受出块奖励和质押奖励的收益账户
             StakingTxIndex: 发起质押时的交易索引
             ProcessVersion: 被质押节点的PlatON进程的真实版本号(获取版本号的接口由治理提供)
             StakingBlockNum: 发起质押时的区块高度
@@ -280,11 +280,8 @@ class Ppos:
             "data": data
         }))
         recive = str(recive,encoding="utf8")
-        print(recive)
-        # p = re.compile(r'{.*}')
-        # recive = re.findall(p, recive)[0]
-        # recive = re.sub("{{", "{", recive)
-        # recive = json.loads(recive)
+        recive = recive.replace('\\','').replace('"[','[').replace(']"',']')
+        recive = json.loads(recive)
         return recive
 
     def getValidatorList(self):
@@ -296,7 +293,7 @@ class Ppos:
             []:列表
             'NodeId': 被质押的节点Id(也叫候选人的节点Id)
             StakingAddress: 发起质押时使用的账户(后续操作质押信息只能用这个账户，撤销质押时，von会被退回该账户或者该账户的锁仓信息中)
-            BenifitAddress: 用于接受出块奖励和质押奖励的收益账户
+            BenefitAddress: 用于接受出块奖励和质押奖励的收益账户
             StakingTxIndex: 发起质押时的交易索引
             ProcessVersion: 被质押节点的PlatON进程的真实版本号(获取版本号的接口由治理提供)
             StakingBlockNum: 发起质押时的区块高度
@@ -315,7 +312,8 @@ class Ppos:
             "data": data
         })
         recive = str(recive, encoding="utf8")
-        print(recive)
+        recive = recive.replace('\\','').replace('"[','[').replace(']"',']')
+        recive = json.loads(recive)
         return recive
 
     def getCandidateList(self):
@@ -328,7 +326,7 @@ class Ppos:
             []:列表
             'NodeId': 被质押的节点Id(也叫候选人的节点Id)
             StakingAddress: 发起质押时使用的账户(后续操作质押信息只能用这个账户，撤销质押时，von会被退回该账户或者该账户的锁仓信息中)
-            BenifitAddress: 用于接受出块奖励和质押奖励的收益账户
+            BenefitAddress: 用于接受出块奖励和质押奖励的收益账户
             StakingTxIndex: 发起质押时的交易索引
             ProcessVersion: 被质押节点的PlatON进程的真实版本号(获取版本号的接口由治理提供)
             Status: 候选人的状态(0: 节点可用； 1: 节点不可用； 2： 节点出块率低； 4： 节点的von不足最低质押门槛； 8：节点被举报双签)
@@ -352,7 +350,8 @@ class Ppos:
             "data": data
         })
         recive = str(recive, encoding="utf8")
-        print(recive)
+        recive = recive.replace('\\','').replace('"[','[').replace(']"',']')
+        recive = json.loads(recive)
         return recive
 
     def getDelegateListByAddr(self,addr):
@@ -377,7 +376,8 @@ class Ppos:
             "data": data
         })
         recive = str(recive, encoding="utf8")
-        print(recive)
+        recive = recive.replace('"[','[').replace(']"',']')
+        recive = json.loads(recive)
         return recive
 
     def getDelegateInfo(self,stakingBlockNum,delAddr,nodeId):
@@ -407,9 +407,8 @@ class Ppos:
             "to": to_address,
             "data": data
         })
-        # print(recive)
         recive = str(recive, encoding="utf8")
-        print(recive)
+        recive = json.loads(recive)
         return recive
 
     def getCandidateInfo(self,nodeId):
@@ -422,7 +421,7 @@ class Ppos:
             []:列表
             NodeId: 被质押的节点Id(也叫候选人的节点Id)
             StakingAddress: 发起质押时使用的账户(后续操作质押信息只能用这个账户，撤销质押时，von会被退回该账户或者该账户的锁仓信息中)
-            BenifitAddress: 用于接受出块奖励和质押奖励的收益账户
+            BenefitAddress: 用于接受出块奖励和质押奖励的收益账户
             StakingTxIndex: 发起质押时的交易索引
             ProcessVersion: 被质押节点的PlatON进程的真实版本号(获取版本号的接口由治理提供)
             Status: 候选人的状态(0: 节点可用； 1: 节点不可用； 2： 节点出块率低； 4： 节点的von不足最低质押门槛； 8：节点被举报双签)
@@ -438,7 +437,7 @@ class Ppos:
             Website: 节点的第三方主页(有长度限制，表示该节点的主页)
             Details: 节点的描述(有长度限制，表示该节点的描述)
         '''
-        data = rlp.encode(rlp.encode([int(1105),rlp.encode(bytes.fromhex(nodeId))]))
+        data = rlp.encode([rlp.encode(int(1105)),rlp.encode(bytes.fromhex(nodeId))])
         to_address = "0x1000000000000000000000000000000000000002"
         recive = self.eth.call({
             "from": self.address,
@@ -446,7 +445,8 @@ class Ppos:
             "data": data
         })
         recive = str(recive, encoding="utf8")
-        print(recive)
+        recive = recive.replace('\\','').replace('"{','{').replace('}"','}')
+        recive = json.loads(recive)
         return recive
 
 #################################治理###############################
@@ -504,7 +504,7 @@ class Ppos:
         result = self.send_raw_transaction(data, from_address, to_address, gasPrice,gas,value=0)
         return self.get_result(result, self.submitVersion.__name__)
 
-    def submitParam(self,verifier,githubID,topic,desc,url,endVotingBlock,currentValue,newValue,
+    def submitParam(self,verifier,githubID,topic,desc,url,endVotingBlock,paramName,currentValue,newValue,
                     from_address=None, gasPrice=None , gas=None):
         '''
         提交参数提案
@@ -523,7 +523,7 @@ class Ppos:
         data = rlp.encode([rlp.encode(int(2002)),rlp.encode(bytes.fromhex(verifier)),
                            rlp.encode(githubID),rlp.encode(topic),
                            rlp.encode(desc),rlp.encode(url),rlp.encode(int(endVotingBlock)),
-                           rlp.encode(currentValue),rlp.encode(newValue)])
+                           rlp.encode(paramName),rlp.encode(str(currentValue)),rlp.encode(str(newValue))])
         if not from_address:
             from_address = self.address
         if not gasPrice :
@@ -734,7 +734,9 @@ class Ppos:
             "data": data
         })
         recive = str(recive, encoding="ISO-8859-1")
-        print(recive)
+        recive = recive[10:]
+        recive = eval(recive)
+        # print(recive)
         return recive
 
 
@@ -750,18 +752,18 @@ if __name__ == '__main__':
     website='ffaf'
     details = 'effs'
     amount= 180
-    processVersion=30
+    programVersion=30
     stakingBlockNum = 66
     # p.addStaking(nodeId,typ,amount)
     # p.GetRestrictingInfo(benifitAddress)
     # p.updateStakingInfo(benifitAddress, nodeId,externalId, nodeName, website, details)
-    # p.staking(typ, benifitAddress, nodeId,externalId, nodeName, website, details, amount,processVersion)
-    p.getVerifierList()
-    p.getValidatorList()
-    p.getCandidateList()
-    p.getDelegateListByAddr(address)
-    p.getDelegateInfo(stakingBlockNum,benifitAddress,nodeId)
-    p.getCandidateInfo(nodeId)
+    # p.staking(typ, benifitAddress, nodeId,externalId, nodeName, website, details, amount,programVersion)
+    # p.getVerifierList()
+    # p.getValidatorList()
+    # p.getCandidateList()
+    # p.getDelegateListByAddr(address)
+    # p.getDelegateInfo(stakingBlockNum,benifitAddress,nodeId)
+    # p.getCandidateInfo(nodeId)
     p.GetRestrictingInfo(address)
     # proposalID = 66666666666666666666666666666666
     # p.getTallyResult(proposalID)
@@ -771,22 +773,33 @@ if __name__ == '__main__':
     # p.addStaking(nodeId,typ,amount)
     # p.getVerifierList()
     # p.getDelegateInfo()
+    # p.GetRestrictingInfo(address)
     verifier = 'f71e1bc638456363a66c4769284290ef3ccff03aba4a22fb60ffaed60b77f614bfd173532c3575abe254c366df6f4d6248b929cb9398aaac00cbcc959f7b2b7c'
     githubID='66'
     topic = '888gergregreggregergregweferfwregweagf'
     desc = 'helloeferfgwrgrgwrgregregregregw'
     url = 'baidu.com'
     newVersion = 1354354
-    endVotingBlock = 550
+    endVotingBlock = 55
     activeBlock = 66
-    currentValue= 66
-    newValue = 11
+    currentValue= '66'
+    newValue = '11'
     activeNode = verifier
     version = 88
+    option = 'y'
     # p.getDelegateListByAddr()
     # p.submitText(verifier,githubID,topic,desc,url,endVotingBlock)
     proposalID = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+    paramName ='wuyiqin'
     # p.getProposal(proposalID)
+    # p.submitText(verifier, githubID, topic, desc, url, endVotingBlock)
+    # p.submitVersion(verifier,githubID,topic,desc,url,newVersion,endVotingBlock,activeBlock)
+    # p.submitParam(verifier,githubID,topic,desc,url,endVotingBlock,paramName,currentValue,newValue)
+    # p.vote(verifier,proposalID,option)
+    # p.declareVersion(activeNode,version)
+    # p.getProposal(proposalID)
+    # p.getTallyResult(proposalID)
+    # p.listProposal()
     plan =  [{"epoch": 12, "amount": 45}, {"epoch": 24, "amount": 90}]
     # p.CreateRestrictingPlan(benifitAddress,plan)
 
