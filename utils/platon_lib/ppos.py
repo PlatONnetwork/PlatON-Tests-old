@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
+
+
 import json
-import re
 import math
 import rlp
 from hexbytes import HexBytes
@@ -22,7 +23,7 @@ def get_sleep_time(number):
         return total_time - number + i
 
 class Ppos:
-    def __init__(self, url, address, password,
+    def __init__(self, url, address, chainid=101,
                  privatekey=conf.PRIVATE_KEY):
         self.web3 = connect_web3(url)
         if not self.web3.isConnected():
@@ -32,10 +33,12 @@ class Ppos:
         self.privatekey = privatekey
         self.gasPrice = "0x8250de00"
         self.gas = "0x6fffffff"
+        self.chainid = chainid
+
 
     def get_result(self, tx_hash, func_name):
         result = self.eth.waitForTransactionReceipt(tx_hash)
-        print(result)
+        # print(result)
         """查看eventData"""
         data = result['logs'][0]['data']
         if data[:2] == '0x':
@@ -43,6 +46,8 @@ class Ppos:
         # print(data)
         data_bytes = rlp.decode(bytes.fromhex(data))[0]
         event_data = bytes.decode(data_bytes)
+        event_data = json.loads(event_data)
+        print(event_data)
         return func_name ,event_data
 
     def send_raw_transaction(self, data, from_address, to_address, gasPrice, gas,value):
@@ -54,7 +59,7 @@ class Ppos:
                 "gas": gas,
                 "nonce": nonce,
                 "data": data,
-                "chainId": 102,
+                "chainId": self.chainid,
                 "value": self.web3.toWei(value, "ether"),
             }
         else:
@@ -64,7 +69,7 @@ class Ppos:
                 "gas": gas,
                 "nonce": nonce,
                 "data": data,
-                "chainId": 102
+                "chainId": self.chainid
             }
         signedTransactionDict = self.eth.account.signTransaction(
             transaction_dict, self.privatekey
@@ -73,10 +78,10 @@ class Ppos:
         result = HexBytes(self.eth.sendRawTransaction(data)).hex()
         return result
 
-    def staking(self, typ, benifitAddress, nodeId,externalId, nodeName, website, details, amount,programVersion,
+    def createStaking(self, typ, benifitAddress, nodeId,externalId, nodeName, website, details, amount,programVersion,
                 from_address=None, gasPrice=None , gas=None):
         '''
-        Description ：发起质押
+        createStaking ：发起质押
         :param typ:  uint16(2bytes)
         :param benifitAddress:  20bytes
         :param nodeId: 64bytes
@@ -112,7 +117,7 @@ class Ppos:
         to_address = "0x1000000000000000000000000000000000000002"
         result = self.send_raw_transaction(data, from_address, to_address, gasPrice,gas,amount)
         print(result)
-        return self.get_result(result, self.staking.__name__)
+        return self.get_result(result, self.createStaking.__name__)
 
     def updateStakingInfo(self, benifitAddress, nodeId,externalId, nodeName, website, details,
                 from_address=None, gasPrice=None , gas=None):
@@ -282,6 +287,7 @@ class Ppos:
         recive = str(recive,encoding="utf8")
         recive = recive.replace('\\','').replace('"[','[').replace(']"',']')
         recive = json.loads(recive)
+        print(recive)
         return recive
 
     def getValidatorList(self):
@@ -534,7 +540,7 @@ class Ppos:
         result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, value=0)
         return self.get_result(result, self.submitParam.__name__)
 
-    def vote(self,verifier,proposalID,option,from_address=None, gasPrice=None , gas=None):
+    def vote(self,verifier,proposalID,option,programVersion,from_address=None, gasPrice=None , gas=None):
         '''
         给提案投票
         :param verifier: 64bytes
@@ -546,6 +552,7 @@ class Ppos:
         :return:
         '''
         data = rlp.encode([rlp.encode(int(2003)),rlp.encode(bytes.fromhex(verifier)),
+                           rlp.encode(int(programVersion)),
                            rlp.encode(proposalID),rlp.encode(option)])
         if not from_address:
             from_address = self.address
@@ -699,9 +706,7 @@ class Ppos:
         plan_list = []
         for dict_ in plan:
             v = [rlp.encode(dict_[k]) for k in dict_]
-            # print(v)
             plan_list.append(v)
-        # print(rlp.encode(plan_list))
         data = rlp.encode([rlp.encode(int(4000)),
                            rlp.encode(bytes.fromhex(account)),
                            rlp.encode(plan_list)])
@@ -743,7 +748,8 @@ class Ppos:
 
 if __name__ == '__main__':
     address = '0x493301712671Ada506ba6Ca7891F436D29185821'
-    p = Ppos( 'http://10.10.8.157:6789',address ,'88888888')
+    # p = Ppos( 'http://10.10.8.157:6789',address ,'88888888')
+    p = Ppos('http://192.168.9.205:6789', address,101)
     typ= 0
     benifitAddress = '0x493301712671Ada506ba6Ca7891F436D29185821'
     nodeId = 'f71e1bc638456363a66c4769284290ef3ccff03aba4a22fb60ffaed60b77f614bfd173532c3575abe254c366df6f4d6248b929cb9398aaac00cbcc959f7b2b7c'
@@ -751,20 +757,20 @@ if __name__ == '__main__':
     nodeName ='ffswfv'
     website='ffaf'
     details = 'effs'
-    amount= 180
+    amount= 10000
     programVersion=30
     stakingBlockNum = 66
     # p.addStaking(nodeId,typ,amount)
     # p.GetRestrictingInfo(benifitAddress)
     # p.updateStakingInfo(benifitAddress, nodeId,externalId, nodeName, website, details)
-    # p.staking(typ, benifitAddress, nodeId,externalId, nodeName, website, details, amount,programVersion)
+    p.createStaking(typ, benifitAddress, nodeId,externalId, nodeName, website, details, amount,programVersion)
     # p.getVerifierList()
     # p.getValidatorList()
     # p.getCandidateList()
     # p.getDelegateListByAddr(address)
     # p.getDelegateInfo(stakingBlockNum,benifitAddress,nodeId)
     # p.getCandidateInfo(nodeId)
-    p.GetRestrictingInfo(address)
+    # p.GetRestrictingInfo(address)
     # proposalID = 66666666666666666666666666666666
     # p.getTallyResult(proposalID)
     # web3 = Web3(Web3.HTTPProvider('http://10.10.8.157:6789'))
@@ -775,6 +781,7 @@ if __name__ == '__main__':
     # p.getDelegateInfo()
     # p.GetRestrictingInfo(address)
     verifier = 'f71e1bc638456363a66c4769284290ef3ccff03aba4a22fb60ffaed60b77f614bfd173532c3575abe254c366df6f4d6248b929cb9398aaac00cbcc959f7b2b7c'
+    # verifier = "a28b52294324f17a8e5e15da2c1562494303d694a9ac6ca02c2ae78fd93af69bb454a711883c23d9a96e38b88e389fbb6225fc6578cb22b4905520c8fbd000c3"
     githubID='66'
     topic = '888gergregreggregergregweferfwregweagf'
     desc = 'helloeferfgwrgrgwrgregregregregw'
