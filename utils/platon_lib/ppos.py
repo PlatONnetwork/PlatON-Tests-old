@@ -50,8 +50,10 @@ class Ppos:
         print(event_data)
         return func_name ,event_data
 
-    def send_raw_transaction(self, data, from_address, to_address, gasPrice, gas,value):
+    def send_raw_transaction(self, data, from_address, to_address, gasPrice, gas,value,privatekey=None):
         nonce = self.eth.getTransactionCount(from_address)
+        if not privatekey:
+            privatekey = self.privatekey
         if value > 0:
             transaction_dict = {
                 "to": to_address,
@@ -72,14 +74,14 @@ class Ppos:
                 "chainId": self.chainid
             }
         signedTransactionDict = self.eth.account.signTransaction(
-            transaction_dict, self.privatekey
+            transaction_dict, privatekey
         )
         data = signedTransactionDict.rawTransaction
         result = HexBytes(self.eth.sendRawTransaction(data)).hex()
         return result
 
-    def createStaking(self, typ, benifitAddress, nodeId,externalId, nodeName, website, details, amount,programVersion,
-                from_address=None, gasPrice=None , gas=None):
+    def createStaking(self, typ, benifitAddress, nodeId,externalId, nodeName, website, details, amount,programVersion,privatekey,
+                from_address=None, gasPrice=None, gas=None):
         '''
         createStaking ：发起质押
         :param typ:  uint16(2bytes)
@@ -115,11 +117,11 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000002"
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice,gas,amount)
+        result = self.send_raw_transaction(data, from_address, to_address, gasPrice,gas,amount,privatekey)
         print(result)
         return self.get_result(result, self.createStaking.__name__)
 
-    def updateStakingInfo(self, benifitAddress, nodeId,externalId, nodeName, website, details,
+    def updateStakingInfo(self, benifitAddress, nodeId,externalId, nodeName, website, details,privatekey,
                 from_address=None, gasPrice=None , gas=None):
         '''
         Description : 修改质押信息
@@ -152,10 +154,10 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000002"
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice,gas,value=0)
+        result = self.send_raw_transaction(data, from_address, to_address, gasPrice,gas,0,privatekey)
         return self.get_result(result, self.updateStakingInfo.__name__)
 
-    def addStaking(self,nodeId,typ,amount,from_address=None, gasPrice=None , gas=None):
+    def addStaking(self,nodeId,typ,amount,privatekey,from_address=None, gasPrice=None, gas=None):
         '''
         Description : 增持质押
         :param nodeId: 64bytes
@@ -180,10 +182,10 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000002"
-        result = self.send_raw_transaction(data, from_address, to_address,gasPrice, gas,value=0)
+        result = self.send_raw_transaction(data, from_address, to_address,gasPrice, gas,0,privatekey)
         return self.get_result(result, self.addStaking.__name__)
 
-    def unStaking(self,nodeId,from_address=None, gasPrice=None , gas=None):
+    def unStaking(self,nodeId,privatekey,from_address=None, gasPrice=None, gas=None):
         '''
         Description : 撤销质押
         :param nodeId: 64bytes
@@ -203,10 +205,10 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000002"
-        result = self.send_raw_transaction(data, from_address, to_address,gasPrice, gas,value=0)
+        result = self.send_raw_transaction(data, from_address, to_address,gasPrice, gas,0,privatekey)
         return self.get_result(result, self.unStaking.__name__)
 
-    def delegate(self,typ,nodeId,amount,from_address=None, gasPrice=None , gas=None):
+    def delegate(self,typ,nodeId,amount,privatekey,from_address=None, gasPrice=None , gas=None):
         '''
         Description :发起委托
         :param typ: uint16(2bytes)
@@ -231,10 +233,10 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000002"
-        result = self.send_raw_transaction(data, from_address, to_address,gasPrice, gas,value=0)
+        result = self.send_raw_transaction(data, from_address, to_address,gasPrice, gas,0,privatekey)
         return self.get_result(result, self.delegate.__name__)
 
-    def unDelegate(self,stakingBlockNum,nodeId,amount,from_address=None, gasPrice=None , gas=None):
+    def unDelegate(self,stakingBlockNum,nodeId,amount,privatekey,from_address=None, gasPrice=None , gas=None):
         '''
         Description :减持/撤销委托(全部减持就是撤销)
         :param stakingBlockNum: uint64(8bytes)
@@ -254,7 +256,7 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000002"
-        result = self.send_raw_transaction(data, from_address, to_address,gasPrice, gas,value=0)
+        result = self.send_raw_transaction(data, from_address, to_address,gasPrice, gas,0,privatekey)
         return self.get_result(result, self.unDelegate.__name__)
 
     def getVerifierList(self):
@@ -456,7 +458,7 @@ class Ppos:
         return recive
 
 #################################治理###############################
-    def submitText(self,verifier,githubID,topic,desc,url,endVotingBlock,from_address=None, gasPrice=None , gas=None):
+    def submitText(self,verifier,githubID,topic,desc,url,endVotingBlock,privatekey,from_address=None, gasPrice=None , gas=None):
         '''
         提交文本提案
         :param verifier: 64bytes
@@ -479,10 +481,10 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000005"
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice,gas,value=0)
+        result = self.send_raw_transaction(data, from_address, to_address, gasPrice,gas,0,privatekey)
         return self.get_result(result, self.submitText.__name__)
 
-    def submitVersion(self,verifier,githubID,topic,desc,url,newVersion,endVotingBlock,activeBlock,
+    def submitVersion(self,verifier,githubID,topic,desc,url,newVersion,endVotingBlock,activeBlock,privatekey,
                       from_address=None, gasPrice=None , gas=None):
         '''
         提交升级提案
@@ -507,11 +509,11 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000005"
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice,gas,value=0)
+        result = self.send_raw_transaction(data, from_address, to_address, gasPrice,gas,0,privatekey)
         return self.get_result(result, self.submitVersion.__name__)
 
     def submitParam(self,verifier,githubID,topic,desc,url,endVotingBlock,paramName,currentValue,newValue,
-                    from_address=None, gasPrice=None , gas=None):
+                    privatekey,from_address=None, gasPrice=None , gas=None):
         '''
         提交参数提案
         :param verifier: 64bytes
@@ -537,10 +539,10 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000005"
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, value=0)
+        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0, privatekey)
         return self.get_result(result, self.submitParam.__name__)
 
-    def vote(self,verifier,proposalID,option,programVersion,from_address=None, gasPrice=None , gas=None):
+    def vote(self,verifier,proposalID,option,programVersion,privatekey,from_address=None, gasPrice=None , gas=None):
         '''
         给提案投票
         :param verifier: 64bytes
@@ -561,10 +563,10 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000005"
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, value=0)
+        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0, privatekey)
         return self.get_result(result, self.vote.__name__)
 
-    def declareVersion(self,activeNode,version,from_address=None, gasPrice=None , gas=None):
+    def declareVersion(self,activeNode,version,privatekey,from_address=None, gasPrice=None , gas=None):
         '''
         版本声明
         :param activeNode: 64bytes
@@ -583,10 +585,10 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000005"
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, value=0)
+        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0,privatekey)
         return self.get_result(result, self.declareVersion.__name__)
 
-    def getProposal(self,proposalID,from_address=None, gasPrice=None , gas=None):
+    def getProposal(self,proposalID,privatekey,from_address=None, gasPrice=None , gas=None):
         '''
         查询提案
         :param proposalID: common.Hash
@@ -600,11 +602,11 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000005"
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, value=0)
+        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0,privatekey)
         # print(result)
         return self.get_result(result, self.getProposal.__name__)
 
-    def getTallyResult(self,proposalID,from_address=None, gasPrice=None , gas=None):
+    def getTallyResult(self,proposalID,privatekey,from_address=None, gasPrice=None , gas=None):
         '''
         查询提案结果
         :param proposalID: common.Hash
@@ -621,11 +623,11 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000005"
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, value=0)
+        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0,privatekey)
         print(result)
         return self.get_result(result, self.getTallyResult.__name__)
 
-    def listProposal(self,from_address=None, gasPrice=None , gas=None):
+    def listProposal(self,privatekey,from_address=None, gasPrice=None , gas=None):
         '''
         查询提案列表
         :param from_address:
@@ -641,11 +643,11 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000005"
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, value=0)
+        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0,privatekey)
         return self.get_result(result, self.listProposal.__name__)
 
 ############################举报惩罚###############################################################
-    def ReportMutiSign(self,data,from_address=None, gasPrice=None , gas=None):
+    def ReportMutiSign(self,data,privatekey,from_address=None, gasPrice=None , gas=None):
         '''
         举报双签
         :param data: string
@@ -662,10 +664,10 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000004"
-        result = self.send_raw_transaction(data_, from_address, to_address, gasPrice, gas, value=0)
+        result = self.send_raw_transaction(data_, from_address, to_address, gasPrice, gas, 0,privatekey)
         return self.get_result(result, self.ReportMutiSign.__name__)
 
-    def CheckMutiSign(self,typ,addr,blockNumber,from_address=None, gasPrice=None , gas=None):
+    def CheckMutiSign(self,typ,addr,blockNumber,privatekey,from_address=None, gasPrice=None , gas=None):
         '''
         查询节点是否已被举报过多签
         :param typ: uint8(1byte)
@@ -687,11 +689,11 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000004"
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, value=0)
+        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0,privatekey)
         return self.get_result(result, self.CheckMutiSign.__name__)
 #######################################锁仓###############################################
 
-    def CreateRestrictingPlan(self,account,plan,from_address=None, gasPrice=None , gas=None):
+    def CreateRestrictingPlan(self,account,plan,privatekey,from_address=None, gasPrice=None , gas=None):
         '''
         创建锁仓计划
         :param account: 20bytes
@@ -717,7 +719,7 @@ class Ppos:
         if not gas:
             gas = self.gas
         to_address = "0x1000000000000000000000000000000000000001"
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, value=0)
+        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0,privatekey)
         return self.get_result(result, self.CreateRestrictingPlan.__name__)
 
     def GetRestrictingInfo(self,account):
@@ -741,7 +743,7 @@ class Ppos:
         recive = str(recive, encoding="ISO-8859-1")
         recive = recive[10:]
         recive = eval(recive)
-        # print(recive)
+        print(recive)
         return recive
 
 
@@ -757,14 +759,14 @@ if __name__ == '__main__':
     nodeName ='ffswfv'
     website='ffaf'
     details = 'effs'
-    amount= 10000
+    amount= 100000
     programVersion=30
     stakingBlockNum = 66
     # p.addStaking(nodeId,typ,amount)
     # p.GetRestrictingInfo(benifitAddress)
     # p.updateStakingInfo(benifitAddress, nodeId,externalId, nodeName, website, details)
     p.createStaking(typ, benifitAddress, nodeId,externalId, nodeName, website, details, amount,programVersion)
-    # p.getVerifierList()
+    p.getVerifierList()
     # p.getValidatorList()
     # p.getCandidateList()
     # p.getDelegateListByAddr(address)
@@ -802,11 +804,12 @@ if __name__ == '__main__':
     # p.submitText(verifier, githubID, topic, desc, url, endVotingBlock)
     # p.submitVersion(verifier,githubID,topic,desc,url,newVersion,endVotingBlock,activeBlock)
     # p.submitParam(verifier,githubID,topic,desc,url,endVotingBlock,paramName,currentValue,newValue)
-    # p.vote(verifier,proposalID,option)
+    # p.vote(verifier,proposalID,option,10)
     # p.declareVersion(activeNode,version)
     # p.getProposal(proposalID)
     # p.getTallyResult(proposalID)
     # p.listProposal()
+    p.submitText(verifier, githubID, topic, desc, url, endVotingBlock)
     plan =  [{"epoch": 12, "amount": 45}, {"epoch": 24, "amount": 90}]
     # p.CreateRestrictingPlan(benifitAddress,plan)
 
