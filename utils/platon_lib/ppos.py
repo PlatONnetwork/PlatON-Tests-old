@@ -635,15 +635,15 @@ class Ppos:
         :return:
         '''
         data = rlp.encode([rlp.encode(int(2102))])
-        if not from_address:
-            from_address = self.address
-        if not gasPrice :
-            gasPrice = self.gasPrice
-        if not gas:
-            gas = self.gas
         to_address = "0x1000000000000000000000000000000000000005"
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0)
-        return self.get_result(result)
+        recive = self.eth.call({
+            "from": self.address,
+            "to": to_address,
+            "data": data
+        })
+        recive = str(recive, encoding="utf8")
+        recive =json.loads(recive)
+        return recive
 
 ############################举报惩罚###############################################################
     def ReportMutiSign(self,data,from_address=None, gasPrice=None , gas=None):
@@ -741,8 +741,7 @@ class Ppos:
             "data": data
         })
         recive = str(recive, encoding="ISO-8859-1")
-        recive = recive[10:]
-        recive = eval(recive)
+        recive = json.loads(recive)
         print(recive)
         return recive
 
@@ -768,9 +767,9 @@ if __name__ == '__main__':
     # p.GetRestrictingInfo(benifitAddress)
     # p.updateStakingInfo(benifitAddress, nodeId,externalId, nodeName, website, details)
     # p.createStaking(typ, address, nodeId,externalId, nodeName, website, details, amount,programVersion)
-    p.getVerifierList()
-    p.getValidatorList()
-    p.getCandidateList()
+    # p.getVerifierList()
+    # p.getValidatorList()
+    # p.getCandidateList()
     # p.getDelegateListByAddr(address)
     # p.getDelegateInfo(stakingBlockNum,benifitAddress,nodeId)
     # p.getCandidateInfo(nodeId)
@@ -813,6 +812,7 @@ if __name__ == '__main__':
     # p.listProposal()
     # p.submitText(verifier, githubID, topic, desc, url, endVotingBlock)
     plan =  [{"epoch": 12, "amount": 45}, {"epoch": 24, "amount": 90}]
+    p.listProposal()
     # p.CreateRestrictingPlan(benifitAddress,plan,"0xa11859ce23effc663a9460e332ca09bd812acc390497f8dc7542b6938e13f8d7")
 
 
