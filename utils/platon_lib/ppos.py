@@ -42,11 +42,11 @@ class Ppos:
         data = result['logs'][0]['data']
         if data[:2] == '0x':
             data = data[2:]
-        print(data)
+        # print(data)
         data_bytes = rlp.decode(bytes.fromhex(data))[0]
         event_data = bytes.decode(data_bytes)
         event_data = json.loads(event_data)
-        print(event_data)
+        # print(event_data)
         return event_data
 
     def send_raw_transaction(self, data, from_address, to_address, gasPrice, gas,value):
@@ -626,12 +626,9 @@ class Ppos:
         print(result)
         return self.get_result(result)
 
-    def listProposal(self,from_address=None, gasPrice=None , gas=None):
+    def listProposal(self):
         '''
         查询提案列表
-        :param from_address:
-        :param gasPrice:
-        :param gas:
         :return:
         '''
         data = rlp.encode([rlp.encode(int(2102))])
@@ -643,6 +640,38 @@ class Ppos:
         })
         recive = str(recive, encoding="utf8")
         recive =json.loads(recive)
+        return recive
+
+    def getActiveVersion(self):
+        """
+        查询节点的链生效版本
+        """
+        data = rlp.encode([rlp.encode(int(2103))])
+        to_address = "0x1000000000000000000000000000000000000005"
+        recive = self.eth.call({
+            "from": self.address,
+            "to": to_address,
+            "data": data
+        })
+        recive = str(recive, encoding="utf8")
+        recive =json.loads(recive)
+        # print(recive)
+        return recive
+
+    def listParam(self):
+        """
+        查询可治理参数列表
+        """
+        data = rlp.encode([rlp.encode(int(2105))])
+        to_address = "0x1000000000000000000000000000000000000005"
+        recive = self.eth.call({
+            "from": self.address,
+            "to": to_address,
+            "data": data
+        })
+        recive = str(recive, encoding="utf8")
+        recive =json.loads(recive)
+        # print(recive)
         return recive
 
 ############################举报惩罚###############################################################
@@ -750,7 +779,7 @@ if __name__ == '__main__':
     address = '0x493301712671Ada506ba6Ca7891F436D29185821'
     # address = "0xb37F459F9F0632C57f1247d495a1D96a3d5b3c15"
     # p = Ppos( 'http://10.10.8.157:6789',address ,'88888888')
-    p = Ppos('http://192.168.9.208:6789', address,101)
+    p = Ppos('http://192.168.9.221:6789', address,101)
     # Ppos('http://10.10.8.157:6789', address, 102)
     typ= 0
     benifitAddress = '0x493301712671Ada506ba6Ca7891F436D29185821'
@@ -812,7 +841,7 @@ if __name__ == '__main__':
     # p.listProposal()
     # p.submitText(verifier, githubID, topic, desc, url, endVotingBlock)
     plan =  [{"epoch": 12, "amount": 45}, {"epoch": 24, "amount": 90}]
-    p.listProposal()
+    p.listParam()
     # p.CreateRestrictingPlan(benifitAddress,plan,"0xa11859ce23effc663a9460e332ca09bd812acc390497f8dc7542b6938e13f8d7")
 
 

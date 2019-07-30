@@ -39,6 +39,13 @@ class TestPledge():
     privatekey = conf.PRIVATE_KEY
     account_list = conf.account_list
     privatekey_list = conf.privatekey_list
+    externalId = "1111111111"
+    nodeName = "platon"
+    website = "https://www.test.network"
+    details = "supper node"
+    amount = 1000000
+    programVersion = 1792
+    illegal_nodeID = conf.illegal_nodeID
 
 
     def setup_class(self):
@@ -46,7 +53,9 @@ class TestPledge():
             self.rpc_list[0], self.address)
         self.w3_list = [connect_web3(url) for url in self.rpc_list]
         """用新的钱包地址和未质押过的节点id封装对象"""
-        self.ppos_link1 = Ppos(self.rpc_list[0], self.account_list[0], privatekey= self.privatekey_list[0])
+        self.ppos_noconsensus_1 = Ppos(self.rpc_list[0], self.account_list[0], privatekey= self.privatekey_list[0])
+        self.ppos_noconsensus_2 = Ppos(self.rpc_list[0], self.account_list[1], privatekey=self.privatekey_list[1])
+        self.ppos_noconsensus_3 = Ppos(self.rpc_list[0], self.account_list[2], privatekey=self.privatekey_list[2])
         for to_account in self.account_list:
             self.transaction(self.w3_list[0],self.address,to_account)
 
@@ -118,23 +127,17 @@ class TestPledge():
         """
         用例 62 非初始验证人做质押
         """
-        benifitAddress = self.account_list[1]
         nodeId = self.nodeid_list2[0]
-        externalId = "1111111111"
-        nodeName = "platon"
-        website = "https://www.test.network"
-        details = "supper node"
-        amount = 1000000
-        programVersion = 1792
         """非共识节点做一笔质押"""
-        msg = self.ppos_link1.createStaking(0, benifitAddress,
-                                           nodeId,externalId,nodeName, website, details,amount,programVersion)
+        msg = self.ppos_noconsensus_1.createStaking(0, self.account_list[1],
+                                           nodeId,self.externalId,self.nodeName, self.website,self.details,
+                                                    self.amount,self.programVersion)
+        print(msg)
         assert msg.get("Status") ==True
         assert msg.get("ErrMsg") == 'ok'
         """暂时没配置参数所以还要调整"""
-        time.sleep(10)
         ##查看实时验证人信息
-        recive = self.ppos_link1.getCandidateList()
+        recive = self.ppos_noconsensus_1.getCandidateList()
         recive_list = recive.get("Data")
         nodeid_list = []
         for node_info in recive_list:
@@ -147,15 +150,10 @@ class TestPledge():
         """
         benifitAddress = self.account_list[1]
         nodeId = self.nodeid_list2[0]
-        externalId = "1111111111"
-        nodeName = "platon"
-        website = "https://www.test.network"
-        details = "supper node"
-        amount = 100000
-        programVersion = 1792
         """非共识节点做一笔质押"""
-        msg = self.ppos_link1.createStaking(0, benifitAddress,
-                                           nodeId,externalId,nodeName, website, details,amount,programVersion)
+        amount = 100000
+        msg = self.ppos_noconsensus_1.createStaking(0, benifitAddress,
+                                           nodeId,self.externalId,self.nodeName, self.website, self.details,amount,self.programVersion)
         print(msg)
         assert msg.get("Status") ==False
 
@@ -164,7 +162,7 @@ class TestPledge():
         用例id 78 非初始验证人成为验证人后，增持质押
         """
         nodeId = conf.illegal_nodeID
-        msg = self.ppos_link1.addStaking(nodeId=nodeId, typ=0, amount=100)
+        msg = self.ppos_noconsensus_1.addStaking(nodeId=nodeId, typ=0, amount=100)
         assert msg.get("Status") == False
         assert msg.get("ErrMsg") == 'This candidate is not exist'
 
@@ -173,18 +171,56 @@ class TestPledge():
         用例id 63 非链上的nodeID去质押
         """
         benifitAddress = self.account_list[1]
-        illegal_nodeID = conf.illegal_nodeID
-        externalId = "1111111111"
-        nodeName = "platon"
-        website = "https://www.test.network"
-        details = "supper node"
-        assert illegal_nodeID not in self.nodeid_list and  self.nodeid_list2
-        ppos_link2 = Ppos(self.rpc_list[0], self.account_list[1], privatekey= self.privatekey_list[1])
-        msg = ppos_link2.createStaking(0, benifitAddress,illegal_nodeID,externalId,
-                                           nodeName, website, details,amount=100000000,programVersion=1792)
+        msg = self.ppos_noconsensus_2.createStaking(0, benifitAddress,self.illegal_nodeID,self.externalId,
+                                           self.nodeName, self.website, self.details,self.amount,self.programVersion)
         print(msg)
         assert msg.get("Status") ==True
         assert msg.get("ErrMsg") == 'ok'
+
+    def test_getCandidateInfo(self):
+        """
+        用例69 查询验证人信息,调用质押节点信息
+        """
+        msg = self.ppos_noconsensus_1.getCandidateInfo(self.nodeid_list2[0])
+        nodeid = msg["Data"]["NodeId"]
+        """验证质押金额"""
+        assert  msg["Data"]["Shares"] == 1000000000000000000000000
+        assert nodeid == self.nodeid_list[0]
+        msg = self.ppos_link.getCandidateInfo(self.nodeid_list[0])
+        # print(msg)
+        nodeid = msg["Data"]["NodeId"]
+        assert nodeid == self.nodeid_list[0]
+
+    # @pytest.mark.parametrize("externalId,nodeName,website,details",[("88888888","jay_wu","https://baidu.com,node_1"),
+    #                                                                       ("","","","")])
+    # def test_editCandidate(self,externalId,nodeName,website,details):
+    #     """
+    #     用例id 70 编辑验证人信息-参数有效性验证
+    #     """
+    #     msg = self.ppos_noconsensus_1.updateStakingInfo(self.account_list[0], self.nodeid_list2[0],
+    #                                                     externalId, nodeName, website, details)
+    #     print(msg)
+    #     msg = self.ppos_noconsensus_1.getCandidateInfo(self.nodeid_list2[0])
+    #     print(msg)
+
+    def test_editCandidate(self):
+        """
+        用例id 70 编辑验证人信息-参数有效性验证
+        """
+        externalId = "88888888"
+        nodeName = "jay_wu"
+        website = "www://baidu.com"
+        details = "node_1"
+        msg = self.ppos_noconsensus_1.updateStakingInfo(self.account_list[0], self.nodeid_list2[0],
+                                                        externalId, nodeName, website, details)
+        assert msg.get("Status") ==True
+        assert msg.get("ErrMsg") == 'ok'
+        msg = self.ppos_noconsensus_1.getCandidateInfo(self.nodeid_list2[0])
+        print(msg)
+        assert msg["Data"]["ExternalId"] == externalId
+        assert msg["Data"]["nodeName"] == nodeName
+        assert msg["Data"]["website"] == website
+        assert msg["Data"]["details"] == details
 
     @pytest.mark.parametrize('amount', [(100),(10000000),(1000000)])
     def test_add_staking(self,amount):
@@ -193,14 +229,14 @@ class TestPledge():
         用例id 74 验证人在质押锁定期内增持的质押数量不限制
         """
         nodeId = self.nodeid_list2[0]
-        msg = self.ppos_link1.addStaking(nodeId=nodeId,typ=0,amount=amount)
+        msg = self.ppos_noconsensus_1.addStaking(nodeId,typ=0,amount=amount)
         assert msg.get("Status") == True
         assert msg.get("ErrMsg") == 'ok'
 
     def test_add_staking_zero(self):
         """测试增持金额为0"""
         nodeId = self.nodeid_list2[0]
-        msg = self.ppos_link1.addStaking(nodeId=nodeId,typ=0,amount=0)
+        msg = self.ppos_noconsensus_1.addStaking(nodeId,typ=0,amount=0)
         assert msg.get("Status") == False
 
     def test_Insufficient_delegate(self):
@@ -209,7 +245,7 @@ class TestPledge():
         """
         amount = 100000000000000000000000000000000000
         nodeId = self.nodeid_list2[0]
-        msg = self.ppos_link1.addStaking(nodeId=nodeId,typ=0,amount=amount)
+        msg = self.ppos_noconsensus_1.addStaking(nodeId=nodeId,typ=0,amount=amount)
         # print(msg)
         assert msg.get("Status") == False
         assert msg.get("ErrMsg") == 'The von of account is not enough'
@@ -219,11 +255,11 @@ class TestPledge():
         用例id 77 验证人已申请退出中，申请增持质押
         """
         nodeId = self.nodeid_list2[0]
-        msg  = self.ppos_link1.unStaking(nodeId)
+        msg  = self.ppos_noconsensus_1.unStaking(nodeId)
         assert msg.get("Status") == True
         assert msg.get("ErrMsg") == 'ok'
         time.sleep(2)
-        msg = self.ppos_link1.addStaking(nodeId,typ=0,amount=100)
+        msg = self.ppos_noconsensus_1.addStaking(nodeId,typ=0,amount=100)
         assert msg.get("Status") == True
         assert msg.get("ErrMsg") == 'This candidate is not exist'
 
@@ -231,8 +267,100 @@ class TestPledge():
     #     """
     #     用例id 94 查询委托参数验证
     #     """
-    #     stakingBlockNum =
-    #     msg = self.ppos_link1.getDelegateInfo(stakingBlockNum,delAddr,nodeId)
+    #     stakingBlockNum = ""
+    #     msg = self.ppos_noconsensus_1.getDelegateInfo(stakingBlockNum,delAddr,nodeId)
+
+    def test_illege_delegate(self):
+        """
+        用例id 首次委托金额必须大于10 eth
+        """
+        amount = 9
+        msg = self.ppos_noconsensus_2.delegate(0,self.nodeid_list2[0],amount)
+        print(msg)
+        assert msg.get("Status") == False
+        assert msg.get("ErrMsg") == "Delegate deposit too low"
+        amount = 0
+        msg = self.ppos_noconsensus_2.delegate(0, self.nodeid_list2[0], amount)
+        assert msg.get("Status") == False
+        assert msg.get("ErrMsg") == "This amount is illege"
+
+    def test_delegate(self):
+        """
+        用例95 委托成功，查询节点信息，金额
+        用例id 98 委托人与验证人验证，验证人存在
+        """
+        amount = 1000
+        msg = self.ppos_noconsensus_2.delegate(0,self.illegal_nodeID,amount)
+        assert msg.get("Status") == True
+        assert msg.get("ErrMsg") == 'ok'
+
+    def test_getDelegateInfo(self):
+        """
+        用例id 94 查询委托参数验证
+        """
+        msg = self.ppos_noconsensus_2.getCandidateInfo(self.illegal_nodeID)
+        print(msg)
+        assert msg["Data"]["NodeId"] == self.illegal_nodeID
+        """查询当前候选人总共质押加被委托的von数目"""
+        assert msg["Data"]["Shares"] == 1001000000000000000000000
+        assert msg["Data"]["ReleasedHes"] == 1000000000000000000000000
+        """通过查询"""
+        stakingBlockNum = msg["Data"]["StakingBlockNum"]
+        # print(stakingBlockNum)
+        msg = self.ppos_noconsensus_2.getDelegateInfo(stakingBlockNum,self.account_list[1],self.illegal_nodeID)
+        print(msg)
+        assert msg["Data"]["Addr"] == self.account_list[1]
+        assert msg["Data"]["NodeId"] == self.illegal_nodeID
+        assert msg["Data"]["ReleasedHes"] == 1000000000000000000000
+
+    def test_insufficient_delegate(self):
+        """
+        用例96 余额不足委托失败
+        """
+        amount = 100000000000000000000000000
+        msg = self.ppos_noconsensus_2.delegate(0,self.illegal_nodeID,amount)
+        # print(msg)
+        assert msg.get("Status") == False
+        assert msg.get("ErrMsg") == 'Delegate failed: The von of account is not enough'
+
+    def test_not_nodeId_delegate(self):
+        """
+        用例72 验证人不存在进行委托
+        """
+        amount = 1000
+        msg = self.ppos_noconsensus_2.delegate(0,self.nodeid_list2[2],amount)
+        print(msg)
+        assert msg.get("Status") == False
+        assert msg.get("ErrMsg") == 'This candidate is not exist'
+
+    def test_restrictingPlan_delegate(self):
+        """
+        用例id 101 委托人使用锁仓Token进行委托
+        """
+        pass
+
+    def test_restrictingPlan_insufficient_delegate(self):
+        """
+        用例id 103委托人使用锁仓Token（余额不足）进行委托
+        """
+
+    def
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
