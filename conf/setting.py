@@ -4,7 +4,11 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 节点配置文件路径
-NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/test_node.yml"))
+# NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/test_node.yml"))
+
+# FOUR_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/cbft_4.yml"))
+
+GOVERN_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/govern_node_7.yml"))
 
 # vc节点配置文件路径
 VC_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/vc_node.yml"))
