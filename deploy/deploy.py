@@ -173,6 +173,10 @@ class BaseDeploy:
                         self.deploy_path, port, base_http, self.deploy_path,
                         port, port, rpcport, "0x" + str(vcactor),
                         self.deploy_path, port)
+                elif ppos:
+                    cmd = '''nohup {}/node-{}/platon {} --datadir {}/node-{}/data --port {} --rpcport {} --config {} > {}/node-{}/nohup.out 2>&1 &'''.format(
+                        self.deploy_path, port, base_http, self.deploy_path, port, port, rpcport, self.deploy_path,
+                        port)
                 else:
                     cmd = '''nohup {}/node-{}/platon {} --datadir {}/node-{}/data --port {} --rpcport {} > {}/node-{}/nohup.out 2>&1 &'''.format(
                         self.deploy_path, port, base_http, self.deploy_path,
@@ -706,6 +710,7 @@ class BaseDeploy:
         password = nodedict["password"]
         mpcactor = nodedict.get("mpcactor", None)
         vcactor = nodedict.get("vcactor", None)
+        ppos = nodedict.get("ppos", None)
         url = nodedict["url"]
         ssh, sftp, t = connect_linux(ip, username, password, sshport)
         if clean or is_init:
@@ -885,6 +890,7 @@ class AutoDeployPlaton(BaseDeploy):
                 cmd = cmd + \
                     " --vc --vc.actor {} --vc.password 88888888".format(
                         node.get("vcactor"))
+            cmd = cmd + "--config {}".format(conf.PPOS_CONFIG_PATH)
             cmd = cmd + " --debug --verbosity 4"
             # cmd = cmd + " --pprof --pprofaddr 0.0.0.0 --pprofport " + \
             #       node["pprof_port"]
