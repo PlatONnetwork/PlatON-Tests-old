@@ -9,6 +9,8 @@ ALICE_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/alice.yml")
 
 BOB_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/bob.yml"))
 
+PPOS_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/7_node.yml"))
+
 # 节点创世文件默认保存位置
 GENESIS_TMP = os.path.abspath(os.path.join(BASE_DIR, "deploy/rely/template/genesis.json"))
 
