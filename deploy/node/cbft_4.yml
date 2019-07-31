@@ -4,34 +4,39 @@ collusion:
   rpcport: 6789
   username: juzhen
   password: cbft@juzix123!
-  nodekey: e9d3a50c23d85fda8548381a7e1abc1efd708172feb1eb0ea624ca2519990a5b
+  nodekey: 790483dfdb207f4904ff71a051057c746b6519d3bb32b206440a9a9df35d6ce3
   url: http://192.168.9.205:6789
+  id: c20e22d02665d94c2ad22283c458f2d003ab27bc2cc6cc0b759ba02ad299e0b0ebcb9d9829ec8ffcef51174b82826fba9a69e399dbac9e945c0444375a48ac7d
 - host: 192.168.9.202
   port: 16789
   rpcport: 6789
   username: juzhen
   password: cbft@juzix123!
-  nodekey: 79b4293c1291f7ad728bef3e878b1134e12e994f27869a27aef11b365f7bda67
+  nodekey: 872f560105c1bc7f4b64311412e06111a2583d7170fa264249c6f5949a0585ee
   url: http://192.168.9.202:6789
+  id: 3bd9849ade4db7d95f8cc3a4429f80535346883fd0ed743e30f72e7dac2baed494b66b1e5bdcd941a5ecbce42382ab4cba7a1d2e815a089798d7cfb02ad2e8d5
 - host: 192.168.9.203
   port: 16789
   rpcport: 6789
   username: juzhen
   password: cbft@juzix123!
-  nodekey: 1e2bfdeff87a0660405ed8a7ca4df5917e63d41f11fd28e3ba4c2454c56d12ee
+  nodekey: 674a1c36470e721344d52f6da962fcf43eb8af33eabf3a1dde9c91e86543d5a9
   url: http://192.168.9.203:6789
+  id: d012d901e5e2c7d56dc74d916cace8ebd9775601cd735e0f14815d60911150d4ddabda4b439a9083c9ec2b9d27ac48aef1adbf865e1720bb6df7d89ae91a4f76
 - host: 192.168.9.204
   port: 16789
   rpcport: 6789
   username: juzhen
   password: cbft@juzix123!
-  nodekey: 2b500ec6c7bc964bab730df27c3daa2f788be7b0969cd0ecd2be9d22d66b516f
+  nodekey: 47f6ebd3c04cb5ea91b64dc0e55eeb3bacb4bbff3c0f90a3799d96dba357898c
   url: http://192.168.9.204:6789
+  id: 909220662a17597cac54b4a9a2b37d276d25a782816813383af670f99b4ee105e253574e70af3b734418735401cfa150b59d8ddca8d048e34596883e15a58aad
 nocollusion:
 - host: 192.168.112.205
   port: 16788
   rpcport: 6788
   username: juzhen
   password: cbft@juzix123!
-  nodekey: a1489b6c63913243b71f6c7f0c8e69c5d8c699fdfdbfad33541c0fa30fff45f0
+  nodekey: 20e7d523560ea82c339b537fd5fc3c4d166f254e4392f72dd959d06739247cf3
   url: http://192.168.112.205:6788
+  id: 1bff1d3fd3f69dc4d7e78c5ce3b48ef486dac4fabaad39001265aaa293d50fe4d9ff05b836829a3bbbf74a1b9010bf8720d2a59cca6866654f1ba5870d0f5be0

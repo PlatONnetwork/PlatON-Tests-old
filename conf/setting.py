@@ -6,6 +6,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # 节点配置文件路径
 NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/test_node.yml"))
 
+PPOS_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/ppos_7.yml"))
+
 # vc节点配置文件路径
 VC_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/vc_node.yml"))
 
@@ -45,6 +47,7 @@ KEYSTORE = os.path.abspath(os.path.join(BASE_DIR,
 
 # 该钱包的私钥
 PRIVATE_KEY = '0xa11859ce23effc663a9460e332ca09bd812acc390497f8dc7542b6938e13f8d7'
+# PRIVATE_KEY =   '0x40a2d01c7b10d19dbdd8b0c04be82d368b3d65a0a3f35e5c9c99eb81229298f7'
 
 # 钱包密码
 PASSWORD = "88888888"
@@ -95,7 +98,16 @@ VERSION_DICT = {
 
 VERSION = "0.7"
 SPLIT_LOG_SCRIPT = os.path.abspath(os.path.join(BASE_DIR, "deploy/rely/script/split_log.py"))
-
 SUP_TEMPLATE = os.path.abspath(os.path.join(BASE_DIR, "deploy/rely/template/supervisor.conf"))
 SUP_TMP = os.path.abspath(os.path.join(BASE_DIR, "deploy/rely/tmp/supervisor/"))
 IS_TEST_NET = False
+
+account_list = ["0x1bA50320f13874Ff682CE64E148df4998481AB7a", "0xFc5F28B97184AE97d8b4496383FBC58328dc7996",
+                "0xb203662cE471Ee733e309d783B819fF95d2cA491","0x993B3904519Bb4922949aEA76ADe7731FEe2f9b0"]
+
+privatekey_list = ["0xa3bc47d1d1b576f87cb2e2eede0395b7b78ea5490bf15784f1cfeb90e0b70766",
+                   "0x345516b67a63d706785e1a02c0649ce0357d1476e0d0ef3ab2a4e7dbcf2ac800",
+                   "0xa2b1984eccdeaf3355ddb585551bb1e70c5f133ec7dffd7a901e0023092d841e",
+                   "e3162b25bc017bb785b603b6dcf858df81f8ddc97b8795d7a574f27141bef2a9"]
+
+illegal_nodeID = "7ee3276fd6b9c7864eb896310b5393324b6db785a2528c00cc28ca8c3f86fc229a86f138b1f1c8e3a942204c03faeb40e3b22ab11b8983c35dc025de42865990"
