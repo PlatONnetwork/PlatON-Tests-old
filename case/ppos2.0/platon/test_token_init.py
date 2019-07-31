@@ -8,7 +8,8 @@ import random
 import allure
 import pytest
 from client_sdk_python import Web3
-from common.ppos import Ppos
+#from common.ppos import Ppos
+from utils.platon_lib.ppos import Ppos
 import inspect
 from common.connect import connect_web3
 from utils.platon_lib.dpos import PlatonDpos
@@ -25,7 +26,7 @@ class TestDposinit:
     pwd = conf.PASSWORD
     abi = conf.DPOS_CONTRACT_ABI
     cbft_json_path = conf.CBFT2
-    node_yml_path = conf.TWENTY_FIVENODE_YML
+    node_yml_path = conf.PPOS_NODE_YML
     file = conf.CASE_DICT
     privatekey = conf.PRIVATE_KEY
     gasPrice = Web3.toWei(0.000000000000000001,'ether')
@@ -40,7 +41,7 @@ class TestDposinit:
 
     def ppos_link(self,url=None,address=conf.ADDRESS ,privatekey= conf.PRIVATE_KEY):
         if url is None:
-            node_info = get_node_info (conf.TWENTY_FIVENODE_YML)
+            node_info = get_node_info (self.node_yml_path)
             self.rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get (
                 'collusion')
             rpc_list_length = len (self.rpc_list) - 1
@@ -55,6 +56,13 @@ class TestDposinit:
         self.new_address = platon_ppos.Web3.toChecksumAddress (
             self.ppos_link().web3.personal.newAccount (self.pwd))
         return self.new_address
+
+    def read_private_key_list(self):
+        with open (conf.PRIVATE_KEY_LIST, 'r') as f:
+            private_key_list = f.read ().split ("\n")
+            index = random.randrange (1, len (private_key_list) - 1)  # 生成随机行数
+            address, private_key = private_key_list[index].split (',')
+        return address, private_key
 
     # def update_config(self, file, key, data):
     #     with open(self.file, 'r', encoding='utf-8') as f:
@@ -105,8 +113,8 @@ class TestDposinit:
         :return:
         '''
         platon_ppos = self.ppos_link ()
-        address1 = '0x684b43Cf53C78aA567840174a55442d7a9282679'
-        privatekey1 = 'a5ac52e828e2656309933339cf12d30755f918e368fffc7c265b55da718ff893'
+        address1,private_key1 = self.read_private_key_list()
+
         try:
             platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
                                               Web3.toChecksumAddress (address1), self.gasPrice, self.gas, self.value,
@@ -172,7 +180,6 @@ class TestDposinit:
         FOUNDATIONLOCKUP = self.initial_amount['FOUNDATIONLOCKUP']
         assert lockupbalance == FOUNDATIONLOCKUP
         result = platon_ppos.GetRestrictingInfo(conf.INCENTIVEPOOLADDRESS)
-        print(result)
         if result['Status'] == 'True' :
             assert result['Date']['balance'] == self.initial_amount['FOUNDATIONLOCKUP']
         else:
@@ -208,18 +215,22 @@ class TestDposinit:
                 #创建锁仓计划
                 result =platon_ppos.CreateRestrictingPlan(address1,plan,privatekey1,
                                                   from_address=address1, gasPrice=self.gasPrice )
-                lockup_after = platon_ppos.eth.getBalance(conf.FOUNDATIONLOCKUPADDRESS)
-                #查看锁仓计划明细
-                RestrictingInfo = platon_ppos.GetRestrictingInfo(address1)
                 if result['status'] == 'True':
-                    assert RestrictingInfo['balance'] == loukupbalace
+                    lockup_after = platon_ppos.eth.getBalance(conf.FOUNDATIONLOCKUPADDRESS)
+                    assert lockup_after == lockup_before + loukupbalace
                 else:
-                    log.info("查询锁仓计划信息返回状态为:{}".format(result['status']))
-
-                assert lockup_after == lockup_before + loukupbalace
+                    log.info("创建锁仓计划失败")
             except:
                 status = 1
                 assert status == 0, '创建锁仓计划失败'
+            #查看锁仓计划明细
+            detail = RestrictingInfo = platon_ppos.GetRestrictingInfo(address1)
+            if detail['status'] == 'True':
+                assert RestrictingInfo['balance'] == loukupbalace
+            else:
+                log.info("查询锁仓计划信息返回状态为:{}".format(result['status']))
+
+
 
     @allure.title ("根据不同参数创建锁仓计划")
     @pytest.mark.parametrize ('number,amount', [(1,0.1),(-1,3),(0.1,3),(37,3)])
@@ -344,7 +355,7 @@ class TestDposinit:
         privatekey1 = '25f9fdf3249bb47f239df0c59d23781c271e8b7e9a94e9e694c15717c1941502'
         # 签名转账
         platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
-                                          Web3.toChecksumAddress (address1), self.gasPrice, self.gas, 1000,
+                                          Web3.toChecksumAddress (address1), self.gasPrice, self.gas, self.value,
                                           conf.PRIVATE_KEY)
         balance = platon_ppos.eth.getBalance (address1)
         if balance > 0:
@@ -385,6 +396,122 @@ class TestDposinit:
         else:
             log.info('error:转账失败')
 
+    @allure.title ("验证锁仓账户和释放到账账户为同一个时质押扣费验证")
+    @pytest.mark.parametrize ('amount,', [(5000000), (9100000)])
+    def test_lockup_pledge(self, amount):
+        '''
+        验证锁仓账户和释放到账账户为同一个时锁仓质押扣费情况
+        amount：质押金额
+        :return:
+        '''
+        platon_ppos = Ppos ('http://10.10.8.157:6789', self.address, chainid=102,
+                            privatekey=conf.PRIVATE_KEY)
+        # platon_ppos = self.ppos_link ()
+        address1 = '0x51a9A03153a5c3c203F6D16233e3B7244844A457'
+        privatekey1 = '25f9fdf3249bb47f239df0c59d23781c271e8b7e9a94e9e694c15717c1941502'
+        # 签名转账
+        platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
+                                          Web3.toChecksumAddress (address1), self.gasPrice, self.gas, 10000000,
+                                          conf.PRIVATE_KEY)
+        balance = platon_ppos.eth.getBalance (address1)
+        log.info("发起锁仓账户余额:{}".format(balance))
+        if balance == Web3.toWei (10000000, 'ether'):
+            try:
+                loukupbalace = Web3.toWei(9000000,'ether')
+                plan = [{'Epoch': 1 ,'Amount':loukupbalace}]
+                lockup_before = platon_ppos.eth.getBalance(conf.FOUNDATIONLOCKUPADDRESS)
+                #创建锁仓计划
+                result =platon_ppos.CreateRestrictingPlan(address1,plan,privatekey1,
+                                                  from_address=address1, gasPrice=self.gasPrice )
+                if result['status'] == 'True':
+                    log.info ("发起锁仓账户余额:{}".format (balance))
+                    lockup_after = platon_ppos.eth.getBalance(conf.FOUNDATIONLOCKUPADDRESS)
+                    assert lockup_after == lockup_before + loukupbalace
+                    staking_befor = platon_ppos.eth.getBalance(conf.STAKINGADDRESS)
+                    if Web3.toWei(amount,'ether') < loukupbalace:
+                        #发起质押
+                        node_info = get_node_info (conf.TWENTY_FIVENODE_YML)
+                        self.rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get_node_info (
+                            'nocollusion')
+                        node_list_length = len (self.node_list)
+                        index = random.randint (0, node_list_length - 1)
+                        nodeId = self.node_list[index]
+                        platon_ppos2 = self.ppos_link (None,address1,privatekey1)
+                        result = platon_ppos2.createStaking(1, address1, nodeId,'externalId', 'nodeName', 'website', 'details',                                                              amount,1792,gasPrice=self.gasPrice)
+                        if result['status'] == 'True':
+                            #质押账户余额增加
+                            staking_after = platon_ppos2.eth.getBalance(conf.STAKINGADDRESS)
+                            assert staking_after == staking_befor + Web3.toWei (amount, 'ether')
+                            #锁仓合约地址余额减少
+                            lock_balance = platon_ppos2.eth.getBalance(conf.FOUNDATIONLOCKUPADDRESS)
+                            assert lock_balance == lockup_after - Web3.toWei (amount, 'ether')
+                            #发起锁仓账户余额减少手续费
+                            pledge_balance_after = platon_ppos2.eth.getBalance()
+                            assert balance > pledge_balance_after
+                            RestrictingInfo = platon_ppos2.GetRestrictingInfo(address1)
+                            if RestrictingInfo['status'] == 'True':
+                                #验证锁仓计划里的锁仓可用余额减少
+                                assert loukupbalace == RestrictingInfo['Data']['balance'] + amount
+                            else:
+                                log.info("查询{}锁仓余额失败".format(address1))
+                        else:
+                            log.info("质押节点:{}失败".format(nodeId))
+                    elif Web3.toWei(amount,'ether') >= loukupbalace:
+                        # 发起质押
+                        node_info = get_node_info (conf.TWENTY_FIVENODE_YML)
+                        self.rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get (
+                            'nocollusion')
+                        node_list_length = len (self.node_list)
+                        index = random.randint (0, node_list_length - 1)
+                        nodeId = self.node_list[index]
+                        platon_ppos2 = self.ppos_link (None, address1, privatekey1)
+                        result = platon_ppos2.createStaking (1, address1, nodeId, 'externalId', 'nodeName', 'website',
+                                                            'details', amount, 1792, gasPrice=self.gasPrice)
+                        assert result['status'] == 'False'
+                    else:
+                        log.info("质押金额:{}有误".format(amount))
+                else:
+                    log.info("创建锁仓计划,状态为{}".format(result['status']))
+            except:
+                status = 1
+                assert status == 0, '创建锁仓计划失败'
+
+    @allure.title ("验证锁仓账户和释放到账账户为不同时质押扣费验证")
+    @pytest.mark.parametrize ('amount,', [(5000000), (9100000)])
+    def test_morelockup_pledge(self):
+        '''
+                验证锁仓账户和释放到账账户为同一个时锁仓质押扣费情况
+                amount：质押金额
+                :return:
+                '''
+        platon_ppos = Ppos ('http://10.10.8.157:6789', self.address, chainid=102,
+                            privatekey=conf.PRIVATE_KEY)
+        # platon_ppos = self.ppos_link ()
+        address1 = '0x51a9A03153a5c3c203F6D16233e3B7244844A457'
+        privatekey1 = '25f9fdf3249bb47f239df0c59d23781c271e8b7e9a94e9e694c15717c1941502'
+        # 签名转账
+        platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
+                                          Web3.toChecksumAddress (address1), self.gasPrice, self.gas, 10000000,
+                                          conf.PRIVATE_KEY)
+        balance = platon_ppos.eth.getBalance (address1)
+        log.info ("发起锁仓账户余额:{}".format (balance))
+        if balance == Web3.toWei (10000000, 'ether'):
+            try:
+                loukupbalace = Web3.toWei(9000000,'ether')
+                plan = [{'Epoch': 1 ,'Amount':loukupbalace}]
+                lockup_before = platon_ppos.eth.getBalance(conf.FOUNDATIONLOCKUPADDRESS)
+                #创建锁仓计划
+                result =platon_ppos.CreateRestrictingPlan(address1,plan,privatekey1,
+                                                  from_address=address1, gasPrice=self.gasPrice )
+                if result['status'] == 'True':
+                    log.info ("发起锁仓账户余额:{}".format (balance))
+                    lockup_after = platon_ppos.eth.getBalance(conf.FOUNDATIONLOCKUPADDRESS)
+                    assert lockup_after == lockup_before + loukupbalace
+            except:
+                status = 1
+                assert status == 0, '创建锁仓计划失败'
+
+
     # def test_loukupplan_amount(self):
     #     '''
     #     账户余额为0的时候调用锁仓接口
@@ -415,6 +542,10 @@ class TestDposinit:
         assert lockupbalance == INCENTIVEPOOL
 
     def test_fee_income(self):
+        '''
+        验证初始内置账户没有基金会Staking奖励和出块奖励只有手续费收益
+        :return:
+        '''
         platon_ppos = Ppos ('http://10.10.8.157:6789', self.address, chainid=102,
                             privatekey=conf.PRIVATE_KEY)
         #platon_ppos = self.ppos_link ()
@@ -454,6 +585,7 @@ class TestDposinit:
         platon_ppos = Ppos ('http://10.10.8.157:6789', self.address, chainid=102,
                             privatekey=conf.PRIVATE_KEY)
         # platon_ppos = self.ppos_link ()
+
         incentive_pool_balance_befor = platon_ppos.eth.getBalance (conf.INCENTIVEPOOLADDRESS)
         log.info ('处罚之前激励池查询余额：{}'.format (incentive_pool_balance_befor))
         #停止其中一个正在出块的节点信息
@@ -480,6 +612,14 @@ class TestDposinit:
             status = 1
             assert status == 0, '停止节点:{}失败'.format(node_data['host'])
 
+    def test_Staking_reward(self):
+        pass
+
+    def test_packaging_reward(self):
+        pass
+
+    def test_poundage_reward(self):
+        pass
 
 
 
@@ -488,5 +628,6 @@ class TestDposinit:
 
 if __name__ == "__main__":
     a = TestDposinit()
-    #a.test_token_loukup()
-    a.test_punishment_income()
+    # a.test_token_loukup()
+    a.test_transfer_normal()
+    #a.test_punishment_income()
