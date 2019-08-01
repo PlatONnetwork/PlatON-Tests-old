@@ -44,10 +44,3 @@ class StrUtil:
         result = ''.join([i for i in all_chars]).lower()
 
         return result
-
-
-# if  __name__ == '__main__':
-#     length=8
-#     st=StrUtil(length)
-#     result=st.gen_random_string()
-#     print(result)
