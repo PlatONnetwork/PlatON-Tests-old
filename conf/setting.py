@@ -4,9 +4,19 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 节点配置文件路径
+# NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/test_node.yml"))
+
+# FOUR_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/cbft_4.yml"))
+
+GOVERN_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/govern_node_7.yml"))
+
+# vc节点配置文件路径
+VC_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/vc_node.yml"))
+
 # Alice节点配置文件路径
 ALICE_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/alice.yml"))
 
+# Bob节点配置文件路径
 BOB_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/bob.yml"))
 
 PPOS_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/7_node.yml"))
@@ -55,6 +65,11 @@ PRIVATE_KEY = '0xa11859ce23effc663a9460e332ca09bd812acc390497f8dc7542b6938e13f8d
 # 该钱包的公钥
 PUBLIC_KEY = 'a28b52294324f17a8e5e15da2c1562494303d694a9ac6ca02c2ae78fd93af69bb454a711883c23d9a96e38b88e389fbb6225fc6578cb22b4905520c8fbd000c3'
 
+# PRIVATE_KEY =   '0x40a2d01c7b10d19dbdd8b0c04be82d368b3d65a0a3f35e5c9c99eb81229298f7'
+
+# 该钱包的公钥
+PUBLIC_KEY = 'a28b52294324f17a8e5e15da2c1562494303d694a9ac6ca02c2ae78fd93af69bb454a711883c23d9a96e38b88e389fbb6225fc6578cb22b4905520c8fbd000c3'
+
 # 钱包密码
 PASSWORD = "88888888"
 
@@ -83,6 +98,8 @@ DPOS_CONTRACT_ABI = os.path.abspath(os.path.join(BASE_DIR, 'data/dpos/candidateC
 # 种子节点
 TEST_NET_NODE = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/test_net.yml"))
 
+GOVERN_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/govern_node_7.yml"))
+
 # mpclib
 MPCLIB = os.path.abspath(os.path.join(BASE_DIR, "deploy/rely/mpclib/mpclib.tar.gz"))
 
@@ -104,6 +121,7 @@ VERSION_DICT = {
 
 VERSION = "0.7"
 SPLIT_LOG_SCRIPT = os.path.abspath(os.path.join(BASE_DIR, "deploy/rely/script/split_log.py"))
+
 SUP_TEMPLATE = os.path.abspath(os.path.join(BASE_DIR, "deploy/rely/template/supervisor.conf"))
 SUP_TMP = os.path.abspath(os.path.join(BASE_DIR, "deploy/rely/tmp/supervisor/"))
 IS_TEST_NET = False
