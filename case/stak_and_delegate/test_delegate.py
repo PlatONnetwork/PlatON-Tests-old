@@ -54,6 +54,8 @@ class TestDelegate():
         """
         ppos_noconsensus_1   质押 self.account_list[0]  self.nodeid_list2[0]
 	    ppos_noconsensus_2   委托的钱包用self.account_list[1]
+	    ppos_noconsensus_3   质押 self.account_list[2]  self.nodeid_list2[2]
+	    ppos_noconsensus_4   委托的钱包用self.account_list[3]
         """
         self.ppos_link = Ppos(
             self.rpc_list[0], self.address)
@@ -380,6 +382,9 @@ class TestDelegate():
         releasedHes = Web3.fromWei(data["ReleasedHes"], 'ether')
         log.info("赎回委托金额后查询委托金额{}".format(releasedHes))
         assert releasedHes == 0
+
+
+
 
 
 
