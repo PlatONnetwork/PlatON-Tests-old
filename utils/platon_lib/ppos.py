@@ -36,26 +36,23 @@ class Ppos:
         self.chainid = chainid
 
 
-    def get_result(self, tx_hash,func_name):
+    def get_result(self, tx_hash):
         result = self.eth.waitForTransactionReceipt(tx_hash)
-        print(result)
         """查看eventData"""
         data = result['logs'][0]['data']
         if data[:2] == '0x':
             data = data[2:]
-        print(data)
         data_bytes = rlp.decode(bytes.fromhex(data))[0]
         event_data = bytes.decode(data_bytes)
         event_data = json.loads(event_data)
         print(event_data)
-        return func_name,event_data
+        return event_data
 
     def send_raw_transaction(self, data, from_address, to_address, gasPrice, gas,value,privatekey=None):
         nonce = self.eth.getTransactionCount(from_address)
         print('nonce:',nonce)
-        if not privatekey:
-            privatekey = self.privatekey
         if value > 0:
+            print(1)
             transaction_dict = {
                 "to": to_address,
                 "gasPrice": gasPrice,
@@ -65,8 +62,8 @@ class Ppos:
                 "chainId": self.chainid,
                 "value": self.web3.toWei(value, "ether")
             }
-
         else:
+            print(2)
             transaction_dict = {
                 "to": to_address,
                 "gasPrice": gasPrice,
@@ -779,6 +776,6 @@ class Ppos:
 if __name__ == '__main__':
     address = '0x493301712671Ada506ba6Ca7891F436D29185821'
     # p = Ppos( 'http://10.10.8.157:6789',address ,'88888888')
-    p = Ppos('http://10.10.8.157:6789', address,101)
-    p.get_result('0x03ecc55232cc5e65f0f95390fa7bb5cd8f3d74439bc607cd36cdac37a861d882','CreateRestrictingPlan')
+    p = Ppos('http://10.10.8.157:6789', address,102)
+    p.get_result('0x328933b378bf92f0713616759a01003d0ea3ee2691347b1af9de07470ea44f13')
     p.GetRestrictingInfo()

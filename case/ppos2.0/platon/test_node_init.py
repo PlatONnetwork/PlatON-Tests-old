@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import json
-import math
-import time
 
 from client_sdk_python import Web3
-from common.ppos import Ppos
+
 from common.connect import connect_web3
-from utils.platon_lib.dpos import PlatonDpos
-from conf import  setting as conf
-from common.load_file import LoadFile, get_node_info,get_node_list
-from common import log
+from common.load_file import LoadFile, get_node_info
+from conf import setting as conf
 from deploy.deploy import AutoDeployPlaton
-import json
+from utils.platon_lib.dpos import PlatonDpos
+from utils.platon_lib.ppos import Ppos
+
 
 class TestDposinit:
     address = Web3.toChecksumAddress(conf.ADDRESS)
