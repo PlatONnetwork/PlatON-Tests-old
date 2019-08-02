@@ -2,6 +2,7 @@
 import json
 import math
 import rlp
+from common.load_file import LoadFile
 from hexbytes import HexBytes
 from client_sdk_python.eth import Eth
 from conf import setting as conf
@@ -10,19 +11,33 @@ from client_sdk_python import (
     Web3,
 )
 import random
-def read_private_key_list(self):
-    with open(conf.PRIVATE_KEY_LIST,'r') as f:
-        private_key_list = f.read().split("\n")
-        index=random.randrange(1,len(private_key_list)-1)#生成随机行数
-        address,private_key = private_key_list[index].split(',')
-        print(address)
-        print(private_key)
+def read_private_key_list(key1,key2,key3=None,value=None):
+    data = LoadFile (conf.PPOS_CONFIG_PATH).get_data ()
+    if key3 == None:
+        data[key1][key2] = value
+    else:
+        data[key1][key2][key3] = value
 
-def update_config(key,value):
-    with open(conf.PPOS_CONFIG_PATH, 'r', encoding='utf-8') as f:
-        res = json.loads(f.read())
-        res[key] = value
-    return res
-
+    data = json.dumps (data)
+    with open (conf.PPOS_CONFIG_PATH, "w") as f:
+        f.write (data)
+        f.close ()
+#     # if key2 :
+#     #     data = LoadFile (conf.PPOS_CONFIG_PATH).get_data ()
+#     #     data[key] = value
+#     #     #print(data)
+# def write_config(data):
+#     data = json.dumps (data)
+#     with open (conf.PPOS_CONFIG_PATH, "w") as f:
+#         f.write(data)
+#         f.close()
+#
+# def test():
+#     data = LoadFile (conf.PPOS_CONFIG_PATH).get_data ()
+#     data['EconomicModel']['Staking']['DelegateThreshold'] = 9
+#     write_config(data)
 if __name__ == '__main__':
-    update_config('SyncMode','one')
+    #update_config()
+    #update_config('eth','SyncMode','one')
+    #read_private_key_list('eth','SyncMode',value='one')
+    read_private_key_list('EconomicModel','Staking','DelegateThreshold',8)

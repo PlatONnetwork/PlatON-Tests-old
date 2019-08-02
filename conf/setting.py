@@ -9,17 +9,18 @@ ALICE_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/alice.yml")
 
 BOB_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/bob.yml"))
 
-PPOS_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/7_node.yml"))
+PPOS_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/ppos_7.yml"))
 
-# 节点创世文件默认保存位置
-GENESIS_TMP = os.path.abspath(os.path.join(BASE_DIR, "deploy/rely/template/genesis.json"))
-
-# 节点创世文件共存位置
-GENESIS_TMP_OTHER = os.path.abspath(os.path.join(BASE_DIR, "deploy/rely/template/genesis_other/genesis.json"))
+PPOS_NODE_TEST_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/ppos_7.yml"))
 
 # ppos系统参数配置文件
 PPOS_CONFIG_PATH = os.path.abspath(os.path.join(BASE_DIR, "deploy/config.json"))
 
+# 节点创世文件默认保存位置
+GENESIS_TMP = os.path.abspath(os.path.join(BASE_DIR, "deploy/rely/tmp/genesis.json"))
+
+# 节点创世文件共存位置
+GENESIS_TMP_OTHER = os.path.abspath(os.path.join(BASE_DIR, "deploy/rely/tmp/genesis_other/genesis.json"))
 
 # 节点创世文件模板
 GENESIS_TEMPLATE = os.path.abspath(os.path.join(BASE_DIR, "deploy/rely/template/genesis.json"))
@@ -50,7 +51,6 @@ KEYSTORE = os.path.abspath(os.path.join(BASE_DIR,
 
 # 该钱包的私钥
 PRIVATE_KEY = '0xa11859ce23effc663a9460e332ca09bd812acc390497f8dc7542b6938e13f8d7'
-# PRIVATE_KEY =   '0x40a2d01c7b10d19dbdd8b0c04be82d368b3d65a0a3f35e5c9c99eb81229298f7'
 
 # 该钱包的公钥
 PUBLIC_KEY = 'a28b52294324f17a8e5e15da2c1562494303d694a9ac6ca02c2ae78fd93af69bb454a711883c23d9a96e38b88e389fbb6225fc6578cb22b4905520c8fbd000c3'

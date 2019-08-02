@@ -60,6 +60,7 @@ def get_pub_key(url, block):
     return output.strip("\n")
 
 
+
 if __name__ == "__main__":
     d = generate_key()
     print(d)

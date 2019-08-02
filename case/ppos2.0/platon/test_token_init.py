@@ -18,19 +18,22 @@ from common.load_file import LoadFile, get_node_info,get_node_list
 from common import log
 from deploy.deploy import AutoDeployPlaton
 import json
+from utils.platon_lib.ppos_common import read_private_key_list,update_config
 from client_sdk_python.eth import Eth
 
 
 class TestDposinit:
-    address = Web3.toChecksumAddress(conf.ADDRESS)
+    address = conf.ADDRESS
     pwd = conf.PASSWORD
     abi = conf.DPOS_CONTRACT_ABI
     cbft_json_path = conf.CBFT2
-    node_yml_path = conf.PPOS_NODE_YML
+    node_yml_path = conf.PPOS_NODE_TEST_YML
     file = conf.CASE_DICT
     privatekey = conf.PRIVATE_KEY
     gasPrice = Web3.toWei(0.000000000000000001,'ether')
     gas = 21000
+    transfer_gasPrice = Web3.toWei(1,'ether')
+    transfer_gas = 210000000
     value = 1000
     initial_amount = {'FOUNDATION': 905000000000000000000000000,
                       'FOUNDATIONLOCKUP': 20000000000000000000000000,
@@ -42,12 +45,11 @@ class TestDposinit:
     def ppos_link(self,url=None,address=conf.ADDRESS ,privatekey= conf.PRIVATE_KEY):
         if url is None:
             node_info = get_node_info (self.node_yml_path)
-            self.rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get (
+            self.rpc_list, enode_list, self.nodeid_list, ip_list, port_list = node_info.get (
                 'collusion')
-            rpc_list_length = len (self.rpc_list) - 1
-            index = random.randint (0, rpc_list_length)
+            rpc_list_length = len (self.rpc_list)
+            index = random.randint (0, rpc_list_length - 1)
             url = self.rpc_list[index]
-
         self.platon_ppos = Ppos (url, address=address, chainid=101,
                                  privatekey=privatekey)
         return self.platon_ppos
@@ -57,36 +59,45 @@ class TestDposinit:
             self.ppos_link().web3.personal.newAccount (self.pwd))
         return self.new_address
 
-    def read_private_key_list(self):
-        with open (conf.PRIVATE_KEY_LIST, 'r') as f:
-            private_key_list = f.read ().split ("\n")
-            index = random.randrange (1, len (private_key_list) - 1)  # 生成随机行数
-            address, private_key = private_key_list[index].split (',')
-        return address, private_key
 
     # def update_config(self, file, key, data):
     #     with open(self.file, 'r', encoding='utf-8') as f:
     #         res = json.loads(f.read())
+    def ppos_Girokonto(self,to_address,from_address,private_key,value):
+        platon_ppos = self.ppos_link()
 
-    def ppos_sendTransaction(self,to_address, from_address, gas, gasPrice, value):
+        result = platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (from_address),
+                                          Web3.toChecksumAddress (to_address), self.transfer_gasPrice, self.transfer_gas, value,
+                                          private_key)
+        print(result)
+
+    def ppos_sendTransaction(self,to_address, from_address, value):
         platon_ppos = self.ppos_link ()
+        platon_ppos.web3.personal.unlockAccount (conf.ADDRESS, conf.PASSWORD, 2222)
+
         self.send_data = {
             "to": to_address,
             "from": from_address,
-            "gas": gas,
-            "gasPrice": gasPrice,
+            "gas": self.transfer_gas,
+            "gasPrice": self.transfer_gasPrice,
             "value": value,
         }
-        a = platon_ppos.eth.estimateGas(self.send_data)
         tx_hash = platon_ppos.eth.sendTransaction (self.send_data)
         self.platon_ppos.eth.waitForTransactionReceipt (tx_hash)
 
+    def read_out_nodeId(self,code):
+        node_info = get_node_info (self.node_yml_path)
+        self.rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get (
+            code)
+        node_list_length = len (nodeid_list)
+        index = random.randint (0, node_list_length - 1)
+        nodeId = nodeid_list[index]
+        print(nodeId)
 
-    def setup_class(self):
-        self.auto = AutoDeployPlaton (cbft=self.cbft_json_path)
-        self.auto.start_all_node (self.node_yml_path)
-
-
+    def test(self):
+        # self.auto = AutoDeployPlaton ()
+        # self.auto.start_all_node (self.node_yml_path)
+        print(self.nodeid_list)
     def test_init_token(self):
         '''
         验证链初始化后token各内置账户初始值
@@ -113,7 +124,7 @@ class TestDposinit:
         :return:
         '''
         platon_ppos = self.ppos_link ()
-        address1,private_key1 = self.read_private_key_list()
+        address1,private_key1 = read_private_key_list()
 
         try:
             platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
@@ -132,17 +143,15 @@ class TestDposinit:
         '''
         platon_ppos = self.ppos_link ()
         #账户1
-        address1 = '0x684b43Cf53C78aA567840174a55442d7a9282679'
-        privatekey1 = 'a5ac52e828e2656309933339cf12d30755f918e368fffc7c265b55da718ff893'
+        address1,private_key1 = read_private_key_list()
         #账户2
-        address2 = '0xc128fDBb500096974Db713b563dBeF597461C5dD'
-        privatekey2 = 'c03975513e3de5b1c63fb4b31470111119d5ef1e580d14ebd23aee48f580ac13'
+        address2,private_key2 = read_private_key_list()
         balance = platon_ppos.eth.getBalance(address1)
         if balance == 0:
             try:
                 platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (address1),
                                                   Web3.toChecksumAddress (address2), self.gasPrice, self.gas, self.value,
-                                                  privatekey1)
+                                                  private_key1)
             except:
                 status = 1
                 assert status == 0, '账号余额不足，无法发起转账'
@@ -196,8 +205,7 @@ class TestDposinit:
         platon_ppos = Ppos ('http://10.10.8.157:6789', self.address, chainid=102,
                                  privatekey=conf.PRIVATE_KEY)
         #platon_ppos = self.ppos_link ()
-        address1 = '0x472599739f398c24ad8Cdc03476b20D6469eAf46'
-        privatekey1 = '61279a4b654aef7c3065c0cf550cdce460682875c218de893544a4799b57cc41'
+        address1,private_key1 = read_private_key_list()
         #非签名转账
         # platon_ppos.web3.personal.unlockAccount(conf.ADDRESS, conf.PASSWORD, 2222)
         # self.ppos_sendTransaction(address1,conf.ADDRESS,self.gas,self.gasPrice,Web3.toWei(10000,'ether'))
@@ -213,7 +221,7 @@ class TestDposinit:
                 plan = [{'Epoch': 1 ,'Amount':loukupbalace}]
                 lockup_before = platon_ppos.eth.getBalance(conf.FOUNDATIONLOCKUPADDRESS)
                 #创建锁仓计划
-                result =platon_ppos.CreateRestrictingPlan(address1,plan,privatekey1,
+                result =platon_ppos.CreateRestrictingPlan(address1,plan,private_key1,
                                                   from_address=address1, gasPrice=self.gasPrice )
                 if result['status'] == 'True':
                     lockup_after = platon_ppos.eth.getBalance(conf.FOUNDATIONLOCKUPADDRESS)
@@ -243,8 +251,7 @@ class TestDposinit:
         :param amount:
         :return:
         '''
-        address1 = '0x9148528b98a0065D185F01dbc59baB88CdbE7Ad2'
-        private_key1 = '6ccbf153f7409af1e5df7a1ef77daaca4759f0a6b50ef73fe9ccd5738cc2fda1'
+        address1,private_key1 = read_private_key_list()
         platon_ppos = Ppos ('http://10.10.8.157:6789', self.address, chainid=102,
                             privatekey=conf.PRIVATE_KEY)
         # platon_ppos = self.ppos_link ()
@@ -277,8 +284,7 @@ class TestDposinit:
         platon_ppos = Ppos ('http://10.10.8.157:6789', self.address, chainid=102,
                             privatekey=conf.PRIVATE_KEY)
         # platon_ppos = self.ppos_link ()
-        address1 = '0x51a9A03153a5c3c203F6D16233e3B7244844A457'
-        privatekey1 = '25f9fdf3249bb47f239df0c59d23781c271e8b7e9a94e9e694c15717c1941502'
+        address1,private_key1 = read_private_key_list()
         # 签名转账
         platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
                                           Web3.toChecksumAddress (address1), self.gasPrice, self.gas,self.value,conf.PRIVATE_KEY)
@@ -287,7 +293,7 @@ class TestDposinit:
             try:
                 loukupbalace = Web3.toWei (10000, 'ether')
                 plan = [{'Epoch': 1, 'Amount': loukupbalace}]
-                result = platon_ppos.CreateRestrictingPlan (address1, plan, privatekey1,
+                result = platon_ppos.CreateRestrictingPlan (address1, plan, private_key1,
                                                             from_address=address1, gasPrice=self.gasPrice, gas=self.gas)
                 assert result['status'] == 'false'
             except:
@@ -309,8 +315,8 @@ class TestDposinit:
         platon_ppos = Ppos ('http://10.10.8.157:6789', self.address, chainid=102,
                             privatekey=conf.PRIVATE_KEY)
         # platon_ppos = self.ppos_link ()
-        address1 = '0x51a9A03153a5c3c203F6D16233e3B7244844A457'
-        privatekey1 = '25f9fdf3249bb47f239df0c59d23781c271e8b7e9a94e9e694c15717c1941502'
+        address1,private_key1 = read_private_key_list()
+
         # 签名转账
         platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
                                           Web3.toChecksumAddress (address1), self.gasPrice, self.gas,self.value,conf.PRIVATE_KEY)
@@ -321,12 +327,12 @@ class TestDposinit:
                 loukupbalace2 = Web3.toWei (balace2, 'ether')
                 if  (loukupbalace1 + loukupbalace2) < self.value:
                     plan = [{'Epoch': 1, 'Amount': loukupbalace1},{'Epoch': 2, 'Amount': loukupbalace2}]
-                    result = platon_ppos.CreateRestrictingPlan (address1, plan, privatekey1,
+                    result = platon_ppos.CreateRestrictingPlan (address1, plan, private_key1,
                                                                 from_address=address1, gasPrice=self.gasPrice, gas=self.gas)
                     assert result['status'] == 'True'
                 elif self.value <= (loukupbalace1 + loukupbalace2) :
                     plan = [{'Epoch': 1, 'Amount': loukupbalace1}, {'Epoch': 2, 'Amount': loukupbalace2}]
-                    result = platon_ppos.CreateRestrictingPlan (address1, plan, privatekey1,
+                    result = platon_ppos.CreateRestrictingPlan (address1, plan, private_key1,
                                                                 from_address=address1, gasPrice=self.gasPrice,
                                                                 gas=self.gas)
                     assert result['status'] == 'false'
@@ -351,8 +357,8 @@ class TestDposinit:
         platon_ppos = Ppos ('http://10.10.8.157:6789', self.address, chainid=102,
                             privatekey=conf.PRIVATE_KEY)
         # platon_ppos = self.ppos_link ()
-        address1 = '0x51a9A03153a5c3c203F6D16233e3B7244844A457'
-        privatekey1 = '25f9fdf3249bb47f239df0c59d23781c271e8b7e9a94e9e694c15717c1941502'
+        address1,private_key1 = read_private_key_list()
+
         # 签名转账
         platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
                                           Web3.toChecksumAddress (address1), self.gasPrice, self.gas, self.value,
@@ -365,7 +371,7 @@ class TestDposinit:
                 loukupbalace = Web3.toWei (100, 'ether')
                 if code == 1:
                     plan = [{'Epoch': period1, 'Amount': loukupbalace}, {'Epoch': period1, 'Amount': loukupbalace}]
-                    result = platon_ppos.CreateRestrictingPlan (address1, plan, privatekey1,
+                    result = platon_ppos.CreateRestrictingPlan (address1, plan, private_key1,
                                                                 from_address=address1, gasPrice=self.gasPrice,
                                                                 gas=self.gas)
                     assert result['status'] == 'True'
@@ -375,13 +381,13 @@ class TestDposinit:
 
                 elif code == 2:
                     plan = [{'Epoch': period1, 'Amount': loukupbalace}, {'Epoch': period2, 'Amount': loukupbalace}]
-                    result = platon_ppos.CreateRestrictingPlan (address1, plan, privatekey1,
+                    result = platon_ppos.CreateRestrictingPlan (address1, plan, private_key1,
                                                                 from_address=address1, gasPrice=self.gasPrice,
                                                                 gas=self.gas)
                     assert result['status'] == 'True'
                     loukupbalace2 = Web3.toWei (200, 'ether')
                     plan = [{'Epoch': period1, 'Amount': loukupbalace2}, {'Epoch': period2, 'Amount': loukupbalace2}]
-                    result1 = platon_ppos.CreateRestrictingPlan (address1, plan, privatekey1,
+                    result1 = platon_ppos.CreateRestrictingPlan (address1, plan, private_key1,
                                                                 from_address=address1, gasPrice=self.gasPrice,
                                                                 gas=self.gas)
                     assert result1['status'] == 'True'
@@ -407,8 +413,8 @@ class TestDposinit:
         platon_ppos = Ppos ('http://10.10.8.157:6789', self.address, chainid=102,
                             privatekey=conf.PRIVATE_KEY)
         # platon_ppos = self.ppos_link ()
-        address1 = '0x51a9A03153a5c3c203F6D16233e3B7244844A457'
-        privatekey1 = '25f9fdf3249bb47f239df0c59d23781c271e8b7e9a94e9e694c15717c1941502'
+        address1,private_key1 = read_private_key_list()
+
         # 签名转账
         platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
                                           Web3.toChecksumAddress (address1), self.gasPrice, self.gas, 10000000,
@@ -421,7 +427,7 @@ class TestDposinit:
                 plan = [{'Epoch': 1 ,'Amount':loukupbalace}]
                 lockup_before = platon_ppos.eth.getBalance(conf.FOUNDATIONLOCKUPADDRESS)
                 #创建锁仓计划
-                result =platon_ppos.CreateRestrictingPlan(address1,plan,privatekey1,
+                result =platon_ppos.CreateRestrictingPlan(address1,plan,private_key1,
                                                   from_address=address1, gasPrice=self.gasPrice )
                 if result['status'] == 'True':
                     log.info ("发起锁仓账户余额:{}".format (balance))
@@ -430,13 +436,8 @@ class TestDposinit:
                     staking_befor = platon_ppos.eth.getBalance(conf.STAKINGADDRESS)
                     if Web3.toWei(amount,'ether') < loukupbalace:
                         #发起质押
-                        node_info = get_node_info (conf.TWENTY_FIVENODE_YML)
-                        self.rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get_node_info (
-                            'nocollusion')
-                        node_list_length = len (self.node_list)
-                        index = random.randint (0, node_list_length - 1)
-                        nodeId = self.node_list[index]
-                        platon_ppos2 = self.ppos_link (None,address1,privatekey1)
+                        nodeId = self.read_out_nodeId('nocollusion')
+                        platon_ppos2 = self.ppos_link (None,address1,private_key1)
                         result = platon_ppos2.createStaking(1, address1, nodeId,'externalId', 'nodeName', 'website', 'details',                                                              amount,1792,gasPrice=self.gasPrice)
                         if result['status'] == 'True':
                             #质押账户余额增加
@@ -458,13 +459,8 @@ class TestDposinit:
                             log.info("质押节点:{}失败".format(nodeId))
                     elif Web3.toWei(amount,'ether') >= loukupbalace:
                         # 发起质押
-                        node_info = get_node_info (conf.TWENTY_FIVENODE_YML)
-                        self.rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get (
-                            'nocollusion')
-                        node_list_length = len (self.node_list)
-                        index = random.randint (0, node_list_length - 1)
-                        nodeId = self.node_list[index]
-                        platon_ppos2 = self.ppos_link (None, address1, privatekey1)
+                        nodeId = self.read_out_nodeId('nocollusion')
+                        platon_ppos2 = self.ppos_link (None, address1, private_key1)
                         result = platon_ppos2.createStaking (1, address1, nodeId, 'externalId', 'nodeName', 'website',
                                                             'details', amount, 1792, gasPrice=self.gasPrice)
                         assert result['status'] == 'False'
@@ -477,39 +473,160 @@ class TestDposinit:
                 assert status == 0, '创建锁仓计划失败'
 
     @allure.title ("验证锁仓账户和释放到账账户为不同时质押扣费验证")
-    @pytest.mark.parametrize ('amount,', [(5000000), (9100000)])
-    def test_morelockup_pledge(self):
+    @pytest.mark.parametrize ('code,', [(1), (2)])
+    def test_morelockup_pledge(self,code):
         '''
-                验证锁仓账户和释放到账账户为同一个时锁仓质押扣费情况
-                amount：质押金额
-                :return:
-                '''
+        验证锁仓账户和释放到账账户为同一个时锁仓质押扣费情况
+        amount：质押金额
+        :return:
+        '''
         platon_ppos = Ppos ('http://10.10.8.157:6789', self.address, chainid=102,
                             privatekey=conf.PRIVATE_KEY)
-        # platon_ppos = self.ppos_link ()
-        address1 = '0x51a9A03153a5c3c203F6D16233e3B7244844A457'
-        privatekey1 = '25f9fdf3249bb47f239df0c59d23781c271e8b7e9a94e9e694c15717c1941502'
+        #platon_ppos = self.ppos_link ()
+        address1,private_key1 = read_private_key_list()
+        address2,private_key2 = read_private_key_list()
+        #非签名转账
+        self.ppos_sendTransaction(address1,self.address,10000000)
         # 签名转账
-        platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
-                                          Web3.toChecksumAddress (address1), self.gasPrice, self.gas, 10000000,
-                                          conf.PRIVATE_KEY)
+        #self.ppos_Girokonto(address1,self.address,self.privatekey,10000000)
+        # platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
+        #                                   Web3.toChecksumAddress (address1), self.gasPrice, self.gas, 10000000,
+        #                                   conf.PRIVATE_KEY)
         balance = platon_ppos.eth.getBalance (address1)
         log.info ("发起锁仓账户余额:{}".format (balance))
         if balance == Web3.toWei (10000000, 'ether'):
             try:
                 loukupbalace = Web3.toWei(9000000,'ether')
                 plan = [{'Epoch': 1 ,'Amount':loukupbalace}]
-                lockup_before = platon_ppos.eth.getBalance(conf.FOUNDATIONLOCKUPADDRESS)
                 #创建锁仓计划
-                result =platon_ppos.CreateRestrictingPlan(address1,plan,privatekey1,
+                result =platon_ppos.CreateRestrictingPlan(address2,plan,private_key1,
                                                   from_address=address1, gasPrice=self.gasPrice )
                 if result['status'] == 'True':
                     log.info ("发起锁仓账户余额:{}".format (balance))
-                    lockup_after = platon_ppos.eth.getBalance(conf.FOUNDATIONLOCKUPADDRESS)
-                    assert lockup_after == lockup_before + loukupbalace
+                    RestrictingInfo = platon_ppos.GetRestrictingInfo(address2)
+                    if RestrictingInfo['status'] == 'True':
+                        assert  RestrictingInfo['Data']['balance'] == loukupbalace
+                if code == 1:
+                    self.ppos_Girokonto(address2,self.address,self.privatekey,1000)
+                    # 锁仓账号发起质押
+                    nodeId = self.read_out_nodeId ('nocollusion')
+                    platon_ppos2 = self.ppos_link (None,address2,private_key2)
+                    result = platon_ppos2.createStaking (1, address1, nodeId, 'externalId', 'nodeName', 'website',
+                                                         'details', 5000000, 1792, gasPrice=self.gasPrice)
+                    assert result['status'] == 'True'
+
+                if code == 2:
+                    # 锁仓账号发起质押
+                    nodeId = self.read_out_nodeId ('nocollusion')
+                    platon_ppos2 = self.ppos_link (None, address2, private_key2)
+                    result = platon_ppos2.createStaking (1, address1, nodeId, 'externalId', 'nodeName', 'website',
+                                                         'details', 5000000, 1792, gasPrice=self.gasPrice)
+                    assert result['status'] == 'False'
             except:
                 status = 1
-                assert status == 0, '创建锁仓计划失败'
+                assert status == 0, '用例执行失败'
+
+    @allure.title ("验证锁仓账户和释放到账账户为同一个时委托扣费")
+    @pytest.mark.parametrize ('amount,', [(500), (910)])
+    def test_lockup_entrust(self,amount):
+        '''
+        锁仓账户和释放到账账户为同一个时委托扣费验证
+        :param amount:
+        :return:
+        '''
+        platon_ppos = self.ppos_link ()
+        address1, private_key1 = read_private_key_list ()
+        # 签名转账
+        self.ppos_Girokonto (address1, self.address, self.privatekey, 1000)
+        balance = platon_ppos.eth.getBalance (address1)
+        log.info ("发起锁仓账户余额:{}".format (balance))
+        if balance == Web3.toWei (1000, 'ether'):
+            try:
+                loukupbalace = Web3.toWei (900, 'ether')
+                plan = [{'Epoch': 1, 'Amount': loukupbalace}]
+                # 创建锁仓计划
+                result = platon_ppos.CreateRestrictingPlan (address1, plan, private_key1,
+                                                            from_address=address1, gasPrice=self.gasPrice)
+                if result['status'] == 'True':
+                    lockup_after = platon_ppos.eth.getBalance (conf.FOUNDATIONLOCKUPADDRESS)
+                    RestrictingInfo = platon_ppos.GetRestrictingInfo (address1)
+                    if RestrictingInfo['status'] == 'True':
+                        assert RestrictingInfo['Data']['balance'] == loukupbalace
+                staking_befor = platon_ppos.eth.getBalance (conf.STAKINGADDRESS)
+                #发起委托
+                if Web3.toWei (amount, 'ether') < loukupbalace:
+                    platon_ppos1 = self.ppos_link(None,address1,private_key1)
+                    nodeId = self.read_out_nodeId ('collusion')
+                    delegate_info = platon_ppos1.delegate(1,nodeId,amount)
+                    if delegate_info['status'] == 'True':
+                        #质押账户余额增加
+                        staking_after = platon_ppos1.eth.getBalance(conf.STAKINGADDRESS)
+                        assert staking_after == staking_befor +Web3.toWei (amount, 'ether')
+                        #锁仓合约地址余额减少
+                        lock_balance = platon_ppos1.eth.getBalance(conf.FOUNDATIONLOCKUPADDRESS)
+                        assert lock_balance == lockup_after - Web3.toWei (amount, 'ether')
+
+                elif Web3.toWei (amount, 'ether') >= loukupbalace:
+                    platon_ppos1 = self.ppos_link (None, address1, private_key1)
+                    nodeId = self.read_out_nodeId ('collusion')
+                    delegate_info = platon_ppos1.delegate (1,nodeId, amount)
+                    assert delegate_info['status'] == 'False'
+
+                else:
+                    log.info ("委托金额:{}输入有误".format (amount))
+            except:
+                status = 1
+                assert status == 0, '用例执行失败'
+
+    @pytest.mark.parametrize ('code,', [(1), (2)])
+    def test_morelockup_entrust(self, code):
+        '''
+        验证锁仓账户和释放到账账户为不同时锁仓委托扣费情况
+        code：1、锁仓账户有余额支付委托手续费。2、锁仓账户没有余额支付委托手续费
+        :return:
+        '''
+        platon_ppos = Ppos ('http://10.10.8.157:6789', self.address, chainid=102,
+                            privatekey=conf.PRIVATE_KEY)
+        # platon_ppos = self.ppos_link ()
+        address1, private_key1 = read_private_key_list ()
+        address2, private_key2 = read_private_key_list ()
+        # 非签名转账
+        self.ppos_sendTransaction (address1, self.address, 1000)
+        # 签名转账
+        # self.ppos_Girokonto(address1,self.address,self.privatekey,10000000)
+        # platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
+        #                                   Web3.toChecksumAddress (address1), self.gasPrice, self.gas, 10000000,
+        #                                   conf.PRIVATE_KEY)
+        balance = platon_ppos.eth.getBalance (address1)
+        log.info ("发起锁仓账户余额:{}".format (balance))
+        if balance == Web3.toWei (1000, 'ether'):
+            try:
+                loukupbalace = Web3.toWei (900, 'ether')
+                plan = [{'Epoch': 1, 'Amount': loukupbalace}]
+                # 创建锁仓计划
+                result = platon_ppos.CreateRestrictingPlan (address2, plan, private_key1,
+                                                            from_address=address1, gasPrice=self.gasPrice)
+                if result['status'] == 'True':
+                    log.info ("发起锁仓账户余额:{}".format (balance))
+                    RestrictingInfo = platon_ppos.GetRestrictingInfo (address2)
+                    if RestrictingInfo['status'] == 'True':
+                        assert RestrictingInfo['Data']['balance'] == loukupbalace
+                if code == 1:
+                    self.ppos_Girokonto (address2, self.address, self.privatekey, 100)
+                    # 锁仓账号发起质押
+                    nodeId = self.read_out_nodeId ('collusion')
+                    platon_ppos1 = self.ppos_link (None, address1, private_key1)
+                    delegate_info = platon_ppos1.delegate (1, nodeId, 500)
+                    assert delegate_info['status'] == 'True'
+
+                if code == 2:
+                    nodeId = self.read_out_nodeId ('collusion')
+                    platon_ppos1 = self.ppos_link (None, address1, private_key1)
+                    delegate_info = platon_ppos1.delegate (1, nodeId, 500)
+                    assert delegate_info['status'] == 'False'
+            except:
+                status = 1
+                assert status == 0, '用例执行失败'
 
 
     # def test_loukupplan_amount(self):
@@ -552,8 +669,8 @@ class TestDposinit:
         incentive_pool_balance_befor = platon_ppos.eth.getBalance (conf.INCENTIVEPOOLADDRESS)
         log.info('交易前激励池查询余额：{}'.format(incentive_pool_balance_befor))
         # 签名转账
-        address1 = '0x51a9A03153a5c3c203F6D16233e3B7244844A457'
-        privatekey1 = '25f9fdf3249bb47f239df0c59d23781c271e8b7e9a94e9e694c15717c1941502'
+        address1,private_key1 = read_private_key_list()
+
         try:
             platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
                                               Web3.toChecksumAddress (address1), self.gasPrice, self.gas, self.value,
@@ -629,5 +746,8 @@ class TestDposinit:
 if __name__ == "__main__":
     a = TestDposinit()
     # a.test_token_loukup()
-    a.test_transfer_normal()
+    #a.test_transfer_normal()
     #a.test_punishment_income()
+    a.test()
+    #a.ppos_link()
+    #a.test_morelockup_pledge(1)

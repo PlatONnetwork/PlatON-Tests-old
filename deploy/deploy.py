@@ -173,10 +173,6 @@ class BaseDeploy:
                         self.deploy_path, port, base_http, self.deploy_path,
                         port, port, rpcport, "0x" + str(vcactor),
                         self.deploy_path, port)
-                elif ppos:
-                    cmd = '''nohup {}/node-{}/platon {} --datadir {}/node-{}/data --port {} --rpcport {} --config {} > {}/node-{}/nohup.out 2>&1 &'''.format(
-                        self.deploy_path, port, base_http, self.deploy_path, port, port, rpcport, self.deploy_path,
-                        port)
                 else:
                     cmd = '''nohup {}/node-{}/platon {} --datadir {}/node-{}/data --port {} --rpcport {} > {}/node-{}/nohup.out 2>&1 &'''.format(
                         self.deploy_path, port, base_http, self.deploy_path,
@@ -323,6 +319,18 @@ class BaseDeploy:
         remote_genesis_path = '{}/node-{}/genesis.json'.format(
             self.deploy_path, port)
         sftp.put(genesis_file, remote_genesis_path)
+
+    def upload_config_json(self, sftp, port, config_file):
+        """
+        上传genesis.json
+        :param sftp:
+        :param port:
+        :param genesis_file:
+        :return:
+        """
+        remote_config_path = '{}/node-{}/config.json'.format(
+            self.deploy_path, port)
+        sftp.put(config_file, remote_config_path)
 
     def upload_cbft_json(self, sftp, port):
         """
@@ -747,6 +755,7 @@ class AutoDeployPlaton(BaseDeploy):
             cbft=conf.CBFT,
             keystore=conf.KEYSTORE,
             genesis=conf.GENESIS_TEMPLATE,
+            config=conf.PPOS_CONFIG_PATH,
             deploy_path=conf.DEPLOY_PATH,
             net_type=None,
             syncmode="full",
@@ -759,6 +768,7 @@ class AutoDeployPlaton(BaseDeploy):
         self.sup_template = sup_template
         self.sup_tmp = sup_tmp
         self.is_metrics = is_metrics
+        self.config = config
         if self.is_metrics:
             import requests
             url = "http://10.10.8.16:8086/query"
@@ -890,7 +900,6 @@ class AutoDeployPlaton(BaseDeploy):
                 cmd = cmd + \
                     " --vc --vc.actor {} --vc.password 88888888".format(
                         node.get("vcactor"))
-            cmd = cmd + "--config {}".format(conf.PPOS_CONFIG_PATH)
             cmd = cmd + " --debug --verbosity 4"
             # cmd = cmd + " --pprof --pprofaddr 0.0.0.0 --pprofport " + \
             #       node["pprof_port"]
@@ -914,10 +923,12 @@ class AutoDeployPlaton(BaseDeploy):
                 cmd = cmd + " --gcmode archive --nodekey " + \
                     node["path"] + \
                     "{}/{}/data/nodekey".format(self.deploy_path, node_name)
+                cmd = cmd + " --config {}/{}/config.json".format (self.deploy_path, node_name)
             else:
                 cmd = cmd + " --gcmode archive --nodekey " + \
                     "{}/{}/{}/data/nodekey".format(pwd,
                                                    self.deploy_path, node_name)
+                cmd = cmd + " --config {}/{}/{}/config.json".format (pwd,self.deploy_path, node_name)
             fp.write("command=" + cmd + "\n")
             fp.write("environment=LD_LIBRARY_PATH={}/mpclib\n".format(pwd))
             fp.write("numprocs=1\n")
@@ -1011,6 +1022,7 @@ class AutoDeployPlaton(BaseDeploy):
             self.clean_blockchain(ssh, port, password)
         self.clean_log(ssh, port)
         self.upload_platon(ssh, sftp, port)
+        self.upload_config_json (sftp, port, self.config)
         if is_init:
             if genesis_file is None:
                 raise Exception("需要初始化时，genesis_file不能为空")
