@@ -4,34 +4,33 @@ collusion:
   rpcport: 6789
   username: juzhen
   password: cbft@juzix123!
-  nodekey: e9d3a50c23d85fda8548381a7e1abc1efd708172feb1eb0ea624ca2519990a5b
-  url: http://192.168.9.205:6789
-- host: 192.168.9.202
-  port: 16789
   rpcport: 6789
   username: juzhen
   password: cbft@juzix123!
-  nodekey: 79b4293c1291f7ad728bef3e878b1134e12e994f27869a27aef11b365f7bda67
+  nodekey: 872f560105c1bc7f4b64311412e06111a2583d7170fa264249c6f5949a0585ee
   url: http://192.168.9.202:6789
+  id: 3bd9849ade4db7d95f8cc3a4429f80535346883fd0ed743e30f72e7dac2baed494b66b1e5bdcd941a5ecbce42382ab4cba7a1d2e815a089798d7cfb02ad2e8d5
+=======
+  nodekey: 2d16fc0d46184ba896973e3476451778c65c459150ddf05a307342642b8b014a
+  url: http://192.168.9.202:6789
+  id: 2923b2745bc7571825aa1338863b4490b6efef42e185eb7e54fc7db1267ad8f3123a564cde5a9fa7aaf9d7b8b0cf28db4207b63148eec0b0cbaccdd713fe76ec
+>>>>>>> origin/master
 - host: 192.168.9.203
   port: 16789
   rpcport: 6789
   username: juzhen
   password: cbft@juzix123!
-  nodekey: 1e2bfdeff87a0660405ed8a7ca4df5917e63d41f11fd28e3ba4c2454c56d12ee
+  nodekey: 4300f926bd895dc200e244211ffe5e1215935935547791c36703469d67d58183
   url: http://192.168.9.203:6789
+  id: 550e214bbe2e0bad4cba9cf9da61f0656227639dcb14e98fe51ae5221d183ba24127c1b3179dc5b26455f71f4e7bc70d88f822bd02df17b57258e47451beaf93
 - host: 192.168.9.204
   port: 16789
   rpcport: 6789
   username: juzhen
   password: cbft@juzix123!
-  nodekey: 2b500ec6c7bc964bab730df27c3daa2f788be7b0969cd0ecd2be9d22d66b516f
-  url: http://192.168.9.204:6789
-nocollusion:
-- host: 192.168.112.205
   port: 16788
   rpcport: 6788
   username: juzhen
-  password: cbft@juzix123!
-  nodekey: a1489b6c63913243b71f6c7f0c8e69c5d8c699fdfdbfad33541c0fa30fff45f0
+  nodekey: 51932f67ef5101f407effb17c252e389860d53641ff64070bb6d998b29983a38
   url: http://192.168.112.205:6788
+  id: 087b413e5a64c102747779d609cd29de03b723c117a5c6742f2aed4a53d6f92ff1d91fb06338301d8f035885d6ba817bb6432dc2375d7186321c8a6ebb6f6c2c

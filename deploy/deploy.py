@@ -320,6 +320,18 @@ class BaseDeploy:
             self.deploy_path, port)
         sftp.put(genesis_file, remote_genesis_path)
 
+    def upload_config_json(self, sftp, port, config_file):
+        """
+        上传genesis.json
+        :param sftp:
+        :param port:
+        :param genesis_file:
+        :return:
+        """
+        remote_config_path = '{}/node-{}/config.json'.format(
+            self.deploy_path, port)
+        sftp.put(config_file, remote_config_path)
+
     def upload_cbft_json(self, sftp, port):
         """
         上传cbft.json
@@ -706,6 +718,7 @@ class BaseDeploy:
         password = nodedict["password"]
         mpcactor = nodedict.get("mpcactor", None)
         vcactor = nodedict.get("vcactor", None)
+        ppos = nodedict.get("ppos", None)
         url = nodedict["url"]
         ssh, sftp, t = connect_linux(ip, username, password, sshport)
         if clean or is_init:
@@ -742,6 +755,7 @@ class AutoDeployPlaton(BaseDeploy):
             cbft=conf.CBFT,
             keystore=conf.KEYSTORE,
             genesis=conf.GENESIS_TEMPLATE,
+            config=conf.PPOS_CONFIG_PATH,
             deploy_path=conf.DEPLOY_PATH,
             net_type=None,
             syncmode="full",
@@ -754,6 +768,7 @@ class AutoDeployPlaton(BaseDeploy):
         self.sup_template = sup_template
         self.sup_tmp = sup_tmp
         self.is_metrics = is_metrics
+        self.config = config
         if self.is_metrics:
             import requests
             url = "http://10.10.8.16:8086/query"
@@ -908,10 +923,12 @@ class AutoDeployPlaton(BaseDeploy):
                 cmd = cmd + " --gcmode archive --nodekey " + \
                     node["path"] + \
                     "{}/{}/data/nodekey".format(self.deploy_path, node_name)
+                cmd = cmd + " --config {}/{}/config.json".format (self.deploy_path, node_name)
             else:
                 cmd = cmd + " --gcmode archive --nodekey " + \
                     "{}/{}/{}/data/nodekey".format(pwd,
                                                    self.deploy_path, node_name)
+                cmd = cmd + " --config {}/{}/{}/config.json".format (pwd,self.deploy_path, node_name)
             fp.write("command=" + cmd + "\n")
             fp.write("environment=LD_LIBRARY_PATH={}/mpclib\n".format(pwd))
             fp.write("numprocs=1\n")
@@ -1005,6 +1022,7 @@ class AutoDeployPlaton(BaseDeploy):
             self.clean_blockchain(ssh, port, password)
         self.clean_log(ssh, port)
         self.upload_platon(ssh, sftp, port)
+        self.upload_config_json (sftp, port, self.config)
         if is_init:
             if genesis_file is None:
                 raise Exception("需要初始化时，genesis_file不能为空")
