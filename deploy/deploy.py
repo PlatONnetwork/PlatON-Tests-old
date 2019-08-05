@@ -1204,5 +1204,11 @@ class AutoDeployPlaton(BaseDeploy):
 if __name__ == "__main__":
     s = AutoDeployPlaton()
     # s.deploy_default_yml(abspath("./deploy/node/25_cbft.yml"))
+<<<<<<< Updated upstream
     # s.kill_of_yaml(abspath("./deploy/node/cbft_4.yml"))
     s.start_all_node(abspath("./deploy/node/cbft_4.yml"))
+=======
+    # s.kill_of_yaml(abspath("./deploy/node/ppos_7.yml"))
+    s.start_all_node(abspath("./deploy/node/ppos_7.yml"))
+
+>>>>>>> Stashed changes

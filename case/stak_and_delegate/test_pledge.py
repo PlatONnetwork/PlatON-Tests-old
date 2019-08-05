@@ -104,15 +104,13 @@ class TestPledge():
             StakingAddress = node_info.get("StakingAddress")
             StakingAddress = ( Web3.toChecksumAddress(StakingAddress))
             assert StakingAddress == self.address,"内置钱包地址错误{}".format(StakingAddress)
-        # print(recive)
-        # print(nodeid_list)
-        assert nodeid_list == nodeid_list, "正常的nodeID列表{},异常的nodeID列表{}".format(nodeid_list,recive_list)
+        assert recive_list == nodeid_list, "正常的nodeID列表{},异常的nodeID列表{}".format(nodeid_list,recive_list)
 
     def test_initial_cannot_entrust(self):
         """
         用例id 56 初始验证人不能接受委托
         """
-        msg = self.ppos_link.delegate(typ = 1,nodeId=self.nodeid_list[0],amount=50)
+        msg = self.ppos_link.delegate(typ = 0,nodeId=self.nodeid_list[0],amount=50)
         assert msg.get("Status") == False ,"返回状态错误"
         assert msg.get("ErrMsg") == 'This candidate is not allow to delegate',"返回提示语错误"
 
@@ -122,8 +120,8 @@ class TestPledge():
         """
         msg = self.ppos_link.addStaking(nodeId=self.nodeid_list[0],typ=0,amount=1000)
         print(msg)
-        assert msg.get("Status") == True
-        assert msg.get("ErrMsg") == 'ok'
+        assert msg.get("Status") == True ,"返回状态错误"
+        assert msg.get("ErrMsg") == 'ok',"返回消错误"
 
     def test_initial_quit(self):
         """
@@ -132,8 +130,8 @@ class TestPledge():
         msg = self.ppos_link.unStaking(self.nodeid_list[0])
         print(msg)
         print(self.nodeid_list[0])
-        assert msg.get("Status") ==True
-        assert msg.get("ErrMsg") == 'ok'
+        assert msg.get("Status") ==True ,"返回状态错误"
+        assert msg.get("ErrMsg") == 'ok',"返回消错误"
         """暂时没配置参数所以还要调整"""
         time.sleep(2)
         node_list = self.getCandidateList()
@@ -153,7 +151,7 @@ class TestPledge():
         msg = self.ppos_noconsensus_1.createStaking(0, benifitAddress,
                                            nodeId,self.externalId,self.nodeName, self.website, self.details,amount,self.programVersion)
         print(msg)
-        assert msg.get("Status") ==False
+        assert msg.get("Status") ==False ,"返回状态错误"
         assert msg.get("ErrMsg") == "Staking deposit too low"
 
     def test_staking(self):
@@ -166,8 +164,8 @@ class TestPledge():
                                            nodeId,self.externalId,self.nodeName, self.website,self.details,
                                                     self.amount,self.programVersion)
         print(msg)
-        assert msg.get("Status") ==True
-        assert msg.get("ErrMsg") == 'ok'
+        assert msg.get("Status") ==True ,"返回状态错误"
+        assert msg.get("ErrMsg") == 'ok',"返回消错误"
         """暂时没配置参数所以还要调整"""
         ##查看实时验证人信息
         time.sleep(5)
@@ -185,7 +183,7 @@ class TestPledge():
         nodeId = conf.illegal_nodeID
         msg = self.ppos_noconsensus_1.addStaking(nodeId=nodeId, typ=0, amount=100)
         # print(msg)
-        assert msg.get("Status") == False
+        assert msg.get("Status") == False ,"返回状态错误"
         assert msg.get("ErrMsg") == 'This candidate is not exist'
 
     def test_illegal_pledge(self):
@@ -197,8 +195,8 @@ class TestPledge():
         msg = self.ppos_noconsensus_2.createStaking(0, benifitAddress,self.illegal_nodeID,self.externalId,
                                            self.nodeName, self.website, self.details,self.amount,self.programVersion)
         print(msg)
-        assert msg.get("Status") ==True
-        assert msg.get("ErrMsg") == 'ok'
+        assert msg.get("Status") ==True ,"返回状态错误"
+        assert msg.get("ErrMsg") == 'ok',"返回消错误"
 
     @pytest.mark.parametrize('amount', [(100),(10000000),(1000000)])
     def test_add_staking(self,amount):
@@ -210,8 +208,8 @@ class TestPledge():
         log.info("分别验证增持100，10000000，1000000")
         msg = self.ppos_noconsensus_1.addStaking(nodeId,typ=0,amount=amount)
         print(msg)
-        assert msg.get("Status") == True
-        assert msg.get("ErrMsg") == 'ok'
+        assert msg.get("Status") == True ,"返回状态错误"
+        assert msg.get("ErrMsg") == 'ok',"返回消错误"
 
     def test_getCandidateInfo(self):
         """
@@ -237,8 +235,8 @@ class TestPledge():
         details = "node_1"
         msg = self.ppos_noconsensus_1.updateStakingInfo(self.account_list[0], self.nodeid_list2[0],
                                                         externalId, nodeName, website, details)
-        assert msg.get("Status") ==True
-        assert msg.get("ErrMsg") == 'ok'
+        assert msg.get("Status") ==True ,"返回状态错误"
+        assert msg.get("ErrMsg") == 'ok',"返回消错误"
         msg = self.ppos_noconsensus_1.getCandidateInfo(self.nodeid_list2[0])
         print(msg)
         assert msg["Data"]["ExternalId"] == externalId
@@ -250,7 +248,7 @@ class TestPledge():
         """测试增持金额为0"""
         nodeId = self.nodeid_list2[0]
         msg = self.ppos_noconsensus_1.addStaking(nodeId,typ=0,amount=0)
-        assert msg.get("Status") == False
+        assert msg.get("Status") == False ,"返回状态错误"
 
     def test_Insufficient_delegate(self):
         """
@@ -260,7 +258,7 @@ class TestPledge():
         nodeId = self.nodeid_list2[0]
         msg = self.ppos_noconsensus_1.addStaking(nodeId=nodeId,typ=0,amount=amount)
         # print(msg)
-        assert msg.get("Status") == False
+        assert msg.get("Status") == False ,"返回状态错误"
         assert msg.get("ErrMsg") == 'The von of account is not enough'
 
     def test_quit_and_addstaking(self):
@@ -269,14 +267,14 @@ class TestPledge():
         """
         nodeId = self.nodeid_list2[0]
         msg  = self.ppos_noconsensus_1.unStaking(nodeId)
-        assert msg.get("Status") == True
-        assert msg.get("ErrMsg") == 'ok'
+        assert msg.get("Status") == True ,"返回状态错误"
+        assert msg.get("ErrMsg") == 'ok',"返回消错误"
         log.info("{}已经退出验证人.".format(nodeId))
         time.sleep(2)
         node_list = self.getCandidateList()
         assert self.nodeid_list2[0] not in node_list
         msg = self.ppos_noconsensus_1.addStaking(nodeId,typ=0,amount=100)
-        assert msg.get("Status") == True
+        assert msg.get("Status") == True ,"返回状态错误"
         assert msg.get("ErrMsg") == 'This candidate is not exist'
 
 
