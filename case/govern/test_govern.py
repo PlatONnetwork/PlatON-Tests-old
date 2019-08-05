@@ -740,6 +740,7 @@ class TestGovern:
             # result = rpc_link.createStaking(0, new_address, node_id, externalId=self.rand_str,nodeName=self.rand_str,
             #                                 website=self.website, details=self.details,amount=self.staking_amount,value=self.staking_amount,
             #                                 programVersion=cur_version, privatekey=rpc_link.privatekey,gasPrice=self.base_gas_price,gas=self.staking_gas)
+
             result = rpc_link.createStaking(0, new_address, node_id, externalId=self.rand_str, nodeName=self.rand_str,
                                             website=self.website, details=self.details, amount=self.staking_amount,
                                             value=self.staking_amount,

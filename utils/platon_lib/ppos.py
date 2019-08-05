@@ -23,8 +23,7 @@ def get_sleep_time(number):
         return total_time - number + i
 
 class Ppos:
-    def __init__(self, url, address, chainid,
-                 privatekey=conf.PRIVATE_KEY):
+    def __init__(self, url, address, chainid=101,privatekey=conf.PRIVATE_KEY):
         self.web3 = connect_web3(url)
         if not self.web3.isConnected():
             raise Exception("node connection failed")
@@ -119,7 +118,7 @@ class Ppos:
             gas = self.eth.estimateGas (transactiondict)
         result = self.send_raw_transaction(data, from_address, to_address, gasPrice,gas,value,privatekey)
         print(result)
-        return self.get_result(result, self.createStaking.__name__)
+        return self.get_result(result)
 
     def updateStakingInfo(self, benifitAddress, nodeId,externalId, nodeName, website, details,privatekey,
                 from_address=None, gasPrice=None , gas=None):
@@ -365,6 +364,22 @@ class Ppos:
         recive = str(recive, encoding="utf8")
         recive = recive.replace('\\','').replace('"[','[').replace(']"',']')
         recive = json.loads(recive)
+        return recive
+
+    def getActiveVersion(self):
+        """
+        查询节点的链生效版本
+        """
+        data = rlp.encode([rlp.encode(int(2103))])
+        to_address = "0x1000000000000000000000000000000000000005"
+        recive = self.eth.call({
+            "from": self.address,
+            "to": to_address,
+            "data": data
+        })
+        recive = str(recive, encoding="utf8")
+        recive = json.loads(recive)
+        # print(recive)
         return recive
 
     def getDelegateListByAddr(self,addr):
