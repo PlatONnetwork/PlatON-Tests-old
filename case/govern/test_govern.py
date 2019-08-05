@@ -737,9 +737,14 @@ class TestGovern:
             log.info('质押开始：节点ID={}-钱包{}未质押过，需要进行质押'.format(node_id, new_address))
 
             # 进行质押
-            result = rpc_link.createStaking(0, new_address, node_id, externalId=self.rand_str,nodeName=self.rand_str,
-                                            website=self.website, details=self.details,amount=self.staking_amount,value=self.staking_amount,
-                                            programVersion=cur_version, privatekey=rpc_link.privatekey,gasPrice=self.base_gas_price,gas=self.staking_gas)
+            # result = rpc_link.createStaking(0, new_address, node_id, externalId=self.rand_str,nodeName=self.rand_str,
+            #                                 website=self.website, details=self.details,amount=self.staking_amount,value=self.staking_amount,
+            #                                 programVersion=cur_version, privatekey=rpc_link.privatekey,gasPrice=self.base_gas_price,gas=self.staking_gas)
+            result = rpc_link.createStaking(0, new_address, node_id, externalId=self.rand_str, nodeName=self.rand_str,
+                                            website=self.website, details=self.details, amount=self.staking_amount,
+                                            value=self.staking_amount,
+                                            programVersion=cur_version, privatekey=rpc_link.privatekey,from_address=self.address,
+                                            gasPrice=self.base_gas_price, gas=self.staking_gas)
 
             log.info('质押结束：节点ID={}-钱包{}未质押过，需要进行质押'.format(node_id, new_address))
             log.info('质押后返回的结果为：{}'.format(result))

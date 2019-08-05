@@ -308,20 +308,3 @@ class GovernUtil:
                                (block_number + interval +self.conse_size * (M - 1) - 20,block_number + interval +self.conse_size * (M - 1) + (M - 1 + 5) * self.conse_size),
                                (block_number + interval +self.conse_size * M - 20,block_number + interval +self.conse_size * M + (M + 5) * self.conse_size)]
         return end_number_list
-
-# if  __name__=='__main__':
-#     rpc_url='http://192.168.120.121:6789'
-#
-#     # address='0xdB245C0ebbCa84395c98c3b2607863cA36ABBD79'
-#     # private_key='b735b2d48e5f6e1dc897081f8655fdbb376ece5b2b648c55eee72c38102a0357'
-#
-#     link_1 = Ppos(rpc_url, Web3.toChecksumAddress('0x493301712671Ada506ba6Ca7891F436D29185821'))
-#         # ,
-#         #           chainid=101,privatekey='0xa11859ce23effc663a9460e332ca09bd812acc390497f8dc7542b6938e13f8d7')
-#
-#     # 当前版本号
-#     version = OperateVersion(link_1,flag=None)
-#
-#     cur_version = version.get_version()
-#
-#     print('cur_version={}'.format(cur_version))
