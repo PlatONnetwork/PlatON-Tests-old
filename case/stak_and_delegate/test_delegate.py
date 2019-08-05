@@ -48,25 +48,20 @@ class TestDelegate():
     amount = 1000000
     programVersion = 1792
     illegal_nodeID = conf.illegal_nodeID
+    chainid = 101
 
 
     def setup_class(self):
-        """
-        ppos_noconsensus_1   质押 self.account_list[0]  self.nodeid_list2[0]
-	    ppos_noconsensus_2   委托的钱包用self.account_list[1]
-	    ppos_noconsensus_3   质押 self.account_list[2]  self.nodeid_list2[2]
-	    ppos_noconsensus_4   委托的钱包用self.account_list[3]
-        """
         self.ppos_link = Ppos(
-            self.rpc_list[0], self.address)
+            self.rpc_list[0],self.address,self.chainid)
         self.w3_list = [connect_web3(url) for url in self.rpc_list]
         """用新的钱包地址和未质押过的节点id封装对象"""
-        self.ppos_noconsensus_1 = Ppos(self.rpc_list[0], self.account_list[0], privatekey= self.privatekey_list[0])
-        self.ppos_noconsensus_2 = Ppos(self.rpc_list[0], self.account_list[1], privatekey=self.privatekey_list[1])
-        self.ppos_noconsensus_3 = Ppos(self.rpc_list[0], self.account_list[2], privatekey=self.privatekey_list[2])
-        self.ppos_noconsensus_4 = Ppos(self.rpc_list[0], self.account_list[3], privatekey=self.privatekey_list[3])
-        self.ppos_noconsensus_5 = Ppos(self.rpc_list[0], self.account_list[4], privatekey=self.privatekey_list[4])
-        self.ppos_noconsensus_6 = Ppos(self.rpc_list[0], self.account_list[5], privatekey=self.privatekey_list[5])
+        self.ppos_noconsensus_1 = Ppos(self.rpc_list[0], self.account_list[0],self.chainid,privatekey=self.privatekey_list[0])
+        self.ppos_noconsensus_2 = Ppos(self.rpc_list[0], self.account_list[1],self.chainid,privatekey=self.privatekey_list[1])
+        self.ppos_noconsensus_3 = Ppos(self.rpc_list[0], self.account_list[2],self.chainid,privatekey=self.privatekey_list[2])
+        self.ppos_noconsensus_4 = Ppos(self.rpc_list[0], self.account_list[3],self.chainid,privatekey=self.privatekey_list[3])
+        self.ppos_noconsensus_5 = Ppos(self.rpc_list[0], self.account_list[4],self.chainid,privatekey=self.privatekey_list[4])
+        self.ppos_noconsensus_6 = Ppos(self.rpc_list[0], self.account_list[5],self.chainid,privatekey=self.privatekey_list[5])
         for to_account in self.account_list:
             self.transaction(self.w3_list[0],self.address,to_account)
         self.eth = Eth(self.w3_list[0])
