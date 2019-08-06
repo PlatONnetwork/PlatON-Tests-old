@@ -2,35 +2,73 @@ collusion:
 - host: 192.168.9.205
   port: 16789
   rpcport: 6789
+  sshport: 22
   username: juzhen
   password: cbft@juzix123!
+<<<<<<< Updated upstream
+=======
+  nodekey: 0f552d45c5c14a0661211047ba587cdfbb8e4a45f1d3309ee51f52cf44bb14f4
+  url: http://192.168.9.205:6789
+  id: a28b52294324f17a8e5e15da2c1562494303d694a9ac6ca02c2ae78fd93af69bb454a711883c23d9a96e38b88e389fbb6225fc6578cb22b4905520c8fbd000c3
+- host: 192.168.9.202
+  port: 16789
+>>>>>>> Stashed changes
   rpcport: 6789
+  sshport: 22
   username: juzhen
   password: cbft@juzix123!
-  nodekey: 872f560105c1bc7f4b64311412e06111a2583d7170fa264249c6f5949a0585ee
+  nodekey: 52812f3092c5c717b1408f0c200eda541b937163bdbf013cf2d967d6c67c43d4
   url: http://192.168.9.202:6789
+<<<<<<< Updated upstream
   id: 3bd9849ade4db7d95f8cc3a4429f80535346883fd0ed743e30f72e7dac2baed494b66b1e5bdcd941a5ecbce42382ab4cba7a1d2e815a089798d7cfb02ad2e8d5
 =======
   nodekey: 2d16fc0d46184ba896973e3476451778c65c459150ddf05a307342642b8b014a
   url: http://192.168.9.202:6789
   id: 2923b2745bc7571825aa1338863b4490b6efef42e185eb7e54fc7db1267ad8f3123a564cde5a9fa7aaf9d7b8b0cf28db4207b63148eec0b0cbaccdd713fe76ec
 >>>>>>> origin/master
+=======
+  id: 6af32b903ab03b2a5096a75b4d2a11edb787bcf7537cc2f41df3f1e06cbbb2389d790f5d9840fb4434c0639f10e26cccfe3b90dfe6cfa6c4eba077b04094b0f5
+>>>>>>> Stashed changes
 - host: 192.168.9.203
   port: 16789
   rpcport: 6789
+  sshport: 22
   username: juzhen
   password: cbft@juzix123!
+<<<<<<< Updated upstream
   nodekey: 4300f926bd895dc200e244211ffe5e1215935935547791c36703469d67d58183
   url: http://192.168.9.203:6789
   id: 550e214bbe2e0bad4cba9cf9da61f0656227639dcb14e98fe51ae5221d183ba24127c1b3179dc5b26455f71f4e7bc70d88f822bd02df17b57258e47451beaf93
+=======
+  nodekey: f5e2e011544d9669cdbcb4b6c287ac3c67e095a6ef4ac2b24d57714111ce008c
+  url: http://192.168.9.203:6789
+  id: 02baec9f3977d91ce068731239b519633b8e6ca916ec96e3d1ba98034d7c8845bae72e9e914e6576b83c85bb938c4f4785cb567ba9dcdb8067a663d1d1981edc
+>>>>>>> Stashed changes
 - host: 192.168.9.204
   port: 16789
   rpcport: 6789
+  sshport: 22
   username: juzhen
   password: cbft@juzix123!
+<<<<<<< Updated upstream
+=======
+  nodekey: c664c3292f79ec3d3204631c363a2eff4b5daf31599d9dc34f005e340fff0a11
+  url: http://192.168.9.204:6789
+  id: e008e437096d98189566acbfc0e53846a790de0a47fc269010ab9b692dcebdc07d2981718aef000079750e124a478efb7a408d8cb1ae768d85f2071095461128
+nocollusion:
+- host: 192.168.112.205
+>>>>>>> Stashed changes
   port: 16788
   rpcport: 6788
+  sshport: 22
   username: juzhen
+<<<<<<< Updated upstream
   nodekey: 51932f67ef5101f407effb17c252e389860d53641ff64070bb6d998b29983a38
   url: http://192.168.112.205:6788
   id: 087b413e5a64c102747779d609cd29de03b723c117a5c6742f2aed4a53d6f92ff1d91fb06338301d8f035885d6ba817bb6432dc2375d7186321c8a6ebb6f6c2c
+=======
+  password: cbft@juzix123!
+  nodekey: 97b735c11467909c841c0c3f05b90bdbba9f400628f750f4b57e9c0e0040c88f
+  url: http://192.168.112.205:6788
+  id: 4d28d44b24e02fa861447aed0c7c2c4a01165d69c7a00a895f20c6a7067757fbc6a0bcc6d75968bda5947b47b785a6e37e3ff901059f52620113458504d2656b
+>>>>>>> Stashed changes
