@@ -2,12 +2,15 @@
 
 
 import random
-
+import time
 from client_sdk_python import Web3
 from utils.platon_lib.ppos import Ppos
+from common import log
 from conf import  setting as conf
 from common.load_file import LoadFile, get_node_info,get_node_list
 from deploy.deploy import AutoDeployPlaton
+from common.connect import connect_web3
+
 import json
 
 class CommonMethod():
@@ -23,43 +26,40 @@ class CommonMethod():
     transfer_gasPrice = Web3.toWei (1, 'ether')
     transfer_gas = 210000000
     value = 1000
+    time_interval = 10
+    ConsensusSize = 50
+    chainid = 101
 
-    def ppos_link(self, url=None, address=conf.ADDRESS, privatekey=conf.PRIVATE_KEY):
-        if url is None:
-            node_info = get_node_info (self.node_yml_path)
-            self.rpc_list, enode_list, self.nodeid_list, ip_list, port_list = node_info.get (
-                'collusion')
-            rpc_list_length = len (self.rpc_list)
-            index = random.randint (0, rpc_list_length - 1)
-            url = self.rpc_list[index]
-        self.platon_ppos = Ppos (url, address=address, chainid=101,
-                                 privatekey=privatekey)
-        return self.platon_ppos
+    def link_list(self):
+        rpc_lastlist = []
+        node_info = get_node_info (self.node_yml_path)
+        self.rpc_list, enode_list, self.nodeid_list, ip_list, port_list = node_info.get (
+            'collusion')
+        for i in self.rpc_list:
+            self.web3 = connect_web3 (i)
+            if self.web3.isConnected():
+                rpc_lastlist.append(i)
+        log.info("目前可连接节点列表:{}".format(rpc_lastlist))
+        index = random.randint (0, len(rpc_lastlist) - 1)
+        url = rpc_lastlist[index]
+        log.info("当前连接节点：{}".format(url))
+        return url
 
+    def get_block_number(self):
+        url = CommonMethod.link_list (self)
+        platon_ppos = Ppos (url, self.address, self.chainid)
+        current_block = platon_ppos.eth.blockNumber
+        differ_block = self.ConsensusSize - (current_block % self.ConsensusSize)
+        current_end_block = current_block + differ_block
+        log.info ('当前块高：{} ，当前共识轮最后一个块高：{}'.format (current_block,current_block + differ_block))
 
-    def ppos_Girokonto(self, to_address, from_address, private_key, value):
-        platon_ppos = self.ppos_link ()
-
-        result = platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (from_address),
-                                                   Web3.toChecksumAddress (to_address), self.transfer_gasPrice,
-                                                   self.transfer_gas, value,
-                                                   private_key)
-        print (result)
-
-
-    def ppos_sendTransaction(self, to_address, from_address, value):
-        platon_ppos = self.ppos_link ()
-        platon_ppos.web3.personal.unlockAccount (conf.ADDRESS, conf.PASSWORD, 2222)
-
-        self.send_data = {
-            "to": to_address,
-            "from": from_address,
-            "gas": self.transfer_gas,
-            "gasPrice": self.transfer_gasPrice,
-            "value": value,
-        }
-        tx_hash = platon_ppos.eth.sendTransaction (self.send_data)
-        self.platon_ppos.eth.waitForTransactionReceipt (tx_hash)
+        while 1:
+            time.sleep (self.time_interval)
+            current_block = platon_ppos.eth.blockNumber
+            differ_block = self.ConsensusSize - (current_block % self.ConsensusSize)
+            log.info ('当前块高度：{}，还差块高：{}'.format ((current_block),differ_block))
+            if current_block > current_end_block :
+                break
 
 
     def read_out_nodeId(self, code):
@@ -78,7 +78,7 @@ class CommonMethod():
         # print(self.nodeid_list)
 
 
-    def update_config(key1, key2, key3=None, value=None,file = conf.PPOS_CONFIG_PATH):
+    def update_config(self,key1, key2, key3=None, value=None,file = conf.PPOS_CONFIG_PATH):
         data = LoadFile (file).get_data ()
         if key3 == None:
             data[key1][key2] = value
@@ -96,3 +96,9 @@ class CommonMethod():
             index = random.randrange (1, len (private_key_list) - 1)  # 生成随机行数
             address, private_key = private_key_list[index].split (',')
         return address, private_key
+
+
+if __name__ == '__main__':
+    a = CommonMethod()
+    #a.get_block_number()
+    a.link_list()
