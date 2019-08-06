@@ -40,7 +40,7 @@ class TestLockeDpositionConfig:
                       'DEVELOPERS': 5000000000000000000000000
                       }
     def test(self):
-        CommonMethod.update_config('EconomicModel','Staking','StakeThreshold',1000)
+        CommonMethod.update_config('EconomicModel','Common','StakeThreshold',1000)
         self.auto = AutoDeployPlaton ()
         self.auto.start_all_node (self.node_yml_path)
 

@@ -412,15 +412,15 @@ class TestLockeDposition:
             lockup_after = platon_ppos.eth.getBalance (conf.FOUNDATIONLOCKUPADDRESS)
             RestrictingInfo = platon_ppos.GetRestrictingInfo (address1)
             assert RestrictingInfo['status'] == False, "查询锁仓计划返回的状态：{},用例失败".format (result['status'])
-            assert RestrictingInfo['Data']['balance'] == loukupbalace
 
             #委托金额小于锁仓金额发起委托
             staking_befor = platon_ppos.eth.getBalance (conf.STAKINGADDRESS)
             if Web3.toWei (amount, 'ether') < loukupbalace:
                 platon_ppos1 = Ppos (url, self.address, self.chainid)
                 nodeId = CommonMethod.read_out_nodeId ('collusion')
-                delegate_info = platon_ppos1.delegate(1,nodeId,amount)
-                assert delegate_info['status'] == True, "查询锁仓计划返回的状态：{},用例失败".format (result['status'])                                #质押账户余额增加
+                delegate_info = platon_ppos1.delegate (1,nodeId, amount,private_key1,address1)
+                assert delegate_info['status'] == True, "查询锁仓计划返回的状态：{},用例失败".format (result['status'])
+                #质押账户余额增加
                 staking_after = platon_ppos1.eth.getBalance(conf.STAKINGADDRESS)
                 assert staking_after == staking_befor +Web3.toWei (amount, 'ether'),"质押账户余额：{}".format(staking_after)
                 #锁仓合约地址余额减少
@@ -430,64 +430,69 @@ class TestLockeDposition:
             elif Web3.toWei (amount, 'ether') >= loukupbalace:
                 platon_ppos1 = Ppos (url, self.address, self.chainid)
                 nodeId = CommonMethod.read_out_nodeId ('collusion')
-                delegate_info = platon_ppos1.delegate (1,nodeId, amount)
+                delegate_info = platon_ppos1.delegate (1,nodeId, amount,private_key1,address1)
                 assert delegate_info['status'] == 'False'
 
             else:
                 log.info ("委托金额:{}输入有误".format (amount))
-        except:
+        else:
             status = 1
-            assert status == 0, '用例执行失败'
+            assert status == 0, '转账失败'
 
-    @pytest.mark.parametrize ('code,', [(1), (2)])
-    def test_morelockup_entrust(self, code):
+    @pytest.mark.parametrize ('status,', [(1), (2)])
+    def test_morelockup_entrust(self, status):
         '''
         验证锁仓账户和释放到账账户为不同时锁仓委托扣费情况
         code：1、锁仓账户有余额支付委托手续费。2、锁仓账户没有余额支付委托手续费
         :return:
         '''
-        platon_ppos = Ppos ('http://10.10.8.157:6789', self.address, chainid=102,
-                            privatekey=conf.PRIVATE_KEY)
-        # platon_ppos = CommonMethod.ppos_link ()
+        url = CommonMethod.link_list (self)
+        platon_ppos = Ppos (url, self.address, self.chainid)
         address1, private_key1 = CommonMethod.read_private_key_list ()
         address2, private_key2 = CommonMethod.read_private_key_list ()
-        # 非签名转账
-        self.ppos_sendTransaction (address1, self.address, 1000)
         # 签名转账
-        # self.ppos_Girokonto(address1,self.address,self.privatekey,10000000)
-        # platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
-        #                                   Web3.toChecksumAddress (address1), self.gasPrice, self.gas, 10000000,
-        #                                   conf.PRIVATE_KEY)
-        balance = platon_ppos.eth.getBalance (address1)
-        log.info ("发起锁仓账户余额:{}".format (balance))
-        if balance == Web3.toWei (1000, 'ether'):
-            try:
-                loukupbalace = Web3.toWei (900, 'ether')
-                plan = [{'Epoch': 1, 'Amount': loukupbalace}]
-                # 创建锁仓计划
-                result = platon_ppos.CreateRestrictingPlan (address2, plan, private_key1,
-                                                            from_address=address1, gasPrice=self.gasPrice)
-                if result['status'] == 'True':
-                    log.info ("发起锁仓账户余额:{}".format (balance))
-                    RestrictingInfo = platon_ppos.GetRestrictingInfo (address2)
-                    if RestrictingInfo['status'] == 'True':
-                        assert RestrictingInfo['Data']['balance'] == loukupbalace
-                if code == 1:
-                    CommonMethod.ppos_Girokonto (address2, self.address, self.privatekey, 100)
-                    # 锁仓账号发起质押
-                    nodeId = CommonMethod.read_out_nodeId ('collusion')
-                    platon_ppos1 = CommonMethod.ppos_link (None, address1, private_key1)
-                    delegate_info = platon_ppos1.delegate (1, nodeId, 500)
-                    assert delegate_info['status'] == 'True'
+        result = platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
+                                                   Web3.toChecksumAddress (address1),
+                                                   self.transfer_gasPrice, self.gas, self.value, conf.PRIVATE_KEY)
+        return_info = platon_ppos.eth.waitForTransactionReceipt (result)
 
-                if code == 2:
+        if return_info is not None:
+            # 创建锁仓计划
+            balance = platon_ppos.eth.getBalance (address1)
+            log.info ("发起锁仓账户余额:{}".format (balance))
+            loukupbalace = Web3.toWei (900, 'ether')
+            plan = [{'Epoch': 1, 'Amount': loukupbalace}]
+            result = platon_ppos.CreateRestrictingPlan (address2, plan, private_key1,
+                                                        from_address=address1, gasPrice=self.gasPrice)
+            assert result['status'] == True, "创建锁仓计划返回的状态：{},用例失败".format (result['status'])
+            RestrictingInfo = platon_ppos.GetRestrictingInfo (address2)
+            assert RestrictingInfo['status'] == True, "查询锁仓计划返回的状态：{},用例失败".format (result['status'])
+
+            # 锁仓账号发起委托
+            if status == 1:
+                # 签名转账
+                result = platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
+                                                           Web3.toChecksumAddress (address1),
+                                                           self.transfer_gasPrice, self.gas, self.value,
+                                                           conf.PRIVATE_KEY)
+                return_info = platon_ppos.eth.waitForTransactionReceipt (result)
+                if return_info is not None:
                     nodeId = CommonMethod.read_out_nodeId ('collusion')
-                    platon_ppos1 = CommonMethod.ppos_link (None, address1, private_key1)
-                    delegate_info = platon_ppos1.delegate (1, nodeId, 500)
-                    assert delegate_info['status'] == 'False'
-            except:
-                status = 1
-                assert status == 0, '用例执行失败'
+                    platon_ppos1 = Ppos (url, self.address, self.chainid)
+                    delegate_info = platon_ppos1.delegate (1, nodeId, 500,private_key2,address2)
+                    assert delegate_info['status'] == True, "申请委托返回的状态：{},用例失败".format (result['status'])
+                else:
+                    status = 1
+                    assert status == 0, '转账失败'
+
+            if status == 2:
+                nodeId = CommonMethod.read_out_nodeId ('collusion')
+                platon_ppos1 = CommonMethod.ppos_link (None, address1, private_key1)
+                delegate_info = platon_ppos1.delegate (1, nodeId, 500)
+                assert delegate_info['status'] == 'False'
+        else:
+            status = 1
+            assert status == 0, '用例执行失败'
 
 
     # def test_loukupplan_amount(self):
