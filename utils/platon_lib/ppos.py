@@ -565,7 +565,7 @@ class Ppos:
         result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0, privatekey)
         return self.get_result(result)
 
-    def vote(self,verifier,proposalID,option,programVersion,privatekey=None,from_address=None, gasPrice=None , gas=None):
+    def vote(self, verifier, proposalID, option, programVersion, from_address=None, gasPrice=None, gas=None,privatekey=None):
         '''
         给提案投票
         :param verifier: 64bytes
@@ -576,21 +576,21 @@ class Ppos:
         :param gas:
         :return:
         '''
-        to_address = "0x1000000000000000000000000000000000000005"
-
-        data = rlp.encode([rlp.encode(int(2003)),rlp.encode(bytes.fromhex(verifier)),
-                           rlp.encode(int(programVersion)),
-                           rlp.encode(proposalID),rlp.encode(option)])
+        print(proposalID)
+        if proposalID[:2] == '0x':
+            proposalID = proposalID[2:]
+        data = rlp.encode([rlp.encode(int(2003)), rlp.encode(bytes.fromhex(verifier)),
+                           rlp.encode(bytes.fromhex(proposalID)), rlp.encode(option), rlp.encode(int(programVersion))])
         if not privatekey:
             privatekey = self.privatekey
         if not from_address:
             from_address = self.address
-        if not gasPrice :
+        if not gasPrice:
             gasPrice = self.gasPrice
         if not gas:
-            transactiondict = {"to": to_address, "data": data}
-            gas = self.eth.estimateGas (transactiondict)
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0, privatekey)
+            gas = self.gas
+        to_address = "0x1000000000000000000000000000000000000005"
+        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0,privatekey)
         return self.get_result(result)
 
     def declareVersion(self,activeNode,version,privatekey=None,from_address=None, gasPrice=None , gas=None):
