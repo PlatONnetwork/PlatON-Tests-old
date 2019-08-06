@@ -7,7 +7,7 @@ import allure
 import pytest
 from client_sdk_python import Web3
 from common.connect import connect_web3
-from utils.platon_lib.ppos import Ppos
+from utils.platon_lib.ppos_wyq import Ppos
 from conf import  setting as conf
 from common.load_file import LoadFile, get_node_info
 from common import log
@@ -16,6 +16,10 @@ from client_sdk_python.personal import (
     Personal,
 )
 from client_sdk_python.eth import Eth
+from client_sdk_python.admin import Admin
+from hexbytes import HexBytes
+
+
 
 """每轮230个块确认验证人"""
 def get_sleep_time(number):
@@ -48,8 +52,11 @@ class TestPledge():
     amount = 1000000
     programVersion = 1792
     illegal_nodeID = conf.illegal_nodeID
+    chainid = 101
 
     def setup_class(self):
+        # self.auto = AutoDeployPlaton()
+        # self.auto.start_all_node(self.node_yml_path)
         self.ppos_link = Ppos(
             self.rpc_list[0],self.address,self.chainid)
         self.w3_list = [connect_web3(url) for url in self.rpc_list]
@@ -60,9 +67,12 @@ class TestPledge():
         self.ppos_noconsensus_4 = Ppos(self.rpc_list[0], self.account_list[3],self.chainid,privatekey=self.privatekey_list[3])
         self.ppos_noconsensus_5 = Ppos(self.rpc_list[0], self.account_list[4],self.chainid,privatekey=self.privatekey_list[4])
         self.ppos_noconsensus_6 = Ppos(self.rpc_list[0], self.account_list[5],self.chainid,privatekey=self.privatekey_list[5])
-        for to_account in self.account_list:
-            self.transaction(self.w3_list[0],self.address,to_account)
+        # for to_account in self.account_list:
+        #     self.transaction(self.w3_list[0],self.address,to_account)
         self.eth = Eth(self.w3_list[0])
+        self.admin = Admin(self.w3_list[0])
+        # for i in self.enode_list2:
+        #     self.admin.addPeer(i)
 
     def transaction(self,w3, from_address, to_address=None, value=1000000000000000000000000000000000,
                     gas=91000000, gasPrice=9000000000):
@@ -76,7 +86,8 @@ class TestPledge():
             'value': value
         }
         tx_hash = w3.eth.sendTransaction(params)
-        return tx_hash
+        result = w3.eth.waitForTransactionReceipt(HexBytes(tx_hash).hex())
+        return result
 
     def getCandidateList(self):
         msg = self.ppos_noconsensus_1.getCandidateList()
@@ -95,15 +106,14 @@ class TestPledge():
         测试验证人参数有效性验证
         """
         recive = self.ppos_link.getVerifierList()
-        recive_list = recive.get("Data")
-        nodeid_list=[]
         # 查看查询当前结算周期的验证人队列
-        for node_info in recive_list:
+        nodeid_list = []
+        for node_info in recive.get("Data"):
             nodeid_list.append(node_info.get("NodeId"))
             StakingAddress = node_info.get("StakingAddress")
             StakingAddress = ( Web3.toChecksumAddress(StakingAddress))
             assert StakingAddress == self.address,"内置钱包地址错误{}".format(StakingAddress)
-        assert recive_list == nodeid_list, "正常的nodeID列表{},异常的nodeID列表{}".format(nodeid_list,recive_list)
+        assert self.nodeid_list == nodeid_list, "正常的nodeID列表{},异常的nodeID列表{}".format(self.nodeid_list,nodeid_list)
 
     def test_initial_cannot_entrust(self):
         """
@@ -111,7 +121,9 @@ class TestPledge():
         """
         msg = self.ppos_link.delegate(typ = 0,nodeId=self.nodeid_list[0],amount=50)
         assert msg.get("Status") == False ,"返回状态错误"
-        assert msg.get("ErrMsg") == 'This candidate is not allow to delegate',"返回提示语错误"
+        print(msg)
+        msg_string = "Delegate failed: Account of Candidate(Validator)  is not allowed to be used for delegating"
+        assert msg.get("ErrMsg") == msg_string,"返回提示语错误"
 
     def test_initial_add_pledge(self):
         """
@@ -166,13 +178,15 @@ class TestPledge():
         assert msg.get("Status") ==True ,"返回状态错误"
         assert msg.get("ErrMsg") == 'ok',"返回消错误"
         """暂时没配置参数所以还要调整"""
-        ##查看实时验证人信息
+        #查看实时验证人信息
         time.sleep(5)
         recive = self.ppos_noconsensus_1.getCandidateList()
         recive_list = recive.get("Data")
         nodeid_list = []
         for node_info in recive_list:
             nodeid_list.append(node_info.get("NodeId"))
+        print(nodeid_list)
+        print(self.nodeid_list2[0])
         assert self.nodeid_list2[0] in nodeid_list,"非初始验证人质押失败"
 
     def test_not_illegal_addstaking(self):
