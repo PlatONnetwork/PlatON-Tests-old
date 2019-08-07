@@ -69,7 +69,7 @@ class CommonMethod():
         node_list_length = len (nodeid_list)
         index = random.randint (0, node_list_length - 1)
         nodeId = nodeid_list[index]
-        print (nodeId)
+        return nodeId
 
 
     def test(self):
@@ -77,8 +77,16 @@ class CommonMethod():
         self.auto.start_all_node (self.node_yml_path)
         # print(self.nodeid_list)
 
+    def query_blockNumber(self):
+        url = CommonMethod.link_list (self)
+        platon_ppos = Ppos (url, self.address, self.chainid)
+        while 1:
+            current_block = platon_ppos.eth.blockNumber
+            time.sleep(10)
+            print(current_block)
 
-    def update_config(self,key1, key2, key3=None, value=None,file = conf.PPOS_CONFIG_PATH):
+
+    def update_config(self,key1, key2, key3=None, value=None,file = conf.PLATON_CONFIG_PATH):
         data = LoadFile (file).get_data ()
         if key3 == None:
             data[key1][key2] = value
@@ -86,7 +94,7 @@ class CommonMethod():
             data[key1][key2][key3] = value
 
         data = json.dumps (data)
-        with open (conf.PPOS_CONFIG_PATH, "w") as f:
+        with open (conf.PLATON_CONFIG_PATH, "w") as f:
             f.write (data)
             f.close ()
 
@@ -101,4 +109,8 @@ class CommonMethod():
 if __name__ == '__main__':
     a = CommonMethod()
     #a.get_block_number()
-    a.link_list()
+    #a.read_out_nodeId('nocollusion')
+    #a.link_list()
+    #a.update_config('EconomicModel','Common','ExpectedMinutes',2)
+    a.test()
+    a.query_blockNumber()
