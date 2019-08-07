@@ -38,7 +38,6 @@
 		"EstHeaderRlpSize":  500,
 		"DefaultTxsCacheSize":20,
 		"DefaultBroadcastInterval":100000000,
-		"Etherbase":	 	 "0x0000000000000000000000000000000000000000",
 		"MinerGasFloor": 	 3150000000,
 		"MinerGasCeil":  	 3150000000,
 		"MinerGasPrice": 	 100000000,
@@ -81,29 +80,6 @@
 		"DocRoot":				  "",
 		"EWASMInterpreter":		  "",
 		"EVMInterpreter":		  "",
-		"MPCPool":{
-			"MPCEnable":   false,
-			"NoLocals":	   false,
-			"Journal":     "mpc_transactions.rlp",
-			"Rejournal":   4000000000,	
-			"GlobalQueue": 1024,
-			"Lifetime":    10800000000000,
-			"LocalRpcPort":0,
-			"IceConf":	   "",
-			"MpcActor":	   "0x0000000000000000000000000000000000000000"
-		},
-		"VCPool":{
-			"VCEnable":    false,
-			"NoLocals":	   false,
-			"Journal":     "VC_transactions.rlp",
-			"Rejournal":   4000000000,
-			"GlobalQueue": 1024,
-			"Lifetime":    10800000000000,
-			"LocalRpcPort":0,
-			"IceConf":	   "",
-			"VcActor":	   "0x0000000000000000000000000000000000000000",
-			"VcPassword":  ""
-		},
 		"Debug":				 false
 	},
 	"ssh":{
@@ -148,7 +124,7 @@
 			"StaticNodes":[],
 			"TrustedNodes":[],
 			"NodeDatabase": "",
-			"ListenAddr": 	":16789",
+			"ListenAddr": "16789",
 			"NoDial": false,
 			"EnableMsgEvents": false
 		}
@@ -162,30 +138,35 @@
 		"Refresh": 5000000000
 	},
 	"EconomicModel":{
+		"Common":{
+			"ExpectedMinutes":5,
+			"Interval":1,
+			"PerRoundBlocks":6,
+			"ValidatorCount":10
+		},
 		"Staking":{
 			"StakeThreshold":				1000000000000000000000000,
-			"DelegateThreshold":			10,
-			"ConsValidatorNum":				25,
-			"EpochValidatorNum":			101,
-			"ShiftValidatorNum":			8,
-			"EpochSize":					88,
+			"MinimumThreshold":				10,
+			"EpochValidatorNum":			30,
+			"ShiftValidatorNum":			2,
 			"HesitateRatio":				1,
-			"EffectiveRatio":				1,
-			"ElectionDistance":				20,
-			"ConsensusSize":				250,
+			"EffectiveRatio":				10,
+			"ElectionDistance":				2,
 			"UnStakeFreezeRatio":			1,
 			"PassiveUnDelegateFreezeRatio":	0,
 			"ActiveUnDelegateFreezeRatio":	0
 		},
 		"Slashing":{
-			"BlockAmountLow":			8,
-			"BlockAmountHigh":			5,
-			"BlockAmountLowSlashing":	10,
-			"BlockAmountHighSlashing":	20,
-			"DuplicateSignNum":			2,
-			"DuplicateSignLowSlashing":	10,
-			"DuplicateSignHighSlashing":10
+		   "PackAmountAbnormal":   8,
+		   "PackAmountHighAbnormal":  5,
+		   "PackAmountLowSlashRate":  10,
+		   "PackAmountHighSlashRate":  20,
+		   "DuplicateSignNum":    2,
+		   "DuplicateSignLowSlashing":  10,
+		   "DuplicateSignHighSlashing": 20
 		},
-		"EpochsPerYear":1
+		"Gov": {
+			"SupportRateThreshold": 0.85
+		}
 	}
 }

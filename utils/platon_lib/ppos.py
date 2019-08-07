@@ -913,10 +913,3 @@ if __name__ == '__main__':
     p.getDelegateListByAddr("0xFc5F28B97184AE97d8b4496383FBC58328dc7996")
     p.getDelegateInfo()
     # p.CreateRestrictingPlan(benifitAddress,plan,"0xa11859ce23effc663a9460e332ca09bd812acc390497f8dc7542b6938e13f8d7")
-
-
-
-
-
-
-
