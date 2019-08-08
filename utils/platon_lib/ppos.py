@@ -78,8 +78,7 @@ class Ppos:
         result = HexBytes(self.eth.sendRawTransaction(data)).hex()
         return result
 
-    def createStaking(self, typ, benifitAddress, nodeId,externalId, nodeName, website, details, amount,programVersion,privatekey=None,
-                from_address=None, gasPrice=None, gas=None):
+    def createStaking(self, typ, benifitAddress, nodeId,externalId, nodeName, website, details, amount,programVersion,                                                                      privatekey=None,from_address=None, gasPrice=None, gas=None):
         '''
         createStaking ：发起质押
         :param typ:  uint16(2bytes)
@@ -502,8 +501,12 @@ class Ppos:
         result = self.send_raw_transaction(data, from_address, to_address, gasPrice,gas,0,privatekey)
         return self.get_result(result)
 
+<<<<<<< Updated upstream
 
     def submitVersion(self,verifier,url,newVersion,endVotingBlock,activeBlock,privatekey=None,
+=======
+    def submitVersion(self,verifier,url,newVersion,endVotingBlock,activeBlock,
+>>>>>>> Stashed changes
                       from_address=None, gasPrice=None , gas=None):
         '''
         提交升级提案
@@ -902,6 +905,8 @@ if __name__ == '__main__':
     plan =  [{"epoch": 12, "amount": 45}, {"epoch": 24, "amount": 90}]
     # p.listParam()
     illegal_nodeID = "7ee3276fd6b9c7864eb896310b5393324b6db785a2528c00cc28ca8c3f86fc229a86f138b1f1c8e3a942204c03faeb40e3b22ab11b8983c35dc025de42865990"
+<<<<<<< Updated upstream
+=======
 
     # p.getCandidateInfo(illegal_nodeID)
     p.getDelegateListByAddr("0xFc5F28B97184AE97d8b4496383FBC58328dc7996")
@@ -913,4 +918,9 @@ if __name__ == '__main__':
 
 
 
+>>>>>>> Stashed changes
 
+    # p.getCandidateInfo(illegal_nodeID)
+    p.getDelegateListByAddr("0xFc5F28B97184AE97d8b4496383FBC58328dc7996")
+    p.getDelegateInfo()
+    # p.CreateRestrictingPlan(benifitAddress,plan,"0xa11859ce23effc663a9460e332ca09bd812acc390497f8dc7542b6938e13f8d7")

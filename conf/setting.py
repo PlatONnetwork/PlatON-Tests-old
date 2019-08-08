@@ -20,10 +20,11 @@ BOB_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/bob.yml"))
 PPOS_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/ppos_wyq.yml"))
 
 
-PPOS_NODE_TEST_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/ppos_7.yml"))
+PPOS_NODE_TEST_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/ppos2_10.yml"))
+
 
 # ppos系统参数配置文件
-PPOS_CONFIG_PATH = os.path.abspath(os.path.join(BASE_DIR, "deploy/config.json"))
+PLATON_CONFIG_PATH = os.path.abspath(os.path.join(BASE_DIR, "deploy/config.json"))
 
 # 节点创世文件默认保存位置
 GENESIS_TMP = os.path.abspath(os.path.join(BASE_DIR, "deploy/rely/tmp/genesis.json"))
