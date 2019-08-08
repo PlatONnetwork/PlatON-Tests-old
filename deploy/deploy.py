@@ -196,9 +196,8 @@ class BaseDeploy:
         :param cmd:
         :return:
         """
-        cmd = '{}/node-{}/platon --datadir {}/node-{}/data init {}/node-{}/genesis.json'.format(
-            self.deploy_path, port, self.deploy_path, port, self.deploy_path,
-            port)
+        cmd = '{}/node-{}/platon --datadir {}/node-{}/data  --config {}/node-{}/config.json init {}/node-{}/genesis.json '.format(
+            self.deploy_path, port, self.deploy_path, port, self.deploy_path,port,self.deploy_path,port)
         s = self.run_ssh(ssh, cmd)
         return s
 
