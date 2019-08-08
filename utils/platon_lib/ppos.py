@@ -78,8 +78,7 @@ class Ppos:
         result = HexBytes(self.eth.sendRawTransaction(data)).hex()
         return result
 
-    def createStaking(self, typ, benifitAddress, nodeId,externalId, nodeName, website, details, amount,programVersion,privatekey=None,
-                from_address=None, gasPrice=None, gas=None):
+    def createStaking(self, typ, benifitAddress, nodeId,externalId, nodeName, website, details, amount,programVersion,                                                                      privatekey=None,from_address=None, gasPrice=None, gas=None):
         '''
         createStaking ：发起质押
         :param typ:  uint16(2bytes)
@@ -470,7 +469,6 @@ class Ppos:
         recive = str(recive, encoding="utf8")
         recive = recive.replace('\\','').replace('"{','{').replace('}"','}')
         recive = json.loads(recive)
-        print(recive)
         return recive
 
 #################################治理###############################

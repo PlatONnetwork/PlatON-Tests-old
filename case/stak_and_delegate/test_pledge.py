@@ -283,7 +283,6 @@ class TestPledge():
 
 
 
-<<<<<<< Updated upstream:case/stak_and_delegate/test_pledge.py
 
 
 
@@ -319,14 +318,6 @@ class TestPledge():
 
 
 
-
-
-
-
-
-
-=======
->>>>>>> Stashed changes:case/staking/test_pledge.py
 
 
 

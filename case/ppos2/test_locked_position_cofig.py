@@ -12,6 +12,7 @@ from utils.platon_lib.ppos import Ppos
 from conf import  setting as conf
 from common import log
 import json
+from utils.platon_lib.govern_util import *
 from utils.platon_lib.ppos_common import CommonMethod
 from deploy.deploy import AutoDeployPlaton
 
@@ -40,7 +41,12 @@ class TestLockeDpositionConfig:
                       'DEVELOPERS': 5000000000000000000000000
                       }
     def test(self):
-        CommonMethod.update_config('EconomicModel','Common','StakeThreshold',1000)
+        CommonMethod.update_config(self,'EconomicModel','Common','ExpectedMinutes',5)
+        CommonMethod.update_config(self,'EconomicModel','Common','PerRoundBlocks',10)
+        CommonMethod.update_config(self,'EconomicModel','Common','ValidatorCount',4)
+        CommonMethod.update_config(self,'EconomicModel','Staking','StakeThreshold',1000)
+
+
         self.auto = AutoDeployPlaton ()
         self.auto.start_all_node (self.node_yml_path)
 
@@ -65,4 +71,5 @@ class TestLockeDpositionConfig:
 
 if __name__ == '__main__':
     a = TestLockeDpositionConfig()
-    a.initial_unlock_Normal(1000)
+    a.test()
+    #a.initial_unlock_Normal(1000)
