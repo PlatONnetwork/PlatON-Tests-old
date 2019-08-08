@@ -4,9 +4,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 节点配置文件路径
-# NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/test_node.yml"))
-
-# FOUR_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/cbft_4.yml"))
+NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/ppos_wyq.yml"))
 
 GOVERN_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/govern_node_7.yml"))
 
@@ -21,7 +19,9 @@ BOB_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/bob.yml"))
 
 PPOS_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/ppos_wyq.yml"))
 
+
 PPOS_NODE_TEST_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/ppos2_10.yml"))
+
 
 # ppos系统参数配置文件
 PLATON_CONFIG_PATH = os.path.abspath(os.path.join(BASE_DIR, "deploy/config.json"))

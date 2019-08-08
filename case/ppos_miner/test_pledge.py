@@ -7,7 +7,7 @@ import allure
 import pytest
 from client_sdk_python import Web3
 from common.connect import connect_web3
-from utils.platon_lib.ppos import Ppos
+from utils.platon_lib.ppos_wyq import Ppos
 from conf import  setting as conf
 from common.load_file import LoadFile, get_node_info
 from common import log
@@ -16,16 +16,9 @@ from client_sdk_python.personal import (
     Personal,
 )
 from client_sdk_python.eth import Eth
+from client_sdk_python.admin import Admin
+from hexbytes import HexBytes
 
-"""每轮230个块确认验证人"""
-def get_sleep_time(number):
-    i = 250
-    d = math.ceil(number / i)
-    total_time = i * d
-    if total_time - number > 20:
-        return total_time - number + 20
-    else:
-        return total_time - number + i + 20
 
 
 class TestPledge():
@@ -48,8 +41,11 @@ class TestPledge():
     amount = 1000000
     programVersion = 1792
     illegal_nodeID = conf.illegal_nodeID
+    chainid = 101
 
     def setup_class(self):
+        # self.auto = AutoDeployPlaton()
+        # self.auto.start_all_node(self.node_yml_path)
         self.ppos_link = Ppos(
             self.rpc_list[0],self.address,self.chainid)
         self.w3_list = [connect_web3(url) for url in self.rpc_list]
@@ -60,13 +56,19 @@ class TestPledge():
         self.ppos_noconsensus_4 = Ppos(self.rpc_list[0], self.account_list[3],self.chainid,privatekey=self.privatekey_list[3])
         self.ppos_noconsensus_5 = Ppos(self.rpc_list[0], self.account_list[4],self.chainid,privatekey=self.privatekey_list[4])
         self.ppos_noconsensus_6 = Ppos(self.rpc_list[0], self.account_list[5],self.chainid,privatekey=self.privatekey_list[5])
-        for to_account in self.account_list:
-            self.transaction(self.w3_list[0],self.address,to_account)
+        # for to_account in self.account_list:
+        #     self.transaction(self.w3_list[0],self.address,to_account)
+        # log.info("给所有非共识绑定的钱包充钱")
         self.eth = Eth(self.w3_list[0])
+        self.admin = Admin(self.w3_list[0])
+        # for i in self.enode_list2:
+        #     self.admin.addPeer(i)
+        # log.info("所有非共识加入测试链")
+        time.sleep(5)
 
     def transaction(self,w3, from_address, to_address=None, value=1000000000000000000000000000000000,
                     gas=91000000, gasPrice=9000000000):
-        personal = Personal(self.w3_list[0])
+        personal = Personal(w3)
         personal.unlockAccount(self.address, self.pwd, 666666)
         params = {
             'to': to_address,
@@ -76,57 +78,81 @@ class TestPledge():
             'value': value
         }
         tx_hash = w3.eth.sendTransaction(params)
-        return tx_hash
+        result = w3.eth.waitForTransactionReceipt(HexBytes(tx_hash).hex())
+        return result
 
     def getCandidateList(self):
+        """
+        查询实时验证人列表
+        :return:
+        """
         msg = self.ppos_noconsensus_1.getCandidateList()
-        # print(msg)
         recive_list = msg.get("Data")
         nodeid_list = []
-        for node_info in recive_list:
-            nodeid_list.append(node_info.get("NodeId"))
+        if recive_list == []:
+            return recive_list
+        else:
+            for node_info in recive_list:
+                nodeid_list.append(node_info.get("NodeId"))
         return nodeid_list
 
-##############################初始验证人############################################
-
+#############################初始验证人############################################
+    @allure.title("校验初始验证人信息")
     def test_initial_identifier(self):
         """
         用例id 54,55
         测试验证人参数有效性验证
         """
         recive = self.ppos_link.getVerifierList()
-        recive_list = recive.get("Data")
-        nodeid_list=[]
         # 查看查询当前结算周期的验证人队列
-        for node_info in recive_list:
+        nodeid_list = []
+        for node_info in recive.get("Data"):
             nodeid_list.append(node_info.get("NodeId"))
             StakingAddress = node_info.get("StakingAddress")
             StakingAddress = ( Web3.toChecksumAddress(StakingAddress))
             assert StakingAddress == self.address,"内置钱包地址错误{}".format(StakingAddress)
-        assert recive_list == nodeid_list, "正常的nodeID列表{},异常的nodeID列表{}".format(nodeid_list,recive_list)
+        assert self.nodeid_list == nodeid_list, "正常的nodeID列表{},异常的nodeID列表{}".format(self.nodeid_list,nodeid_list)
 
+
+    @allure.title("验证人不能接受委托")
     def test_initial_cannot_entrust(self):
         """
         用例id 56 初始验证人不能接受委托
         """
         msg = self.ppos_link.delegate(typ = 0,nodeId=self.nodeid_list[0],amount=50)
         assert msg.get("Status") == False ,"返回状态错误"
-        assert msg.get("ErrMsg") == 'This candidate is not allow to delegate',"返回提示语错误"
+        msg_string = "Delegate failed: Account of Candidate(Validator)  is not allowed to be used for delegating"
+        assert msg.get("ErrMsg") == msg_string,"返回提示语错误"
 
+    @allure.title("验证人增持质押")
     def test_initial_add_pledge(self):
         """
         用例id 57 初始验证人增持质押
         """
-        msg = self.ppos_link.addStaking(nodeId=self.nodeid_list[0],typ=0,amount=1000)
+        value = 1000
+        msg = self.ppos_link.addStaking(nodeId=self.nodeid_list[0],typ=0,amount=value)
         print(msg)
+        assert msg.get("Status") == True ,"初始验证人增持质押失败"
+        assert msg.get("ErrMsg") == 'ok',"返回消错误"
+        msg = self.ppos_link.getCandidateInfo(self.nodeid_list[0])
+        print(msg)
+        assert  msg["Data"]["NodeId"] == self.nodeid_list[0]
+        assert  msg["Data"]["Shares"] == Web3.fromWei(self.amount + value, 'ether'),\
+            "锁定期增持的质押+增持金额不对{},应为{}".format(msg["Data"]["Shares"],Web3.fromWei(self.amount+ value, 'ether'))
+        assert msg["Data"]["Released"] == Web3.fromWei(self.amount, 'ether'),\
+            "锁定期增持的金额不对{},应为{}".format(msg["Data"]["Released"],Web3.fromWei(self.amount, 'ether'))
         assert msg.get("Status") == True ,"返回状态错误"
         assert msg.get("ErrMsg") == 'ok',"返回消错误"
 
+
+    @allure.title("初始验证人退出")
     def test_initial_quit(self):
         """
         用例id 58 初始验证人退出
         """
         msg = self.ppos_link.unStaking(self.nodeid_list[0])
+        assert msg.get("Status") ==True ,"返回状态错误"
+        assert msg.get("ErrMsg") == 'ok',"返回消息错误"
         print(msg)
         print(self.nodeid_list[0])
         assert msg.get("Status") ==True ,"返回状态错误"
@@ -134,19 +160,40 @@ class TestPledge():
         """暂时没配置参数所以还要调整"""
         time.sleep(2)
         node_list = self.getCandidateList()
-        assert self.nodeid_list[0] not in node_list
+        # print(node_list)
+        # print(self.nodeid_list[0])
+        assert self.nodeid_list[0] not in node_list,"初始验证人还没退出"
+
+    @allure.title("初始验证人退出后，锁定期质押")
+    def test_creatstaking_initial_lockup(self):
+        """
+        初始验证人退出验证节点后，不能在锁定期内再质押
+        """
+        log.info("初始验证人退出后，再去质押")
+        msg = self.ppos_link.createStaking(0, self.address,self.nodeid_list[0],self.externalId,self.nodeName,
+                                           self.website, self.details,self.amount,self.programVersion)
+        assert msg.get("Status") == False, "返回状态错误"
+        log.info("查询节点的质押情况")
+        msg = self.ppos_link.getCandidateInfo(self.nodeid_list[0])
+        assert msg.get("Status") == True, "返回状态错误"
+        assert msg["Data"]["NodeId"] == self.nodeid_list[0],"验证人信息异常不存在了"
+
+    def test_lockup_end_creatstaking(self):
+        """
+        初始验证人结束锁定期后，重新质押
+        """
+        pass
 
 
-###########################质押于增持#######################################################
-
+# ###########################质押于增持#######################################################
     def test_iff_staking(self):
         """
         用例 64 非初始验证人做质押,质押金额小于最低门槛
         """
-        benifitAddress = self.account_list[1]
+        benifitAddress = self.account_list[0]
         nodeId = self.nodeid_list2[0]
         """非共识节点做一笔质押"""
-        amount = 100000
+        amount = self.amount - 100
         msg = self.ppos_noconsensus_1.createStaking(0, benifitAddress,
                                            nodeId,self.externalId,self.nodeName, self.website, self.details,amount,self.programVersion)
         print(msg)
@@ -166,13 +213,10 @@ class TestPledge():
         assert msg.get("Status") ==True ,"返回状态错误"
         assert msg.get("ErrMsg") == 'ok',"返回消错误"
         """暂时没配置参数所以还要调整"""
-        ##查看实时验证人信息
+        #查看实时验证人信息
         time.sleep(5)
-        recive = self.ppos_noconsensus_1.getCandidateList()
-        recive_list = recive.get("Data")
-        nodeid_list = []
-        for node_info in recive_list:
-            nodeid_list.append(node_info.get("NodeId"))
+        nodeid_list = self.getCandidateList
+        print(self.nodeid_list2[0])
         assert self.nodeid_list2[0] in nodeid_list,"非初始验证人质押失败"
 
     def test_not_illegal_addstaking(self):
@@ -229,7 +273,7 @@ class TestPledge():
         用例id 70 编辑验证人信息-参数有效性验证
         """
         externalId = "88888888"
-        nodeName = "jay_wu"
+        nodeName = "wuyiqin"
         website = "www://baidu.com"
         details = "node_1"
         msg = self.ppos_noconsensus_1.updateStakingInfo(self.account_list[0], self.nodeid_list2[0],
@@ -237,9 +281,8 @@ class TestPledge():
         assert msg.get("Status") ==True ,"返回状态错误"
         assert msg.get("ErrMsg") == 'ok',"返回消错误"
         msg = self.ppos_noconsensus_1.getCandidateInfo(self.nodeid_list2[0])
-        print(msg)
         assert msg["Data"]["ExternalId"] == externalId
-        assert msg["Data"]["nodeName"] == nodeName
+        assert msg["Data"]["NodeName"] == nodeName
         assert msg["Data"]["website"] == website
         assert msg["Data"]["details"] == details
 
@@ -273,7 +316,7 @@ class TestPledge():
         node_list = self.getCandidateList()
         assert self.nodeid_list2[0] not in node_list
         msg = self.ppos_noconsensus_1.addStaking(nodeId,typ=0,amount=100)
-        assert msg.get("Status") == True ,"返回状态错误"
+        assert msg.get("Status") == False ,"返回状态错误"
         assert msg.get("ErrMsg") == 'This candidate is not exist'
 
 
