@@ -111,11 +111,8 @@ class TestPledge():
             StakingAddress = node_info.get("StakingAddress")
             StakingAddress = ( Web3.toChecksumAddress(StakingAddress))
             assert StakingAddress == self.address,"内置钱包地址错误{}".format(StakingAddress)
-<<<<<<< Updated upstream:case/ppos_miner/test_pledge.py
         assert self.nodeid_list == nodeid_list, "正常的nodeID列表{},异常的nodeID列表{}".format(self.nodeid_list,nodeid_list)
-=======
-        assert recive_list == nodeid_list, "正常的nodeID列表{},异常的nodeID列表{}".format(nodeid_list,recive_list)
->>>>>>> Stashed changes:case/stak_and_delegate/test_pledge.py
+
 
     @allure.title("验证人不能接受委托")
     def test_initial_cannot_entrust(self):
@@ -135,7 +132,6 @@ class TestPledge():
         value = 1000
         msg = self.ppos_link.addStaking(nodeId=self.nodeid_list[0],typ=0,amount=value)
         print(msg)
-<<<<<<< Updated upstream:case/ppos_miner/test_pledge.py
         assert msg.get("Status") == True ,"初始验证人增持质押失败"
         assert msg.get("ErrMsg") == 'ok',"返回消错误"
         msg = self.ppos_link.getCandidateInfo(self.nodeid_list[0])
@@ -145,10 +141,9 @@ class TestPledge():
             "锁定期增持的质押+增持金额不对{},应为{}".format(msg["Data"]["Shares"],Web3.fromWei(self.amount+ value, 'ether'))
         assert msg["Data"]["Released"] == Web3.fromWei(self.amount, 'ether'),\
             "锁定期增持的金额不对{},应为{}".format(msg["Data"]["Released"],Web3.fromWei(self.amount, 'ether'))
-=======
         assert msg.get("Status") == True ,"返回状态错误"
         assert msg.get("ErrMsg") == 'ok',"返回消错误"
->>>>>>> Stashed changes:case/stak_and_delegate/test_pledge.py
+
 
     @allure.title("初始验证人退出")
     def test_initial_quit(self):
@@ -156,17 +151,14 @@ class TestPledge():
         用例id 58 初始验证人退出
         """
         msg = self.ppos_link.unStaking(self.nodeid_list[0])
-<<<<<<< Updated upstream:case/ppos_miner/test_pledge.py
         assert msg.get("Status") ==True ,"返回状态错误"
         assert msg.get("ErrMsg") == 'ok',"返回消息错误"
-=======
         print(msg)
         print(self.nodeid_list[0])
         assert msg.get("Status") ==True ,"返回状态错误"
         assert msg.get("ErrMsg") == 'ok',"返回消错误"
         """暂时没配置参数所以还要调整"""
         time.sleep(2)
->>>>>>> Stashed changes:case/stak_and_delegate/test_pledge.py
         node_list = self.getCandidateList()
         # print(node_list)
         # print(self.nodeid_list[0])
@@ -324,11 +316,7 @@ class TestPledge():
         node_list = self.getCandidateList()
         assert self.nodeid_list2[0] not in node_list
         msg = self.ppos_noconsensus_1.addStaking(nodeId,typ=0,amount=100)
-<<<<<<< Updated upstream:case/ppos_miner/test_pledge.py
         assert msg.get("Status") == False ,"返回状态错误"
-=======
-        assert msg.get("Status") == True ,"返回状态错误"
->>>>>>> Stashed changes:case/stak_and_delegate/test_pledge.py
         assert msg.get("ErrMsg") == 'This candidate is not exist'
 
 
