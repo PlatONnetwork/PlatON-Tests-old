@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
 
-from case.stak_and_delegate.test_delegate import TestDelegate
+from case.ppos_miner.test_pledge import TestPledge
 
 
 
 if __name__ == '__main__':
-    auto = TestDelegate()
+    auto = TestPledge()
     auto.setup_class()
-    # auto.test_back_unStaking_commissioned()
+    auto.test_staking()
     # auto.test_()
     # auto.test_add_staking(amount=1000000)
     # auto.test_getCandidateInfo()

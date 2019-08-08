@@ -55,12 +55,12 @@ def setup(node_yml=None, collusion_number=0):
     auto = AutoDeployPlaton()
     auto.check_node_yml(conf.NODE_YML)
     conf.NODE_NUMBER = collusion_number
-    auto.start_all_node(conf.NODE_YML)
+    # auto.start_all_node(conf.NODE_YML)
 
 
 def teardown():
     auto = AutoDeployPlaton()
-    auto.kill_of_yaml(conf.NODE_YML)
+    # auto.kill_of_yaml(conf.NODE_YML)
 
 
 if __name__ == "__main__":

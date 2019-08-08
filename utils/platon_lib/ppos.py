@@ -576,7 +576,6 @@ class Ppos:
         :param gas:
         :return:
         '''
-        print(proposalID)
         if proposalID[:2] == '0x':
             proposalID = proposalID[2:]
         data = rlp.encode([rlp.encode(int(2003)), rlp.encode(bytes.fromhex(verifier)),
@@ -619,29 +618,26 @@ class Ppos:
         result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0,privatekey)
         return self.get_result(result)
 
-    def getProposal(self,proposalID,privatekey=None,from_address=None, gasPrice=None , gas=None):
+    def getProposal(self,proposalID):
         '''
         查询提案
         :param proposalID: common.Hash
         :return:
         '''
+        if proposalID[:2] == '0x':
+            proposalID = proposalID[2:]
         to_address = "0x1000000000000000000000000000000000000005"
+        data = rlp.encode([rlp.encode(int(2100)),rlp.encode(bytes.fromhex(proposalID))])
+        recive = self.eth.call({
+            "from": self.address,
+            "to": to_address,
+            "data": data
+        })
+        recive = str(recive, encoding="utf8")
+        recive = json.loads(recive)
+        return recive
 
-        data = rlp.encode([rlp.encode(int(2100)),rlp.encode(proposalID)])
-        if not privatekey:
-            privatekey = self.privatekey
-        if not from_address:
-            from_address = self.address
-        if not gasPrice :
-            gasPrice = self.gasPrice
-        if not gas:
-            transactiondict = {"to": to_address, "data": data}
-            gas = self.eth.estimateGas (transactiondict)
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0,privatekey)
-        # print(result)
-        return self.get_result(result)
-
-    def getTallyResult(self,proposalID,privatekey=None,from_address=None, gasPrice=None , gas=None):
+    def getTallyResult(self,proposalID):
         '''
         查询提案结果
         :param proposalID: common.Hash
@@ -650,20 +646,18 @@ class Ppos:
         :param gas:
         :return:
         '''
+        if proposalID[:2] == '0x':
+            proposalID = proposalID[2:]
+        data = rlp.encode([rlp.encode(int(2101)),rlp.encode(bytes.fromhex(proposalID))])
         to_address = "0x1000000000000000000000000000000000000005"
-
-        data = rlp.encode([rlp.encode(int(2101)),rlp.encode(str(proposalID))])
-        if not privatekey:
-            privatekey = self.privatekey
-        if not from_address:
-            from_address = self.address
-        if not gasPrice :
-            gasPrice = self.gasPrice
-        if not gas:
-            transactiondict = {"to": to_address, "data": data}
-            gas = self.eth.estimateGas (transactiondict)
-        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0,privatekey)
-        return self.get_result(result)
+        recive = self.eth.call({
+            "from": self.address,
+            "to": to_address,
+            "data": data
+        })
+        recive = str(recive, encoding="utf8")
+        recive = json.loads(recive)
+        return recive
 
     def listProposal(self):
         '''
