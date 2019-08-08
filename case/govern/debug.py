@@ -11,15 +11,18 @@ from case.govern.test_govern import TestGovern
 from common import log
 from utils.platon_lib.ppos import Ppos
 from client_sdk_python import Web3
+import json
 import os
 import time,random
 import threading
 
+from common.govern_util import *
 
-def number_add(self, a, b):
-    self.result = a + b
-    print('a+b')
-    return self.result
+
+# def number_add(self, a, b):
+#     self.result = a + b
+#     print('a+b')
+#     return self.result
 
 # class TestDebug:
     # @allure.title("{a}-{b}")
@@ -32,60 +35,118 @@ def number_add(self, a, b):
     #         status=1
     #     assert status == 1, '两个数相加发生错误，{}加{}'.format(a, b)
 
+def get_proposal(rpc_link):
+    '''
+    判断链上是否存在有效的升级提案-用于判断是否可以发起投票
+    :param rpc_link:
+    :return:
+    '''
+    # result = rpc_link.listProposal()
+    # proposalinfo = result.get('Data')
+    proposalinfo='null'
 
-# def transaction(from_address, to_address=None, value=1000000000000000000000000000000000,gas=91000000, gasPrice=9000000000):
-#     privatekey = '0xa11859ce23effc663a9460e332ca09bd812acc390497f8dc7542b6938e13f8d7'
-#     platon_ppos = Ppos('http://10.10.8.157:6789', address, chainid=102, privatekey=privatekey)
-#     platon_ppos.web3.personal.unlockAccount(address, 88888888, 666666)
-#     params = {
-#         'to': to_address,
-#         'from': from_address,
-#         'gas': gas,
-#         'gasPrice': gasPrice,
-#         'value': value
-#     }
-#     tx_hash = platon_ppos.eth.sendTransaction(params)
-#
-#     von=platon_ppos.eth.getBalance(to_address)
-#     log.info('von={}'.format(von))
-#     return tx_hash
-
+    # if not result.get('Data'):
+    #     log.info('查询提案列表失败')
+    #     while 1:
+    #         if result.get('Data'):
+    #             flag=True
+    #             break
+    #     return flag
+    if proposalinfo=='null' or proposalinfo ==False:
+        log.info('查询提案列表失败')
+        while 1:
+            if proposalinfo:
+                flag = True
+                break
+        return flag
+    else:
+        log.info('查询提案列表成功')
+        flag = False
+        return flag
 
 if __name__ == "__main__":
-    # # id='6f4d11f66b4d41c6b946cfca467e491d795eae02d6cdfb1b4d00e7a0f48524839251540dc71d0a9e0e8f5514789c2248774b1e7e3a3aa0e5393b7b7bbee9043e'
+    address=Web3.toChecksumAddress('0x493301712671ada506ba6ca7891f436d29185821')
+    new_address = Web3.toChecksumAddress('0xb2fC346DF94cBE871AF2ea56B9E56E477569FcDb')
+    privatekey = '0aea84e2169919c796b4983b130bf31ac152f78319f91f56563bd75cf842314c'
 
-    # address=Web3.toChecksumAddress('0x493301712671ada506ba6ca7891f436d29185821')
-    # new_address = Web3.toChecksumAddress('0xdB245C0ebbCa84395c98c3b2607863cA36ABBD79')
-    # privatekey = '0xa11859ce23effc663a9460e332ca09bd812acc390497f8dc7542b6938e13f8d7'
     # ppos = Ppos('http://10.10.8.157:6789', address, chainid=102, privatekey=privatekey)
-
     # ppos = Ppos('http://192.168.9.221:6789',address,chainid=101)
-    # ppos = Ppos('http://192.168.120.121:6789', address, chainid=101,privatekey=privatekey)
+    # ppos = Ppos('http://192.168.120.121:6789', new_address, chainid=101,privatekey=privatekey)
 
-    # transaction(address,new_address)
-    # von = ppos.eth.getBalance(new_address)
-    # log.info('von={}'.format(von))
+
+    # la=ppos.listProposal()
+    # log.info(la)
+    # flag=is_exist_ineffective_proposal_info(ppos)
+    # print(flag)
+
+
+    # result = ppos.listProposal()
+    # proposalinfo = result.get('Data')
+    # print(proposalinfo)
+
+    # if not result.get('Data'):
+    #     log.info('查询提案列表失败')
+    #     while 1:
+    #         if result.get('Data'):
+    #             print('1-True')
+    #             break
+    # else:
+    #     print('2-True')
+
+    # flag=get_proposal(ppos)
+    # log.info(flag)
+
+    # flag=is_exist_ineffective_proposal_info(ppos)
+    # log.info(flag)
+    # list=ppos.listProposal()
+    # ls=len(list)
+    #
+    # print(ls)
+    # print(list)
+    # if False==True:
+    #     print('False')
+    # elif True==True:
+    #     print('True')
+    # elif False==False:
+    #     print('aa1')
+    # else:
+    #     print('aaa')
+    #
+    # if not 'test':
+    #     print('4')
+    # else:
+    #     print('5')
+
+    # if None ==False:
+    #     print('a')
+    # else:
+    #     print('b')
+
+    # if not None:
+    #     print('a')
 
 
     test=TestGovern()
     test.setup_class()
-    # test.test_submit_version_version_not_empty()
-    # test.test_submit_ineffective_verify()
+    test.test_submit_version_version_not_empty()
     # test.test_submit_version_end_block_number()
     # test.test_submit_version_effect_block_number()
-    test.test_submit_version_success()
-    # test.test_submit_ineffective_verify()
     # test.test_submit_version_on_newnode()
     # test.test_submit_version_on_candidatenode()
+    # test.test_submit_version_success()
+    # test.test_submit_ineffective_verify()
 
     # test.test_vote_vote_trans()
+
     # test.test_vote_notin_vote_cycle_a()
     # test.test_vote_notin_vote_cycle_b()
     # test.test_vote_notin_vote_cycle_c()
-    # test.test_vote_vote_double_cycle()
-    # test.test_vote_vote_version_error()
+
     # test.test_vote_new_node_vote()
     # test.test_vote_candidate_node_vote()
+    # test.test_vote_vote_double_cycle()
+    # test.test_vote_vote_version_error()
+    # test.test_vote_vote_success()
 
     # test.test_declare_version_nostaking_address()
     # test.test_declare_version_noproposal_newnode()
@@ -98,28 +159,5 @@ if __name__ == "__main__":
     # test.test_get_proposal_list()
     # test.test_get_node_list()
 
-    # if proposal_list!='null':
-    #     log.info('当前链上存在生效的升级提案，该用例执行失败')
-    # else:
-    #     log.info('2')
-    #     pass
-    # delay_time=20
-    # def thread_fun(delay_time):
-    #     count=0
-    #     while 1:
-    #         count=count+1
-    #         print(count)
-    #         if count>=delay_time:
-    #             break
-    #
-    # # def start_operate(delay_time):
-    # t = threading.Thread(target=thread_fun,args=(delay_time,))
-    #     # t.setDaemon(True)
-    # t.start()
-    # t.join()
-
-    # start_operate(20)
-
-
-
+    # log.info('aaa')
 

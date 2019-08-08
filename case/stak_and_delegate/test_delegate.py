@@ -377,12 +377,3 @@ class TestDelegate():
         releasedHes = Web3.fromWei(data["ReleasedHes"], 'ether')
         log.info("赎回委托金额后查询委托金额{}".format(releasedHes))
         assert releasedHes == 0
-
-
-
-
-
-
-
-
-
