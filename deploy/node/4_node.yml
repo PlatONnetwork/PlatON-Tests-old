@@ -2,7 +2,6 @@ collusion:
 - host: 192.168.9.181
   username: juzhen
   password: Platon123!
-  id: faee4596f5f8f815d0dc4d49a180a47e087c7b71b684f6b496fa3264e6ecb295482c2d9e9c9f6aa4f17558acc4b07930a5b690f776327b6d26f91db950b6eb1b
   nodekey: 8b925c3f37abb851fc84fde325618125a4b23628eb04c52b1a98dcfa471356ae
   port: 16789
   rpcport: 6789
@@ -10,7 +9,6 @@ collusion:
 - host: 192.168.9.182
   username: juzhen
   password: Platon123!
-  id: 29f6485ec9a5943c0e726b65b9841c4f3cc389ec720a283ac18c732f10c1386723ce02ca26dfe9f69286ba476249979023a2c6c5a76e3397c6ecf494aec17e9b
   nodekey: f32d6ece351a75641810fc1cf0a77b03fcaf1e2e6e67d115ec8a14108b72cdae
   port: 16789
   rpcport: 6789
@@ -18,7 +16,6 @@ collusion:
 - host: 192.168.9.183
   username: juzhen
   password: Platon123!
-  id: 2a511963e808c1b99f737df70a61e326a7a29d8548c3a573a4a7f8975f2cc5062280b351404029dd0b51e8f9fcf271f2a3d1c7b6d8a8109893457c8c52e2395c
   nodekey: 0bc13b6366df72ed1edda09221ac8e7ed85fdfffbe67ff455793db3f057f6d91
   port: 16789
   rpcport: 6789
@@ -26,7 +23,6 @@ collusion:
 - host: 192.168.9.184
   username: juzhen
   password: Platon123!
-  id: 553b1cbf84febfe3bb7d3b12626f69d24b6d2d5d305b007db5f79de0eeca319b41cae7d1dad760e75bfeed37119161613fdabbb84a11415f6405c0f58fd0bf9c
   nodekey: be2b40b2438cb723c79ab665e20d43a12803d81df51351356058256b71aad058
   port: 16789
   rpcport: 6789
