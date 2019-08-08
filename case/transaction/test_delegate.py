@@ -21,18 +21,6 @@ from hexbytes import HexBytes
 
 
 
-
-"""每轮230个块确认验证人"""
-def get_sleep_time(number):
-    i = 250
-    d = math.ceil(number / i)
-    total_time = i * d
-    if total_time - number > 20:
-        return total_time - number + 20
-    else:
-        return total_time - number + i + 20
-
-
 class TestPledge():
     node_yml_path = conf.PPOS_NODE_YML
     node_info = get_node_info(node_yml_path)
@@ -70,14 +58,17 @@ class TestPledge():
         self.ppos_noconsensus_6 = Ppos(self.rpc_list[0], self.account_list[5],self.chainid,privatekey=self.privatekey_list[5])
         # for to_account in self.account_list:
         #     self.transaction(self.w3_list[0],self.address,to_account)
+        log.info("给所有非共识绑定的钱包充钱")
         self.eth = Eth(self.w3_list[0])
         self.admin = Admin(self.w3_list[0])
-        # for i in self.enode_list2:
-        #     self.admin.addPeer(i)
+        for i in self.enode_list2:
+            self.admin.addPeer(i)
+        log.info("所有非共识加入测试链")
+        time.sleep(5)
 
     def transaction(self,w3, from_address, to_address=None, value=1000000000000000000000000000000000,
                     gas=91000000, gasPrice=9000000000):
-        personal = Personal(self.w3_list[0])
+        personal = Personal(w3)
         personal.unlockAccount(self.address, self.pwd, 666666)
         params = {
             'to': to_address,
@@ -92,12 +83,15 @@ class TestPledge():
 
     def getCandidateList(self):
         msg = self.ppos_noconsensus_1.getCandidateList()
-        # print(msg)
         recive_list = msg.get("Data")
         nodeid_list = []
-        for node_info in recive_list:
-            nodeid_list.append(node_info.get("NodeId"))
+        if recive_list == []:
+            return recive_list
+        else:
+            for node_info in recive_list:
+                nodeid_list.append(node_info.get("NodeId"))
         return nodeid_list
+
 
     def test_illege_delegate(self):
         """
