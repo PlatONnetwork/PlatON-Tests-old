@@ -196,9 +196,8 @@ class BaseDeploy:
         :param cmd:
         :return:
         """
-        cmd = '{}/node-{}/platon --datadir {}/node-{}/data init {}/node-{}/genesis.json'.format(
-            self.deploy_path, port, self.deploy_path, port, self.deploy_path,
-            port)
+        cmd = '{}/node-{}/platon --datadir {}/node-{}/data  --config {}/node-{}/config.json init {}/node-{}/genesis.json '.format(
+            self.deploy_path, port, self.deploy_path, port, self.deploy_path,port,self.deploy_path,port)
         s = self.run_ssh(ssh, cmd)
         return s
 
@@ -1224,9 +1223,6 @@ if __name__ == "__main__":
     # s.deploy_default_yml(abspath("./deploy/node/25_cbft.yml"))
     # s.kill_of_yaml(abspath("./deploy/node/cbft_4.yml"))
     s.start_all_node(abspath("./deploy/node/cbft_4.yml"))
-
     # s.kill_of_yaml(abspath("./deploy/node/ppos_7.yml"))
     s.start_all_node(abspath("./deploy/node/ppos_7.yml"))
 
-    # s.kill_of_yaml(abspath("./deploy/node/govern_node_7.yml"))
-    s.start_all_node(abspath("./deploy/node/govern_node_7.yml"))
