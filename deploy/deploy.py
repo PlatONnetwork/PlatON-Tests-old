@@ -196,8 +196,9 @@ class BaseDeploy:
         :param cmd:
         :return:
         """
-        cmd = '{}/node-{}/platon --datadir {}/node-{}/data  --config {}/node-{}/config.json init {}/node-{}/genesis.json '.format(
-            self.deploy_path, port, self.deploy_path, port, self.deploy_path,port,self.deploy_path,port)
+        cmd = '{}/node-{}/platon --datadir {}/node-{}/data init {}/node-{}/genesis.json'.format(
+            self.deploy_path, port, self.deploy_path, port, self.deploy_path,
+            port)
         s = self.run_ssh(ssh, cmd)
         return s
 
@@ -543,6 +544,23 @@ class BaseDeploy:
             f.write(json.dumps(genesis_data))
         return genesis_file
 
+    def generate_config_json(self, config_json, init_node):
+        """
+        修改启动配置文件
+        :param config_json:ppos配置文件保存路径
+        :param init_node: 初始出块节点enode
+        :return:
+        """
+        log.info("增加种子节点到config.json配置文件")
+        config_file = config_json
+        config_data = LoadFile(self.config).get_data()
+        config_data['node']['P2P']["BootstrapNodes"] = init_node
+        if not os.path.exists(os.path.dirname(config_file)):
+            os.makedirs(os.path.dirname(config_file))
+        with open(config_file, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(config_data))
+        return config_file
+
     def generate_static_node_json(self,
                                   static_nodes,
                                   static_node_file=conf.STATIC_NODE_FILE):
@@ -754,16 +772,15 @@ class AutoDeployPlaton(BaseDeploy):
             cbft=conf.CBFT,
             keystore=conf.KEYSTORE,
             genesis=conf.GENESIS_TEMPLATE,
-            config=conf.PPOS_CONFIG_PATH,
             deploy_path=conf.DEPLOY_PATH,
             net_type=None,
             syncmode="full",
             sup_template=conf.SUP_TEMPLATE,
             sup_tmp=conf.SUP_TMP,
             is_metrics=False,
+            config=conf.PLATON_CONFIG_PATH,
     ):
-        super(AutoDeployPlaton, self).__init__(platon, cbft, keystore, genesis,
-                                               deploy_path, net_type, syncmode)
+        super(AutoDeployPlaton, self).__init__(platon, cbft, keystore, genesis, deploy_path, net_type, syncmode)
         self.sup_template = sup_template
         self.sup_tmp = sup_tmp
         self.is_metrics = is_metrics
@@ -1040,6 +1057,7 @@ class AutoDeployPlaton(BaseDeploy):
                       collusion_list,
                       nocollusion_list=None,
                       genesis_file=None,
+                      config_file = None,
                       static_node_file=None,
                       is_need_init=True,
                       genesis_path=conf.GENESIS_TMP,
@@ -1073,6 +1091,7 @@ class AutoDeployPlaton(BaseDeploy):
                     genesis_path, init_node)
             if not static_node_file:
                 static_node_file = self.generate_static_node_json(static_nodes)
+        self.generate_config_json(self.config, static_nodes)
         # for node in node_list:
         #     self.supervisor_deploy_platon(node, genesis_file, static_node_file, is_need_init, clean)
         run_thread(node_list, self.supervisor_deploy_platon, genesis_file,
@@ -1202,6 +1221,12 @@ class AutoDeployPlaton(BaseDeploy):
 
 if __name__ == "__main__":
     s = AutoDeployPlaton()
-    # s.kill_of_yaml(abspath("./deploy/node/ppos_7.yml"))
-    s.start_all_node(abspath("./deploy/node/ppos_wyq.yml"))
+    # s.deploy_default_yml(abspath("./deploy/node/25_cbft.yml"))
+    # s.kill_of_yaml(abspath("./deploy/node/cbft_4.yml"))
+    s.start_all_node(abspath("./deploy/node/cbft_4.yml"))
 
+    # s.kill_of_yaml(abspath("./deploy/node/ppos_7.yml"))
+    s.start_all_node(abspath("./deploy/node/ppos_7.yml"))
+
+    # s.kill_of_yaml(abspath("./deploy/node/govern_node_7.yml"))
+    s.start_all_node(abspath("./deploy/node/govern_node_7.yml"))

@@ -24,7 +24,6 @@ send_address = Web3.toChecksumAddress("0xdB245C0ebbCa84395c98c3b2607863cA36ABBD7
 send_privatekey = "b735b2d48e5f6e1dc897081f8655fdbb376ece5b2b648c55eee72c38102a0357"
 
 
-
 def transaction(w3, from_address, to_address=None, value=1000000000000000000000, gas=91000000, gasPrice=9000000000):
     params = {
         'to': to_address,

@@ -7,7 +7,7 @@ import allure
 import pytest
 from client_sdk_python import Web3
 from common.connect import connect_web3
-from utils.platon_lib.ppos_wyq import Ppos
+from utils.platon_lib.ppos import Ppos
 from conf import  setting as conf
 from common.load_file import LoadFile, get_node_info
 from common import log
@@ -16,12 +16,19 @@ from client_sdk_python.personal import (
     Personal,
 )
 from client_sdk_python.eth import Eth
-from client_sdk_python.admin import Admin
-from hexbytes import HexBytes
+
+"""每轮230个块确认验证人"""
+def get_sleep_time(number):
+    i = 250
+    d = math.ceil(number / i)
+    total_time = i * d
+    if total_time - number > 20:
+        return total_time - number + 20
+    else:
+        return total_time - number + i + 20
 
 
-
-class TestPledge():
+class TestDelegate():
     node_yml_path = conf.PPOS_NODE_YML
     node_info = get_node_info(node_yml_path)
     rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get(
@@ -43,9 +50,8 @@ class TestPledge():
     illegal_nodeID = conf.illegal_nodeID
     chainid = 101
 
+
     def setup_class(self):
-        # self.auto = AutoDeployPlaton()
-        # self.auto.start_all_node(self.node_yml_path)
         self.ppos_link = Ppos(
             self.rpc_list[0],self.address,self.chainid)
         self.w3_list = [connect_web3(url) for url in self.rpc_list]
@@ -56,19 +62,13 @@ class TestPledge():
         self.ppos_noconsensus_4 = Ppos(self.rpc_list[0], self.account_list[3],self.chainid,privatekey=self.privatekey_list[3])
         self.ppos_noconsensus_5 = Ppos(self.rpc_list[0], self.account_list[4],self.chainid,privatekey=self.privatekey_list[4])
         self.ppos_noconsensus_6 = Ppos(self.rpc_list[0], self.account_list[5],self.chainid,privatekey=self.privatekey_list[5])
-        # for to_account in self.account_list:
-        #     self.transaction(self.w3_list[0],self.address,to_account)
-        log.info("给所有非共识绑定的钱包充钱")
+        for to_account in self.account_list:
+            self.transaction(self.w3_list[0],self.address,to_account)
         self.eth = Eth(self.w3_list[0])
-        self.admin = Admin(self.w3_list[0])
-        for i in self.enode_list2:
-            self.admin.addPeer(i)
-        log.info("所有非共识加入测试链")
-        time.sleep(5)
 
     def transaction(self,w3, from_address, to_address=None, value=1000000000000000000000000000000000,
                     gas=91000000, gasPrice=9000000000):
-        personal = Personal(w3)
+        personal = Personal(self.w3_list[0])
         personal.unlockAccount(self.address, self.pwd, 666666)
         params = {
             'to': to_address,
@@ -78,20 +78,16 @@ class TestPledge():
             'value': value
         }
         tx_hash = w3.eth.sendTransaction(params)
-        result = w3.eth.waitForTransactionReceipt(HexBytes(tx_hash).hex())
-        return result
+        return tx_hash
 
     def getCandidateList(self):
         msg = self.ppos_noconsensus_1.getCandidateList()
+        # print(msg)
         recive_list = msg.get("Data")
         nodeid_list = []
-        if recive_list == []:
-            return recive_list
-        else:
-            for node_info in recive_list:
-                nodeid_list.append(node_info.get("NodeId"))
+        for node_info in recive_list:
+            nodeid_list.append(node_info.get("NodeId"))
         return nodeid_list
-
 
     def test_illege_delegate(self):
         """
@@ -381,12 +377,3 @@ class TestPledge():
         releasedHes = Web3.fromWei(data["ReleasedHes"], 'ether')
         log.info("赎回委托金额后查询委托金额{}".format(releasedHes))
         assert releasedHes == 0
-
-
-
-
-
-
-
-
-

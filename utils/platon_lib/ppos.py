@@ -469,7 +469,6 @@ class Ppos:
         recive = str(recive, encoding="utf8")
         recive = recive.replace('\\','').replace('"{','{').replace('}"','}')
         recive = json.loads(recive)
-        print(recive)
         return recive
 
 #################################治理###############################
@@ -501,12 +500,8 @@ class Ppos:
         result = self.send_raw_transaction(data, from_address, to_address, gasPrice,gas,0,privatekey)
         return self.get_result(result)
 
-<<<<<<< Updated upstream
 
     def submitVersion(self,verifier,url,newVersion,endVotingBlock,activeBlock,privatekey=None,
-=======
-    def submitVersion(self,verifier,url,newVersion,endVotingBlock,activeBlock,
->>>>>>> Stashed changes
                       from_address=None, gasPrice=None , gas=None):
         '''
         提交升级提案
@@ -579,6 +574,7 @@ class Ppos:
         :param gas:
         :return:
         '''
+        print(proposalID)
         if proposalID[:2] == '0x':
             proposalID = proposalID[2:]
         data = rlp.encode([rlp.encode(int(2003)), rlp.encode(bytes.fromhex(verifier)),
@@ -621,26 +617,29 @@ class Ppos:
         result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0,privatekey)
         return self.get_result(result)
 
-    def getProposal(self,proposalID):
+    def getProposal(self,proposalID,privatekey=None,from_address=None, gasPrice=None , gas=None):
         '''
         查询提案
         :param proposalID: common.Hash
         :return:
         '''
-        if proposalID[:2] == '0x':
-            proposalID = proposalID[2:]
         to_address = "0x1000000000000000000000000000000000000005"
-        data = rlp.encode([rlp.encode(int(2100)),rlp.encode(bytes.fromhex(proposalID))])
-        recive = self.eth.call({
-            "from": self.address,
-            "to": to_address,
-            "data": data
-        })
-        recive = str(recive, encoding="utf8")
-        recive = json.loads(recive)
-        return recive
 
-    def getTallyResult(self,proposalID):
+        data = rlp.encode([rlp.encode(int(2100)),rlp.encode(proposalID)])
+        if not privatekey:
+            privatekey = self.privatekey
+        if not from_address:
+            from_address = self.address
+        if not gasPrice :
+            gasPrice = self.gasPrice
+        if not gas:
+            transactiondict = {"to": to_address, "data": data}
+            gas = self.eth.estimateGas (transactiondict)
+        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0,privatekey)
+        # print(result)
+        return self.get_result(result)
+
+    def getTallyResult(self,proposalID,privatekey=None,from_address=None, gasPrice=None , gas=None):
         '''
         查询提案结果
         :param proposalID: common.Hash
@@ -649,18 +648,20 @@ class Ppos:
         :param gas:
         :return:
         '''
-        if proposalID[:2] == '0x':
-            proposalID = proposalID[2:]
-        data = rlp.encode([rlp.encode(int(2101)),rlp.encode(bytes.fromhex(proposalID))])
         to_address = "0x1000000000000000000000000000000000000005"
-        recive = self.eth.call({
-            "from": self.address,
-            "to": to_address,
-            "data": data
-        })
-        recive = str(recive, encoding="utf8")
-        recive = json.loads(recive)
-        return recive
+
+        data = rlp.encode([rlp.encode(int(2101)),rlp.encode(str(proposalID))])
+        if not privatekey:
+            privatekey = self.privatekey
+        if not from_address:
+            from_address = self.address
+        if not gasPrice :
+            gasPrice = self.gasPrice
+        if not gas:
+            transactiondict = {"to": to_address, "data": data}
+            gas = self.eth.estimateGas (transactiondict)
+        result = self.send_raw_transaction(data, from_address, to_address, gasPrice, gas, 0,privatekey)
+        return self.get_result(result)
 
     def listProposal(self):
         '''
@@ -905,20 +906,6 @@ if __name__ == '__main__':
     plan =  [{"epoch": 12, "amount": 45}, {"epoch": 24, "amount": 90}]
     # p.listParam()
     illegal_nodeID = "7ee3276fd6b9c7864eb896310b5393324b6db785a2528c00cc28ca8c3f86fc229a86f138b1f1c8e3a942204c03faeb40e3b22ab11b8983c35dc025de42865990"
-<<<<<<< Updated upstream
-=======
-
-    # p.getCandidateInfo(illegal_nodeID)
-    p.getDelegateListByAddr("0xFc5F28B97184AE97d8b4496383FBC58328dc7996")
-    p.getDelegateInfo()
-    # p.CreateRestrictingPlan(benifitAddress,plan,"0xa11859ce23effc663a9460e332ca09bd812acc390497f8dc7542b6938e13f8d7")
-
-
-
-
-
-
->>>>>>> Stashed changes
 
     # p.getCandidateInfo(illegal_nodeID)
     p.getDelegateListByAddr("0xFc5F28B97184AE97d8b4496383FBC58328dc7996")
