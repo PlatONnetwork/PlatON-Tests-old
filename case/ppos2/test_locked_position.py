@@ -698,7 +698,7 @@ if __name__ == '__main__':
     #a.test_lockup_Withdrawal_of_pledge()
     #a.query_amount()
     #a.test_lockup_redemption_of_entrust()
-    #a.test_token_loukup()
+    a.test_loukupplan()
     #a.test_loukupplan()
     #a.test_loukupplan_amount()
 

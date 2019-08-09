@@ -27,7 +27,8 @@ class CommonMethod():
     transfer_gas = 210000000
     value = 1000
     time_interval = 10
-    ConsensusSize = 50
+    #ConsensusSize = 50
+    ExpectedMinutes = 180
     chainid = 101
 
     def link_list(self):
@@ -45,21 +46,26 @@ class CommonMethod():
         log.info("当前连接节点：{}".format(url))
         return url
 
-    def get_block_number(self):
+    def get_block_number(self,ConsensusSize):
         url = CommonMethod.link_list (self)
         platon_ppos = Ppos (url, self.address, self.chainid)
         current_block = platon_ppos.eth.blockNumber
-        differ_block = self.ConsensusSize - (current_block % self.ConsensusSize)
+        differ_block = ConsensusSize - (current_block % ConsensusSize)
         current_end_block = current_block + differ_block
-        log.info ('当前块高：{} ，当前共识轮最后一个块高：{}'.format (current_block,current_block + differ_block))
+        log.info ('当前块高：{} ，下周期结束块高：{}'.format (current_block,current_end_block))
 
         while 1:
             time.sleep (self.time_interval)
             current_block = platon_ppos.eth.blockNumber
-            differ_block = self.ConsensusSize - (current_block % self.ConsensusSize)
+            differ_block = ConsensusSize - (current_block % ConsensusSize)
             log.info ('当前块高度：{}，还差块高：{}'.format ((current_block),differ_block))
             if current_block > current_end_block :
                 break
+
+    def get_settlement_interval(self):
+        url = CommonMethod.link_list (self)
+        platon_ppos = Ppos (url, self.address, self.chainid)
+        current_block = platon_ppos.eth.blockNumber
 
 
     def read_out_nodeId(self, code):
@@ -112,5 +118,5 @@ if __name__ == '__main__':
     #a.read_out_nodeId('nocollusion')
     #a.link_list()
     #a.update_config('EconomicModel','Common','ExpectedMinutes',2)
-    a.test()
+    #a.test()
     a.query_blockNumber()
