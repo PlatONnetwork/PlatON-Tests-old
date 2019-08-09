@@ -12,10 +12,10 @@ import allure
 import pytest
 from conf import setting as conf
 from utils.platon_lib.ppos import Ppos
+from utils.platon_lib.govern_util import *
 from hexbytes import HexBytes
 
 from common.load_file import  get_node_info
-from common.govern_util import *
 from common.connect import connect_web3
 from deploy.deploy import AutoDeployPlaton
 
