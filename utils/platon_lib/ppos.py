@@ -831,7 +831,7 @@ class Ppos:
         recive = json.loads(recive)
         # recive = recive[10:]
         # recive = eval(recive)
-        # print(recive)
+        print(recive)
         return recive
 
 
