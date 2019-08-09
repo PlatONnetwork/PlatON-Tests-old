@@ -328,11 +328,13 @@ def is_exist_ineffective_proposal_info(rpc_link):
 
     if not proposal_info:
         log.info('查询提案失败')
+        log.info('is_exist_ineffective_proposal_info-结束')
     else:
         log.info('查询提案成功')
         proposal_info = json.loads(proposal_info)
         if proposal_info is None:
             log.info('提案信息为空')
+            log.info('is_exist_ineffective_proposal_info-结束')
             return False
         else:
             log.info('有提案信息')
@@ -372,8 +374,8 @@ def is_exist_ineffective_proposal_info(rpc_link):
                         else:
                             flag=False
                             log.info('没有预生效的升级提案')
+            log.info('is_exist_ineffective_proposal_info-结束')
             return flag
-    log.info('is_exist_ineffective_proposal_info-结束')
 
 
 def is_exist_ineffective_proposal_info_for_vote(rpc_link):
@@ -389,12 +391,14 @@ def is_exist_ineffective_proposal_info_for_vote(rpc_link):
 
     if not proposal_info:
         log.info('查询提案失败')
+        log.info('is_exist_ineffective_proposal_info_for_vote-结束')
     else:
         log.info('查询提案成功')
         proposal_info = json.loads(proposal_info)
 
         if proposal_info is None:
             log.info('提案信息为空')
+            log.info('is_exist_ineffective_proposal_info_for_vote-结束')
             return False
         else:
             log.info('有提案信息')
@@ -419,8 +423,8 @@ def is_exist_ineffective_proposal_info_for_vote(rpc_link):
                 else:
                     flag=False
                     log.info('没有可投票的升级提案')
+            log.info('is_exist_ineffective_proposal_info_for_vote-结束')
             return flag
-    log.info('is_exist_ineffective_proposal_info_for_vote-结束')
 
 
 def get_effect_proposal_id(rpc_link):
