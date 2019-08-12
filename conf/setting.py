@@ -1,14 +1,11 @@
 import os
+from common import log
 
 # 项目基本路径
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 节点配置文件路径
 # NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/test_node.yml"))
-
-# FOUR_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/cbft_4.yml"))
-
-GOVERN_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/govern_node_7.yml"))
 
 # vc节点配置文件路径
 VC_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/vc_node.yml"))
@@ -98,7 +95,7 @@ DPOS_CONTRACT_ABI = os.path.abspath(os.path.join(BASE_DIR, 'data/dpos/candidateC
 # 种子节点
 TEST_NET_NODE = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/test_net.yml"))
 
-GOVERN_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/govern_node_7.yml"))
+GOVERN_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/govern_node_4.yml"))
 
 # mpclib
 MPCLIB = os.path.abspath(os.path.join(BASE_DIR, "deploy/rely/mpclib/mpclib.tar.gz"))

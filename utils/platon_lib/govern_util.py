@@ -1,9 +1,9 @@
 # -*- coding:utf-8 -*-
 
 """
-@Author: 
+@Author:
 @Date: block_interval19/8/1 14:46
-@LastEditors: 
+@LastEditors:
 @LastEditTime: block_interval19/8/1 14:46
 @Description:
 """
@@ -17,7 +17,8 @@ from client_sdk_python import Web3
 from common import log
 
 # 查询块高的时间间隔-单位秒
-time_interval=10
+time_interval = 5
+
 
 # 一个共识周期数包含的区块数
 # block_count
@@ -39,9 +40,9 @@ def get_privatekey(address, file=None):
     :param file:
     :return:
     '''
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     file = os.path.abspath(os.path.join(BASE_DIR, "deploy/privatekeyfile4000.txt"))
-    with open(file,'r') as f:
+    with open(file, 'r') as f:
         address_list = {}
         for i in f.readlines():
             i = i.strip('\n')
@@ -53,9 +54,9 @@ def get_privatekey(address, file=None):
         return
 
 
-def is_cur_block_number_big_than_end_block_number(rpc_link,end_number):
+def is_cur_block_number_big_than_end_block_number(rpc_link, end_number):
     '''
-    判断当前块高是否大于截止块高
+    判断当前块高是否大于指定块高
     :param rpc_link,end_number:
     :return:
     '''
@@ -67,12 +68,12 @@ def is_cur_block_number_big_than_end_block_number(rpc_link,end_number):
         time.sleep(time_interval)
 
         log.info('当前块高={}'.format(block_number))
-        if block_number >= end_number:
+        if block_number > end_number:
             log.info('当前块高={}'.format(block_number))
             break
 
 
-def get_single_valid_end_and_effect_block_number(rpc_link,block_count,block_interval,conse_index):
+def get_single_valid_end_and_effect_block_number(rpc_link, block_count, block_interval, conse_index):
     '''
     获取构造单个合理的截止块高和生效块高
     :param rpc_link,block_count,block_interval,conse_index:
@@ -99,7 +100,7 @@ def get_single_valid_end_and_effect_block_number(rpc_link,block_count,block_inte
     return end_number, effect_number
 
 
-def get_all_invalid_end_block_number(rpc_link,block_count,block_interval,conse_index,conse_border):
+def get_all_invalid_end_block_number(rpc_link, block_count, block_interval, conse_index, conse_border):
     '''
     获取构造各类不合理的截止区块块高
     :param rpc_link,block_count,block_interval,conse_index,conse_border:
@@ -122,9 +123,11 @@ def get_all_invalid_end_block_number(rpc_link,block_count,block_interval,conse_i
             # ('number', effect_number),
             # ('0.a.0', effect_number),
             (block_number, effect_number),
-            (block_number + block_count * conse_index - (block_interval-1), effect_number),
-            (block_number + block_count * conse_border - (block_interval+1), effect_number + block_count * conse_border),
-            (block_number + block_count * (conse_border + 1) - block_interval, effect_number + block_count * (conse_border + 1))]
+            (block_number + block_count * conse_index - (block_interval - 1), effect_number),
+            (block_number + block_count * conse_border - (block_interval + 1),
+             effect_number + block_count * conse_border),
+            (block_number + block_count * (conse_border + 1) - block_interval,
+             effect_number + block_count * (conse_border + 1))]
     else:
         mod = block_number % block_count
         interval = block_count - mod
@@ -140,13 +143,15 @@ def get_all_invalid_end_block_number(rpc_link,block_count,block_interval,conse_i
             # ('number', effect_number),
             # ('0.a.0', effect_number),
             (block_number, effect_number),
-            (block_number + interval + block_count * conse_index - (block_interval-1), effect_number),
-            (block_number + interval + block_count * conse_border - (block_interval+1), effect_number + block_count * conse_border),
-            (block_number + interval + block_count * (conse_border + 1) - block_interval, effect_number + block_count * (conse_border + 1))]
+            (block_number + interval + block_count * conse_index - (block_interval - 1), effect_number),
+            (block_number + interval + block_count * conse_border - (block_interval + 1),
+             effect_number + block_count * conse_border),
+            (block_number + interval + block_count * (conse_border + 1) - block_interval,
+             effect_number + block_count * (conse_border + 1))]
     return end_number_list
 
 
-def get_all_invalid_effect_block_number(rpc_link,block_count,block_interval,conse_index):
+def get_all_invalid_effect_block_number(rpc_link, block_count, block_interval, conse_index):
     '''
     获取构造各类不合理的生效区块块高
     :param rpc_link,block_count,block_interval,conse_index:
@@ -156,20 +161,20 @@ def get_all_invalid_effect_block_number(rpc_link,block_count,block_interval,cons
     block_number = rpc_link.web3.eth.blockNumber
 
     log.info('当前块高={}'.format(block_number))
-    
+
     if block_number % block_count == 0:
         # 截止块高
         end_number = block_number + (conse_index * block_count) - block_interval
         effect_number_list = [
-                              #   (end_number, None),
-                              # (end_number, 'number'),
-                              # (end_number, '0.a.0'),
-                              (end_number, block_number),
-                              (end_number, end_number),
-                              (end_number, end_number + (conse_index + 4) * block_count+block_interval),
-                              (end_number, end_number + (conse_index + 5) * block_count - 1+block_interval),
-                              (end_number, end_number + (conse_index + 5) * block_count + 1+block_interval),
-                              (end_number, end_number + (conse_index + 10) * block_count+block_interval)]
+            #   (end_number, None),
+            # (end_number, 'number'),
+            # (end_number, '0.a.0'),
+            (end_number, block_number),
+            (end_number, end_number),
+            (end_number, end_number + (conse_index + 4) * block_count + block_interval),
+            (end_number, end_number + (conse_index + 5) * block_count - 1 + block_interval),
+            (end_number, end_number + (conse_index + 5) * block_count + 1 + block_interval),
+            (end_number, end_number + (conse_index + 10) * block_count + block_interval)]
     else:
         mod = block_number % block_count
         interval = block_count - mod
@@ -178,20 +183,20 @@ def get_all_invalid_effect_block_number(rpc_link,block_count,block_interval,cons
         # 截止块高
         end_number = block_number + interval + (conse_index * block_count) - block_interval
         effect_number_list = [
-                              #   (end_number, None),
-                              # (end_number, 'number'),
-                              # (end_number, '0.a.0'),
-                              (end_number, block_number),
-                              (end_number, end_number),
-                              (end_number, end_number + (conse_index + 4) * block_count+block_interval),
-                              (end_number, end_number + (conse_index + 5) * block_count - 1+block_interval),
-                              (end_number, end_number + (conse_index + 5) * block_count + 1+block_interval),
-                              (end_number, end_number + (conse_index + 10) * block_count+block_interval)]
+            #   (end_number, None),
+            # (end_number, 'number'),
+            # (end_number, '0.a.0'),
+            (end_number, block_number),
+            (end_number, end_number),
+            (end_number, end_number + (conse_index + 4) * block_count + block_interval),
+            (end_number, end_number + (conse_index + 5) * block_count - 1 + block_interval),
+            (end_number, end_number + (conse_index + 5) * block_count + 1 + block_interval),
+            (end_number, end_number + (conse_index + 10) * block_count + block_interval)]
 
     return effect_number_list
 
 
-def get_all_legal_end_and_effect_block_number(rpc_link,block_count,block_interval,conse_index,conse_border):
+def get_all_legal_end_and_effect_block_number(rpc_link, block_count, block_interval, conse_index, conse_border):
     '''
     获取构造各类合理的截止区块、生效区块块高
     :param rpc_link,block_count,block_interval,conse_index,conse_border:
@@ -220,7 +225,8 @@ def get_all_legal_end_and_effect_block_number(rpc_link,block_count,block_interva
     return end_number_list
 
 
-def get_all_legal_end_and_effect_block_number_for_vote(rpc_link,block_count,block_interval,conse_index,conse_border):
+def get_all_legal_end_and_effect_block_number_for_vote(rpc_link, block_count, block_interval, conse_index,
+                                                       conse_border):
     '''
     获取构造各类合理的截止区块、生效区块块高
     :param rpc_link,block_count,block_interval,conse_index,conse_border:
@@ -231,21 +237,47 @@ def get_all_legal_end_and_effect_block_number_for_vote(rpc_link,block_count,bloc
     log.info('当前块高={}'.format(block_number))
 
     if block_number % block_count == 0:
-        end_number_list = [
-            (block_number + block_count * conse_index - block_interval, block_number + block_count * conse_index + (conse_index + 5) * block_count),
+        block_number_list = [
+            (block_number + block_count * conse_index - block_interval,
+             block_number + block_count * conse_index + (conse_index + 5) * block_count),
             (block_number + block_count * (conse_border - 1) - block_interval,
              block_number + block_count * (conse_border - 1) + (conse_border - 1 + 5) * block_count),
-            (block_number + block_count * conse_border - block_interval, block_number + block_count * conse_border + (conse_border + 5) * block_count)]
+            (block_number + block_count * conse_border - block_interval,
+             block_number + block_count * conse_border + (conse_border + 5) * block_count)]
     else:
         mod = block_number % block_count
         interval = block_count - mod
-        end_number_list = [(block_number + interval + block_count * conse_index - block_interval,
-                            block_number + interval + block_count * conse_index + (conse_index + 5) * block_count),
-                           (block_number + interval + block_count * (conse_border - 1) - block_interval,
-                            block_number + interval + block_count * (conse_border - 1) + (conse_border - 1 + 5) * block_count),
-                           (block_number + interval + block_count * conse_border - block_interval,
-                            block_number + interval + block_count * conse_border + (conse_border + 5) * block_count)]
-    return end_number_list
+        block_number_list = [(block_number + interval + block_count * conse_index - block_interval,
+                              block_number + interval + block_count * conse_index + (conse_index + 5) * block_count),
+                             (block_number + interval + block_count * (conse_border - 1) - block_interval,
+                              block_number + interval + block_count * (conse_border - 1) + (
+                                          conse_border - 1 + 5) * block_count),
+                             (block_number + interval + block_count * conse_border - block_interval,
+                              block_number + interval + block_count * conse_border + (conse_border + 5) * block_count)]
+    return block_number_list
+
+
+def get_cross_sellte_cycle_legal_end_and_effect_block_number(rpc_link, block_count, block_interval, conse_border):
+    '''
+    获取构造指定结算周期的截止区块、生效区块块高
+    :param rpc_link,block_count,block_interval,conse_border:
+    :return: list
+    '''
+    # 当前块高
+    block_number = rpc_link.web3.eth.blockNumber
+    log.info('当前块高={}'.format(block_number))
+
+    if block_number % block_count == 0:
+        block_number_list = [(block_number + block_count * conse_border - block_interval,
+                              block_number + block_count * (conse_border + 5),
+                              block_number + block_count * (conse_border - 1))]
+    else:
+        mod = block_number % block_count
+        interval = block_count - mod
+        block_number_list = [(block_number + interval + block_count * conse_border - block_interval,
+                              block_number + interval + block_count * (conse_border + 5),
+                              block_number + interval + block_count * (conse_border - 1))]
+    return block_number_list
 
 
 def get_current_settle_account_candidate_list(rpc_link):
@@ -275,7 +307,7 @@ def get_current_settle_account_candidate_list(rpc_link):
     return candidate_no_verify_list
 
 
-def get_stakingaddree(rpc_link,nodeid):
+def get_stakingaddree(rpc_link, nodeid):
     '''
     根据节点id获取质押钱包地址
     :param rpc_link:
@@ -289,7 +321,7 @@ def get_stakingaddree(rpc_link,nodeid):
     return Web3.toChecksumAddress(address)
 
 
-def waite_to_settle_account_cycle_block_number(rpc_link, block_count,end_block=None):
+def waite_to_settle_account_cycle_block_number(rpc_link, block_count, end_block=None):
     '''
     等待指定快高，未指定则等待至本结算周期结束
     :param rpc_link:
@@ -347,9 +379,9 @@ def is_exist_ineffective_proposal_info(rpc_link):
                 endvotingblock_list.append(p_list.get('EndVotingBlock'))
 
             log.info('提案信息为：{}'.format(proposal_info))
-            flag=False
+            flag = False
 
-            #当前块高
+            # 当前块高
             block_number = rpc_link.eth.blockNumber
             for i in range(0, len(proposal_list)):
                 if endvotingblock_list[i] > block_number:
@@ -358,7 +390,7 @@ def is_exist_ineffective_proposal_info(rpc_link):
                     break
                 else:
                     result = rpc_link.getTallyResult(proposal_list[i].strip())
-                    data=result.get('Data')
+                    data = result.get('Data')
 
                     if not data:
                         log.info('根据升级提案号，查询升级提案失败')
@@ -372,7 +404,7 @@ def is_exist_ineffective_proposal_info(rpc_link):
                             flag = True
                             break
                         else:
-                            flag=False
+                            flag = False
                             log.info('没有预生效的升级提案')
             log.info('is_exist_ineffective_proposal_info-结束')
             return flag
@@ -413,7 +445,7 @@ def is_exist_ineffective_proposal_info_for_vote(rpc_link):
 
             flag = False
 
-            #当前块高
+            # 当前块高
             block_number = rpc_link.eth.blockNumber
             for i in range(0, len(proposal_list)):
                 if endvotingblock_list[i] > block_number:
@@ -421,7 +453,7 @@ def is_exist_ineffective_proposal_info_for_vote(rpc_link):
                     flag = True
                     break
                 else:
-                    flag=False
+                    flag = False
                     log.info('没有可投票的升级提案')
             log.info('is_exist_ineffective_proposal_info_for_vote-结束')
             return flag
@@ -494,7 +526,7 @@ def get_effect_proposal_info_for_vote(rpc_link):
         block_number = rpc_link.eth.blockNumber
         for i in range(0, len(proposalid_list)):
             if endvotingblock_list[i] > block_number:
-                return proposalid_list[i],newversion_list[i],endvotingblock_list[i]
+                return proposalid_list[i], newversion_list[i], endvotingblock_list[i]
 
 
 def get_proposal_vote_end_block_number(rpc_link):
@@ -556,21 +588,21 @@ def get_effect_proposal_id_and_version(rpc_link):
 
         proposalid_list = []
         newversion_list = []
-        endvotingblock_list =[]
+        endvotingblock_list = []
 
         for pid_list in proposal_info:
             proposalid_list.append(pid_list.get('ProposalID'))
             endvotingblock_list.append(pid_list.get('EndVotingBlock'))
             newversion_list.append(pid_list.get('NewVersion'))
 
-        #当前块高
+        # 当前块高
         block_number = rpc_link.eth.blockNumber
         for i in range(0, len(proposalid_list)):
             if endvotingblock_list[i] > block_number:
                 return proposalid_list[i], newversion_list[i]
 
 
-def get_version(rpc_link,flag=None):
+def get_version(rpc_link, flag=None):
     '''
     获取版本号，不传入flag，为获取链上版本号，例：链上版本号为0.7.0
     flag = 1（获取小于链上主版号） 0.6.0
@@ -634,7 +666,7 @@ def get_rate_of_voting(rpc_link, proposalid):
     else:
         yeas = resultinfo.get('yeas')
         accuVerifiers = resultinfo.get('accuVerifiers')
-        return yeas/accuVerifiers
+        return yeas / accuVerifiers
 
 
 def get_accuVerifiers_of_proposal(rpc_link, proposalid):
@@ -709,7 +741,7 @@ def gen_random_string(length):
     :param length:
     :return: string
     '''
-    len=length
+    len = length
     # 随机产生指定个数的字符
     num_of_numeric = random.randint(1, len - 1)
 

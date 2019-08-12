@@ -16,6 +16,7 @@ from client_sdk_python.personal import (
     Personal,
 )
 from client_sdk_python.eth import Eth
+from hexbytes import HexBytes
 
 """每轮230个块确认验证人"""
 def get_sleep_time(number):
@@ -66,10 +67,13 @@ class TestDelegate():
             self.transaction(self.w3_list[0],self.address,to_account)
         self.eth = Eth(self.w3_list[0])
 
-    def transaction(self,w3, from_address, to_address=None, value=1000000000000000000000000000000000,
-                    gas=91000000, gasPrice=9000000000):
-        personal = Personal(self.w3_list[0])
-        personal.unlockAccount(self.address, self.pwd, 666666)
+    def transaction(self,w3, from_address, to_address=None,value=1000000000000000000000000000000000,
+                    gas=91000000, gasPrice=9000000000,pwd ="88888888"):
+        """"
+        转账公共方法
+        """
+        personal = Personal(w3)
+        personal.unlockAccount(from_address, pwd, 666666)
         params = {
             'to': to_address,
             'from': from_address,
@@ -78,7 +82,8 @@ class TestDelegate():
             'value': value
         }
         tx_hash = w3.eth.sendTransaction(params)
-        return tx_hash
+        result = w3.eth.waitForTransactionReceipt(HexBytes(tx_hash).hex())
+        return result
 
     def getCandidateList(self):
         msg = self.ppos_noconsensus_1.getCandidateList()

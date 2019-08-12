@@ -13,16 +13,20 @@ import pytest
 from conf import setting as conf
 from utils.platon_lib.ppos import Ppos
 from utils.platon_lib.govern_util import *
-from hexbytes import HexBytes
 
-from common.load_file import  get_node_info
+from common.load_file import get_node_info
 from common.connect import connect_web3
 from deploy.deploy import AutoDeployPlaton
-
+from hexbytes import HexBytes
+from client_sdk_python.personal import (
+    Personal,
+)
 
 class TestGovern:
     cbft_json_path = conf.CBFT2
     node_yml_path = conf.GOVERN_NODE_YML
+
+    log.info(node_yml_path)
 
     node_info = get_node_info(node_yml_path)
 
@@ -51,16 +55,19 @@ class TestGovern:
                        "0aea84e2169919c796b4983b130bf31ac152f78319f91f56563bd75cf842314c"]
 
     # 一个共识周期数包含的区块数
-    block_count=250
+    block_count=50
 
     # 截止块高在某个共识周期的第(block_count-block_interval)个块高
-    block_interval=20
+    block_interval=10
 
     # 提案截止块高中，设置截止块高在第几个共识周期中
     conse_index=1
 
     # 提案截止块高中，设置截止块高在最大的共识周期中
     conse_border=3
+
+    # 时间间隔-秒
+    time_interval = 2
 
     # 随机字符个数
     length=6
@@ -74,9 +81,6 @@ class TestGovern:
     # 提案在github上的id
     github_id = '101'
 
-    # 时间间隔-秒
-    time_interval=10
-
     # 基本的gas
     base_gas = 21000
 
@@ -88,6 +92,9 @@ class TestGovern:
 
     # 进行质押的gas
     staking_gas = base_gas + 32000 + 6000 + 100000
+
+    # 撤销质押的gas
+    unstaking_gas = base_gas + 20000 + 6000 + 100000
 
     # 发起提案的gas
     proposal_gas = base_gas + 450000 + 9000 + 50000
@@ -113,28 +120,21 @@ class TestGovern:
     def setup_class(self):
         log.info('setup_class-开始')
 
-        # log.info('开始重新部署链')
-        # self.auto = AutoDeployPlaton()
-        # self.auto.start_all_node(self.node_yml_path)
-        # log.info('结束重新部署链')
+        log.info('开始重新部署链')
+        self.auto = AutoDeployPlaton()
+        self.auto.start_all_node(self.node_yml_path)
+        log.info('结束重新部署链')
+
+        # 默认初始化后，给所有钱包进行转账处理
+        self.w3_list = [connect_web3(url) for url in self.rpc_list]
 
         self.link_1 = Ppos(self.rpc_list[0], self.address)
         self.link_2 = Ppos(self.rpc_list[1], self.address)
 
         # 新钱包地址和私钥
-        self.no_link_1 = Ppos(self.rpc_list[1], self.address_list[0], privatekey= self.private_key_list[0])
+        self.no_link_1 = Ppos(self.rpc_list[2], self.address_list[0], privatekey= self.private_key_list[0])
         self.no_link_2 = Ppos(self.rpc_list[2], self.address_list[1], privatekey=self.private_key_list[1])
-        self.no_link_3 = Ppos(self.rpc_list[3], self.address_list[2], privatekey=self.private_key_list[2])
-
-        log.info('默认初始化后，给所有钱包进行转账处理')
-        # 默认初始化后，给所有钱包进行转账处理
-        self.w3_list =[connect_web3(url) for url in self.rpc_list]
-
-        # 等待上链后再操作
-        for to_account in self.address_list:
-            tx_hash=self.transaction(self.address, to_account)
-            tx_hash_hex=HexBytes(tx_hash).hex()
-            result = self.w3_list[0].eth.waitForTransactionReceipt(tx_hash_hex)
+        self.no_link_3 = Ppos(self.rpc_list[2], self.address_list[2], privatekey=self.private_key_list[2])
 
         log.info('获取随机生成字符的对象 随机设置主题和说明')
         # 获取随机生成字符的对象 随机设置主题和说明
@@ -155,23 +155,16 @@ class TestGovern:
         self.auto.start_all_node(self.node_yml_path)
         log.info('结束重新部署链')
 
+        # 默认初始化后，给所有钱包进行转账处理
+        self.w3_list = [connect_web3(url) for url in self.rpc_list]
+
         self.link_1 = Ppos(self.rpc_list[0], self.address)
         self.link_2 = Ppos(self.rpc_list[1], self.address)
 
         # 新钱包地址和私钥
-        self.no_link_1 = Ppos(self.rpc_list[0], self.address_list[0], privatekey=self.private_key_list[0])
-        self.no_link_2 = Ppos(self.rpc_list[0], self.address_list[1], privatekey=self.private_key_list[1])
-        self.no_link_3 = Ppos(self.rpc_list[0], self.address_list[2], privatekey=self.private_key_list[2])
-
-        log.info('默认初始化后，给所有钱包进行转账处理')
-        # 默认初始化后，给所有钱包进行转账处理
-        self.w3_list = [connect_web3(url) for url in self.rpc_list]
-
-        # 等待上链后再操作
-        for to_account in self.address_list:
-            tx_hash = self.transaction(self.address, to_account)
-            tx_hash_hex = HexBytes(tx_hash).hex()
-            result = self.w3_list[0].eth.waitForTransactionReceipt(tx_hash_hex)
+        self.no_link_1 = Ppos(self.rpc_list[2], self.address_list[0], privatekey=self.private_key_list[0])
+        self.no_link_2 = Ppos(self.rpc_list[2], self.address_list[1], privatekey=self.private_key_list[1])
+        self.no_link_3 = Ppos(self.rpc_list[2], self.address_list[2], privatekey=self.private_key_list[2])
 
         log.info('获取随机生成字符的对象 随机设置主题和说明')
         # 获取随机生成字符的对象 随机设置主题和说明
@@ -184,8 +177,12 @@ class TestGovern:
         log.info('re_deploy-结束')
 
     # 默认初始化后，给所有钱包进行转账处理
-    def transaction(self, from_address, to_address=None):
-        self.link_1.web3.personal.unlockAccount(self.address, self.pwd, 666666)
+    def transaction(self, w3, from_address, to_address=None):
+        """"
+        转账公共方法
+        """
+        personal = Personal(w3)
+        personal.unlockAccount(from_address, self.pwd, 666666)
         params = {
             'to': to_address,
             'from': from_address,
@@ -193,43 +190,63 @@ class TestGovern:
             'gasPrice': self.base_gas_price,
             'value': self.trans_amount
         }
-        tx_hash = self.link_1.eth.sendTransaction(params)
-        return tx_hash
+        tx_hash = w3.eth.sendTransaction(params)
+        result = w3.eth.waitForTransactionReceipt(HexBytes(tx_hash).hex())
+        return result
 
-    def submit_version(self,new_version=None,end_number=None,effect_number=None):
+    def submit_version(self,flag=None):
         '''
         提交升级提案
-        :param new_version,end_number,effect_number
+        :param new_version,flag=0、1、2 获取特定截止和生效块高
         :return: list
         '''
         rpc_link=self.link_1
 
-        if not new_version:
-            new_version=get_version(rpc_link,3)
+        while 1:
+            # 获取验证人节点ID列表
+            nodeid_list=get_current_verifier(rpc_link)
+            if nodeid_list:
+                break
 
-        if not (end_number and effect_number):
-            end_number,effect_number=get_single_valid_end_and_effect_block_number(rpc_link,self.block_count,self.block_interval,self.conse_index)
-
-        # 获取验证人列表
-        verifierinfo = rpc_link.getVerifierList()
-        v_list = verifierinfo.get('Data')
-
-        verifier_list = []
-
-        # 获取验证人节点ID列表
-        for list1 in v_list:
-            verifier_list.append(list1.get('NodeId'))
+        node_id=nodeid_list[0]
+        address=get_stakingaddree(rpc_link, nodeid_list[0])
+        log.info('节点ID={},钱包地址={}'.format(node_id,address))
 
         # 获取验证人的质押钱包地址和私钥
-        address = Web3.toChecksumAddress(get_stakingaddree(rpc_link,verifier_list[1]))
-        privatekey = get_privatekey(address)
+        check_address = Web3.toChecksumAddress(address)
+        privatekey = get_privatekey(check_address)
 
         # 新建一个链接连接到链上 用上面的质押钱包地址和私钥
-        rpc_link = Ppos(self.rpc_list[2], address, chainid=101, privatekey=privatekey)
+        rpc_link = Ppos(self.rpc_list[2], check_address, chainid=101, privatekey=privatekey)
+
+        new_version = get_version(rpc_link, 3)
+        log.info('升级提案版本号={}'.format(new_version))
+
+        if not flag:
+            end_number,effect_number=get_single_valid_end_and_effect_block_number(rpc_link,self.block_count,self.block_interval,self.conse_index)
+        elif flag==0:
+            # 截止块高 生效块高 在第几个共识周期 共识周期最大边界
+            block_number_list = get_all_legal_end_and_effect_block_number_for_vote(rpc_link, self.block_count,
+                                                                                   self.block_interval,
+                                                                                   self.conse_index, self.conse_border)
+            end_number,effect_number = block_number_list[flag][0],block_number_list[flag][1]
+        elif flag==1:
+            # 截止块高 生效块高 在第几个共识周期 共识周期最大边界
+            block_number_list = get_all_legal_end_and_effect_block_number_for_vote(rpc_link, self.block_count,
+                                                                                   self.block_interval,
+                                                                                   self.conse_index, self.conse_border)
+            end_number,effect_number = block_number_list[flag][0],block_number_list[flag][1]
+        elif flag==2:
+            # 截止块高 生效块高 在第几个共识周期 共识周期最大边界
+            block_number_list = get_all_legal_end_and_effect_block_number_for_vote(rpc_link, self.block_count,
+                                                                                   self.block_interval,
+                                                                                   self.conse_index, self.conse_border)
+            end_number,effect_number = block_number_list[flag][0],block_number_list[flag][1]
+        else:
+            pass
 
         # 发起升级提案
-        result = rpc_link.submitVersion(verifier_list[1], self.website, new_version, end_number, effect_number,from_address=address, privatekey=privatekey)
-
+        result = rpc_link.submitVersion(node_id, self.website, new_version, end_number, effect_number,from_address=address, privatekey=privatekey)
         log.info('升级提案后的结果为={}'.format(result))
         return result
 
@@ -257,7 +274,25 @@ class TestGovern:
 
         log.info('没有有效的升级提案，可以发起升级提案')
         rpc_link=self.link_1
-        node_id=self.nodeid_list[0]
+
+        while 1:
+            # 获取验证人节点ID列表
+            nodeid_list = get_current_verifier(rpc_link)
+            if nodeid_list:
+                break
+
+        node_id = nodeid_list[0]
+        log.info('获取到了验证人节点ID={}'.format(node_id))
+
+        address = get_stakingaddree(rpc_link, nodeid_list[0])
+        log.info('node_id={},address={}'.format(node_id, address))
+
+        # 获取验证人的质押钱包地址和私钥
+        check_address = Web3.toChecksumAddress(address)
+        private_key = get_privatekey(check_address)
+
+        # 新建一个链接连接到链上 用上面的质押钱包地址和私钥
+        rpc_link = Ppos(self.rpc_list[2], check_address, chainid=101, privatekey=private_key)
 
         # 获取单个合理的截止块高 生效块高 在第几个共识周期 共识周期最大边界
         end_number,effect_number=get_single_valid_end_and_effect_block_number(rpc_link,self.block_count,self.block_interval,self.conse_index)
@@ -321,20 +356,38 @@ class TestGovern:
 
         log.info('没有有效的升级提案，可以发起升级提案')
         rpc_link = self.link_1
-        node_id = self.nodeid_list[0]
+
+        while 1:
+            # 获取验证人节点ID列表
+            nodeid_list = get_current_verifier(rpc_link)
+            if nodeid_list:
+                break
+
+        node_id = nodeid_list[0]
+        log.info('获取到了验证人节点ID={}'.format(node_id))
+
+        address = get_stakingaddree(rpc_link, nodeid_list[0])
+        log.info('node_id={},address={}'.format(node_id, address))
+
+        # 获取验证人的质押钱包地址和私钥
+        check_address = Web3.toChecksumAddress(address)
+        private_key = get_privatekey(check_address)
+
+        # 新建一个链接连接到链上 用上面的质押钱包地址和私钥
+        rpc_link = Ppos(self.rpc_list[2], check_address, chainid=101, privatekey=private_key)
 
         # 获取各类不合理的截止块高 在第几个共识周期 共识周期最大边界
-        block_list = get_all_invalid_end_block_number(rpc_link,self.block_count,self.block_interval,self.conse_index,self.conse_border)
+        block_number_list = get_all_invalid_end_block_number(rpc_link,self.block_count,self.block_interval,self.conse_index,self.conse_border)
 
         # 升级版本号
         new_version = get_version(rpc_link, flag=3)
         log.info('升级提案版本号={}'.format(new_version))
 
         log.info('2-test_submit_version_end_block_number-内置验证人节点发起升级提案')
-        for count in range(len(block_list)):
+        for count in range(len(block_number_list)):
             if count == 0:
-                end_number = block_list[count][0]
-                effect_number = block_list[count][1]
+                end_number = block_number_list[count][0]
+                effect_number = block_number_list[count][1]
 
                 log.info('第{}组块高-截止块高={}-生效块高={}'.format(count+1,end_number, effect_number))
 
@@ -344,8 +397,8 @@ class TestGovern:
                 assert result.get('Status') == False
                 assert info.find('end-voting-block invalid', 0, len(info)) > 0, '截止区块块高不正确，不能等于当前块高，发起升级提案失败'
             elif count == 1:
-                end_number = block_list[count][0]
-                effect_number = block_list[count][1]
+                end_number = block_number_list[count][0]
+                effect_number = block_number_list[count][1]
 
                 log.info('第{}组块高-截止块高={}-生效块高={}'.format(count+1,end_number, effect_number))
 
@@ -355,8 +408,8 @@ class TestGovern:
                 assert result.get('Status') == False
                 assert info.find('end-voting-block invalid', 0, len(info)) > 0, '截止区块块高不正确，不是第230块块高，发起升级提案失败'
             elif count == 2:
-                end_number = block_list[count][0]
-                effect_number = block_list[count][1]
+                end_number = block_number_list[count][0]
+                effect_number = block_number_list[count][1]
 
                 log.info('第{}组块高-截止块高={}-生效块高={}'.format(count+1,end_number, effect_number))
 
@@ -366,8 +419,8 @@ class TestGovern:
                 assert result.get('Status') == False
                 assert info.find('end-voting-block invalid', 0, len(info)) > 0, '截止区块块高不正确，不是第230块块高，发起升级提案失败'
             elif count == 3:
-                end_number = block_list[count][0]
-                effect_number = block_list[count][1]
+                end_number = block_number_list[count][0]
+                effect_number = block_number_list[count][1]
 
                 log.info('第{}组块高-截止块高={}-生效块高={}'.format(count+1,end_number, effect_number))
 
@@ -403,20 +456,38 @@ class TestGovern:
 
         log.info('没有有效的升级提案，可以发起升级提案')
         rpc_link = self.link_1
-        node_id = self.nodeid_list[0]
+
+        while 1:
+            # 获取验证人节点ID列表
+            nodeid_list = get_current_verifier(rpc_link)
+            if nodeid_list:
+                break
+
+        node_id = nodeid_list[0]
+        log.info('获取到了验证人节点ID={}'.format(node_id))
+
+        address = get_stakingaddree(rpc_link, nodeid_list[0])
+        log.info('node_id={},address={}'.format(node_id, address))
+
+        # 获取验证人的质押钱包地址和私钥
+        check_address = Web3.toChecksumAddress(address)
+        private_key = get_privatekey(check_address)
+
+        # 新建一个链接连接到链上 用上面的质押钱包地址和私钥
+        rpc_link = Ppos(self.rpc_list[2], check_address, chainid=101, privatekey=private_key)
 
         # 获取各类不合理的生效块高 在第几个共识周期 共识周期最大边界
-        block_list = get_all_invalid_effect_block_number(rpc_link,self.block_count,self.block_interval,self.conse_index)
+        block_number_list = get_all_invalid_effect_block_number(rpc_link,self.block_count,self.block_interval,self.conse_index)
 
         # 升级版本号
         new_version = get_version(rpc_link, flag=3)
         log.info('升级提案版本号={}'.format(new_version))
 
         log.info('3-test_submit_version_effect_block_number-内置验证人节点发起升级提案')
-        for count in range(len(block_list)):
+        for count in range(len(block_number_list)):
             if count == 0:
-                end_number = block_list[count][0]
-                effect_number = block_list[count][1]
+                end_number = block_number_list[count][0]
+                effect_number = block_number_list[count][1]
                 log.info('第{}组块高-截止块高={}-生效块高={}'.format(count+1,end_number, effect_number))
 
                 result = rpc_link.submitVersion(verifier=node_id, url=self.website, newVersion=new_version,
@@ -425,8 +496,8 @@ class TestGovern:
                 assert result.get('Status') == False
                 assert info.find('active-block invalid', 0, len(info)) > 0, '生效区块块高不正确，生效块高设置为=当前块高，发起升级提案失败'
             elif count == 1:
-                end_number = block_list[count][0]
-                effect_number = block_list[count][1]
+                end_number = block_number_list[count][0]
+                effect_number = block_number_list[count][1]
                 log.info('第{}组块高-截止块高={}-生效块高={}'.format(count+1,end_number, effect_number))
 
                 result = rpc_link.submitVersion(verifier=node_id, url=self.website, newVersion=new_version,
@@ -435,8 +506,8 @@ class TestGovern:
                 assert result.get('Status') == False
                 assert info.find('active-block invalid', 0, len(info)) > 0, '生效区块块高不正确，生效块高设置为=截止块高，发起升级提案失败'
             elif count == 2:
-                end_number = block_list[count][0]
-                effect_number = block_list[count][1]
+                end_number = block_number_list[count][0]
+                effect_number = block_number_list[count][1]
                 log.info('第{}组块高-截止块高={}-生效块高={}'.format(count+1,end_number, effect_number))
 
                 result = rpc_link.submitVersion(verifier=node_id, url=self.website, newVersion=new_version,
@@ -446,8 +517,8 @@ class TestGovern:
                 assert info.find('active-block invalid', 0,
                                  len(info)) > 0, '生效区块块高不正确，生效块高为第(N + 4)个共识周期的第230块块高，发起升级提案失败'
             elif count == 3:
-                end_number = block_list[count][0]
-                effect_number = block_list[count][1]
+                end_number = block_number_list[count][0]
+                effect_number = block_number_list[count][1]
                 log.info('第{}组块高-截止块高={}-生效块高={}'.format(count+1,end_number, effect_number))
 
                 result = rpc_link.submitVersion(verifier=node_id, url=self.website, newVersion=new_version,
@@ -457,8 +528,8 @@ class TestGovern:
                 assert info.find('active-block invalid', 0,
                                  len(info)) > 0, '生效区块块高不正确，生效块高为第(N + 5)个共识周期的第229块块高，发起升级提案失败'
             elif count == 4:
-                end_number = block_list[count][0]
-                effect_number = block_list[count][1]
+                end_number = block_number_list[count][0]
+                effect_number = block_number_list[count][1]
                 log.info('第{}组块高-截止块高={}-生效块高={}'.format(count+1,end_number, effect_number))
 
                 result = rpc_link.submitVersion(verifier=node_id, url=self.website, newVersion=new_version,
@@ -468,8 +539,8 @@ class TestGovern:
                 assert info.find('active-block invalid', 0,
                                  len(info)) > 0, '生效区块块高不正确，生效块高为第(N + 5)个共识周期的第231块块高，发起升级提案失败'
             elif count == 5:
-                end_number = block_list[count][0]
-                effect_number = block_list[count][1]
+                end_number = block_number_list[count][0]
+                effect_number = block_number_list[count][1]
                 log.info('第{}组块高-截止块高={}-生效块高={}'.format(count+1,end_number, effect_number))
 
                 result = rpc_link.submitVersion(verifier=node_id, url=self.website, newVersion=new_version,
@@ -524,7 +595,6 @@ class TestGovern:
         if set(self.nodeid_list2) < set(candidate_list):
             log.info('节点配置文件中的地址已全部质押，该用例执行失败')
         else:
-            # rpc_link = Ppos(self.rpc_list[1], self.address_list[0], chainid=101, privatekey=self.private_key_list[0])
             for i in range(0, len(self.nodeid_list2)):
                 if self.nodeid_list2[i] not in candidate_list:
                     log.info('test_submit_version_on_newnode-新节点发起升级提案')
@@ -571,31 +641,32 @@ class TestGovern:
         log.info('当前生成的提案升级版本号={}'.format(new_version))
 
         log.info('没有有效的升级提案，可以发起升级提案')
-        n_list = get_current_settle_account_candidate_list(rpc_link)
+        not_verify_list = get_current_settle_account_candidate_list(rpc_link)
 
         # 判断是否存在候选人节点(非验证人)，存在则直接用该节点进行升级提案，不存在就先进行质押
-        if n_list:
-            dv_nodeid = n_list[0]
-            log.info('存在候选人节点，取第一个候选人节点={}'.format(dv_nodeid))
+        if not_verify_list:
+            node_id = not_verify_list[0]
+            log.info('存在候选人节点，取第一个候选人节点={}'.format(node_id))
         else:
             # 获取候选人节点id列表
-            revice = rpc_link.getCandidateList()
-            node_info = revice.get('Data')
+            receive = rpc_link.getCandidateList()
+            node_info = receive.get('Data')
             candidate_list = []
 
-            rpc_link = self.no_link_2
+            rpc_link = self.no_link_1
 
             for nodeid in node_info:
                 candidate_list.append(nodeid.get('NodeId'))
 
             for i in range(0, len(self.nodeid_list2)):
                 if self.nodeid_list2[i] not in candidate_list:
-                    result = rpc_link.createStaking(0, self.address_list[1], self.nodeid_list2[i], externalId=self.external_id,nodeName=self.node_name,
+                    self.transaction(self.w3_list[0], self.address, to_address=self.address_list[0])
+                    result = rpc_link.createStaking(0, self.address_list[0], self.nodeid_list2[i], externalId=self.external_id,nodeName=self.node_name,
                                                     website=self.website, details=self.details,amount=self.staking_amount,
-                                                    programVersion=cur_version,  from_address=self.address_list[1],
+                                                    programVersion=cur_version,  from_address=self.address_list[0],
                                                     gasPrice=self.base_gas_price,gas=self.staking_gas)
-                    dv_nodeid = self.nodeid_list2[i]
-                    log.info('不存在候选人节点，质押后的候选人节点={}'.format(dv_nodeid))
+                    node_id = self.nodeid_list2[i]
+                    log.info('不存在候选人节点，质押后的候选人节点={}'.format(node_id))
                     log.info('候选人节点质押成功')
                     assert result.get('Status') == True
                     assert result.get('ErrMsg') == 'ok'
@@ -606,7 +677,7 @@ class TestGovern:
         end_number,effect_number = get_single_valid_end_and_effect_block_number(rpc_link,self.block_count,self.block_interval,self.conse_index)
         log.info('截止块高={}-生效块高={}'.format(end_number, effect_number))
 
-        result = rpc_link.submitVersion(verifier=dv_nodeid, url=self.website, newVersion=new_version,
+        result = rpc_link.submitVersion(verifier=node_id, url=self.website, newVersion=new_version,
                                         endVotingBlock=end_number, activeBlock=effect_number)
         log.info('候选人节点发起提案失败')
         info = result.get('ErrMsg')
@@ -615,64 +686,64 @@ class TestGovern:
                          len(info)) > 0, '发起升级提案失败-发起升级提案时，该节点是候选人节点，而不是验证人节点'
         log.info('5-test_submit_version_on_candidatenode-发起升级提案-提案人身份的验证（质押排名101之后但质押TOKEN符合要求的提案人），候选人节点发起升级提案-结束')
 
-    @allure.title('6-发起升级提案-交易手续费的验证-提案人账号的手续费不足')
-    def test_submit_version_charge_not_enough(self):
-        '''
-        用例id 23
-        发起升级提案-交易手续费的验证-提案人账号的手续费不足
-        '''
-        # 链上是否有未生效的升级提案，为True则有
-        flag = is_exist_ineffective_proposal_info(self.link_1)
-
-        # 存在有效的升级提案，需要重新部署链
-        if flag:
-            log.info('存在有效的升级提案，需要重新部署链')
-
-            # 重新部署链
-            log.info('重新部署链开始-re_deploy')
-            self.re_deploy()
-            log.info('重新部署链结束-re_deploy')
-
-            log.info('等待一段时间={}秒'.format(self.time_interval))
-            time.sleep(self.time_interval)
-
-        log.info('没有有效的升级提案，可以发起升级提案')
-        rpc_link = self.link_1
-
-        # 升级版本号
-        new_version = get_version(rpc_link, 3)
-
-        # 截止块高 生效块高 在第几个共识周期 共识周期最大边界
-        end_number, effect_number = get_single_valid_end_and_effect_block_number(rpc_link, self.block_count,self.block_interval,
-                                                                                 self.conse_index)
-        log.info('截止块高={}-生效块高={}'.format(end_number, effect_number))
-
-        # 获取验证人id列表
-        revice = rpc_link.getVerifierList()
-        node_info = revice.get('Data')
-        verifier_list = []
-
-        dv_nodeid = False
-
-        for nodeid in node_info:
-            verifier_list.append(nodeid.get('NodeId'))
-
-        for i in range(0, len(verifier_list)):
-            if verifier_list[i] not in self.nodeid_list:
-                dv_nodeid = verifier_list[i]
-                break
-
-        if dv_nodeid:
-            result = rpc_link.submitVersion(verifier=dv_nodeid, url=self.website, newVersion=new_version,
-                                            endVotingBlock=end_number, activeBlock=effect_number)
-            log.info('result='.format(result))
-            assert result.get('Status') == False
-            # assert result.get('ErrMsg') == 'ok', '发起升级提案成功'
-            log.info('发起升级提案失败')
-        else:
-            log.info('发起升级提案-当前结算周期不存在可用验证人（创始验证人节点），该用例验证失败')
-
-        log.info('6-test_submit_version_charge_not_enough-发起升级提案-交易手续费的验证-提案人账号的手续费不足-结束')
+    # @allure.title('6-发起升级提案-交易手续费的验证-提案人账号的手续费不足')
+    # def test_submit_version_charge_not_enough(self):
+    #     '''
+    #     用例id 23
+    #     发起升级提案-交易手续费的验证-提案人账号的手续费不足
+    #     '''
+    #     # 链上是否有未生效的升级提案，为True则有
+    #     flag = is_exist_ineffective_proposal_info(self.link_1)
+    #
+    #     # 存在有效的升级提案，需要重新部署链
+    #     if flag:
+    #         log.info('存在有效的升级提案，需要重新部署链')
+    #
+    #         # 重新部署链
+    #         log.info('重新部署链开始-re_deploy')
+    #         self.re_deploy()
+    #         log.info('重新部署链结束-re_deploy')
+    #
+    #         log.info('等待一段时间={}秒'.format(self.time_interval))
+    #         time.sleep(self.time_interval)
+    #
+    #     log.info('没有有效的升级提案，可以发起升级提案')
+    #     rpc_link = self.link_1
+    #
+    #     # 升级版本号
+    #     new_version = get_version(rpc_link, 3)
+    #
+    #     # 截止块高 生效块高 在第几个共识周期 共识周期最大边界
+    #     end_number, effect_number = get_single_valid_end_and_effect_block_number(rpc_link, self.block_count,self.block_interval,
+    #                                                                              self.conse_index)
+    #     log.info('截止块高={}-生效块高={}'.format(end_number, effect_number))
+    #
+    #     # 获取验证人id列表
+    #     revice = rpc_link.getVerifierList()
+    #     node_info = revice.get('Data')
+    #     verifier_list = []
+    #
+    #     dv_nodeid = False
+    #
+    #     for nodeid in node_info:
+    #         verifier_list.append(nodeid.get('NodeId'))
+    #
+    #     for i in range(0, len(verifier_list)):
+    #         if verifier_list[i] not in self.nodeid_list:
+    #             dv_nodeid = verifier_list[i]
+    #             break
+    #
+    #     if dv_nodeid:
+    #         result = rpc_link.submitVersion(verifier=dv_nodeid, url=self.website, newVersion=new_version,
+    #                                         endVotingBlock=end_number, activeBlock=effect_number)
+    #         log.info('result='.format(result))
+    #         assert result.get('Status') == False
+    #         # assert result.get('ErrMsg') == 'ok', '发起升级提案成功'
+    #         log.info('发起升级提案失败')
+    #     else:
+    #         log.info('发起升级提案-当前结算周期不存在可用验证人（创始验证人节点），该用例验证失败')
+    #
+    #     log.info('6-test_submit_version_charge_not_enough-发起升级提案-交易手续费的验证-提案人账号的手续费不足-结束')
 
     @allure.title('7-发起升级提案-升级提案成功的验证')
     def test_submit_version_success(self):
@@ -698,6 +769,25 @@ class TestGovern:
         log.info('没有有效的升级提案，可以发起升级提案')
         rpc_link = self.link_1
 
+        while 1:
+            # 获取验证人节点ID列表
+            nodeid_list = get_current_verifier(rpc_link)
+            if nodeid_list:
+                break
+
+        node_id = nodeid_list[0]
+        log.info('获取到了验证人节点ID={}'.format(node_id))
+
+        address = get_stakingaddree(rpc_link, nodeid_list[0])
+        log.info('node_id={},address={}'.format(node_id, address))
+
+        # 获取验证人的质押钱包地址和私钥
+        check_address = Web3.toChecksumAddress(address)
+        private_key = get_privatekey(check_address)
+
+        # 新建一个链接连接到链上 用上面的质押钱包地址和私钥
+        rpc_link = Ppos(self.rpc_list[2], check_address, chainid=101, privatekey=private_key)
+
         # 升级版本号
         new_version =get_version(rpc_link,3)
 
@@ -705,31 +795,11 @@ class TestGovern:
         end_number,effect_number = get_single_valid_end_and_effect_block_number(rpc_link,self.block_count,self.block_interval,self.conse_index)
         log.info('截止块高={}-生效块高={}'.format(end_number, effect_number))
 
-        # 获取验证人id列表
-        revice = rpc_link.getVerifierList()
-        node_info = revice.get('Data')
-        verifier_list = []
-
-        dv_nodeid = False
-
-        for nodeid in node_info:
-            verifier_list.append(nodeid.get('NodeId'))
-
-        for i in range(0, len(verifier_list)):
-            if verifier_list[i] not in self.nodeid_list:
-                dv_nodeid = verifier_list[i]
-                break
-
-        if dv_nodeid:
-            result = rpc_link.submitVersion(verifier=dv_nodeid, url=self.website, newVersion=new_version,
-                                            endVotingBlock=end_number, activeBlock=effect_number)
-            log.info('result='.format(result))
-            assert result.get('Status') == True
-            assert result.get('ErrMsg') == 'ok', '发起升级提案成功'
-            log.info('发起升级提案成功')
-        else:
-            log.info('发起升级提案-当前结算周期不存在可用验证人（创始验证人节点），该用例验证失败')
-
+        result = rpc_link.submitVersion(verifier=node_id, url=self.website, newVersion=new_version,
+                                        endVotingBlock=end_number, activeBlock=effect_number)
+        log.info('result='.format(result))
+        assert result.get('Status') == True
+        assert result.get('ErrMsg') == 'ok', '发起升级提案成功'
         log.info('7-test_submit_version_success-发起升级提案-升级提案成功的验证-结束')
 
     @allure.title('8-发起升级提案-未生效的升级提案的验证')
@@ -738,45 +808,39 @@ class TestGovern:
         用例id 16,17
         发起升级提案-未生效的升级提案的验证
         '''
-
         rpc_link=self.link_1
-        node_id=self.nodeid_list[0]
 
         # 链上是否有未生效的升级提案，为True则有
         flag = is_exist_ineffective_proposal_info(rpc_link)
 
-        # 设置获取截止、生效块高的对象
-        new_version = get_version(rpc_link, 3)
-
-        # 截止块高 生效块高 在第几个共识周期 共识周期最大边界
-        end_number, effect_number = get_single_valid_end_and_effect_block_number(rpc_link, self.block_count,self.block_interval,
-                                                                                 self.conse_index)
-        log.info('截止块高={}-生效块高={}'.format(end_number, effect_number))
-
         # 存在未生效的升级提案
         if flag:
             log.info('存在未生效的升级提案，发起升级提案失败')
-            result = rpc_link.submitVersion(verifier=node_id, url=self.website, newVersion=new_version,
-                                            endVotingBlock=end_number, activeBlock=effect_number)
-            log.info('result='.format(result))
+
+            result = self.submit_version()
+
+            log.info('升级提案后的结果='.format(result))
             info = result.get('ErrMsg')
+
             assert result.get('Status') == False
             assert info.find('existing a version proposal', 0,
                              len(info)) > 0, '有未生效的升级提案，发起升级提案失败'
         else:
             log.info('不存在有效的升级提案，需先发起一个升级提案，再继续升级提案')
 
-            result=self.submit_version(new_version,end_number,effect_number)
-            log.info('提案后的结果={}'.format(result))
-            assert result.get('Status') == True, '发起升级提案成功'
+            result = self.submit_version()
+            log.info('升级提案后的结果='.format(result))
+
+            assert result.get('Status') == True
+            assert result.get('ErrMsg')=='ok', '没有未生效的升级提案，发起升级提案成功'
 
             log.info('等待一段时间={}秒'.format(self.time_interval))
             time.sleep(self.time_interval)
 
-            log.info('再新发起一个升级提案')
-            result=self.submit_version(new_version,end_number,effect_number)
-            log.info('提案后的结果={}'.format(result))
+            result = self.submit_version()
+            log.info('升级提案后的结果='.format(result))
             info = result.get('ErrMsg')
+
             assert result.get('Status') == False
             assert info.find('existing a version proposal', 0,
                              len(info)) > 0, '有未生效的升级提案，发起升级提案失败'
@@ -789,38 +853,56 @@ class TestGovern:
         对升级提案进行投票-投票交易的验证（节点版本号的正确性校验）
         '''
         rpc_link=self.link_1
-        node_id = self.nodeid_list[0]
-        option = 1
 
         # 判断是否存在可投票的提案，没有则需要先发起一个升级提案，然后再进行投票
         flag=is_exist_ineffective_proposal_info_for_vote(rpc_link)
         log.info('flag={}'.format(flag))
 
-        # 升级版本号
-        new_version = get_version(rpc_link, flag=3)
-        log.info('升级提案版本号={}'.format(new_version))
-
         # True 没有可投票的升级提案
         if not flag:
             log.info('没有可投票的升级提案，需先发起一个升级提案成功后，再投票')
 
-            # 获取截止、生效块高
-            end_number, effect_number = get_single_valid_end_and_effect_block_number(rpc_link, self.block_count,self.block_interval,self.conse_index)
-
             # 发起升级提案
-            self.submit_version(new_version,end_number, effect_number)
-        else:
-            log.info('有可投票的升级提案，直接进行投票')
+            self.submit_version()
+
+        log.info('有可投票的升级提案，直接进行投票')
+
+        while 1:
+            # 获取验证人节点ID列表
+            nodeid_list = get_current_verifier(rpc_link)
+            if nodeid_list:
+                break
+
+        node_id = nodeid_list[0]
+        log.info('获取到了验证人节点ID={}'.format(node_id))
+
+        address = get_stakingaddree(rpc_link, nodeid_list[0])
+        log.info('节点ID={},钱包地址={}'.format(node_id, address))
+
+        # 获取验证人的质押钱包地址和私钥
+        check_address = Web3.toChecksumAddress(address)
+        private_key = get_privatekey(check_address)
+
+        # 新建一个链接连接到链上 用上面的质押钱包地址和私钥
+        rpc_link = Ppos(self.rpc_list[2], check_address, chainid=101, privatekey=private_key)
+
+        # 提案ID，升级版本号，截止块高
+        proposal_id, new_version, end_block_number = get_effect_proposal_info_for_vote(rpc_link)
+        log.info('提案ID={}，升级版本号={}，截止块高={}'.format(proposal_id, new_version, end_block_number))
 
         # 设置获取版本号的对象
         little_version = get_version(rpc_link, 1)
         cur_version = get_version(rpc_link)
 
+        # 升级版本号
+        new_version = get_version(rpc_link, flag=3)
+        log.info('升级提案版本号={}'.format(new_version))
+
         log.info('当前生成的小版本号为：{}-当前版本号为：{}'.format(little_version, cur_version))
         version_list = [little_version, cur_version]
 
-        # 提案ID，升级版本号，截止块高
-        proposal_id, new_version, end_block_number = get_effect_proposal_info_for_vote(rpc_link)
+        # 投赞成票
+        option=1
 
         # 投票
         for node_version in version_list:
@@ -840,13 +922,13 @@ class TestGovern:
                 pass
         log.info('9-test_vote_vote_trans-对升级提案进行投票-投票交易的验证（节点版本号的正确性校验）-结束')
 
-    @allure.title('10-对升级提案进行投票-是否在投票周期内的验证 conse_size * N - 20')
+    @allure.title('10-对升级提案进行投票-是否在投票周期内的验证 block_count * conse_index - 20')
     def test_vote_notin_vote_cycle_a(self):
         '''
         用例id 51,54
-        对升级提案进行投票-是否在投票周期内的验证 conse_size * N - 20
+        对升级提案进行投票-是否在投票周期内的验证 block_count * conse_index - 20
         '''
-        log.info('对升级提案进行投票-是否在投票周期内的验证 conse_size * N - 20')
+        log.info('对升级提案进行投票-是否在投票周期内的验证 block_count * conse_index - 20')
 
         # 重新部署链
         log.info('重新部署链开始-re_deploy')
@@ -857,51 +939,60 @@ class TestGovern:
         time.sleep(self.time_interval)
 
         rpc_link = self.link_1
-        node_id = self.nodeid_list[0]
-        option = 1
 
-        # 判断是否存在可投票的提案，没有则需要先发起一个升级提案，然后再进行投票
-        flag = is_exist_ineffective_proposal_info_for_vote(rpc_link)
+        log.info('先发起一个升级提案成功后，再投票')
 
-        # 升级版本号
-        new_version = get_version(rpc_link, flag=3)
-        log.info('升级提案版本号={}'.format(new_version))
-
-        # True 没有可投票的升级提案
-        if not flag:
-            log.info('没有可投票的升级提案，需先发起一个升级提案成功后，再投票')
-
-            # 截止块高 生效块高 在第几个共识周期 共识周期最大边界
-            block_list = get_all_legal_end_and_effect_block_number_for_vote(rpc_link, self.block_count,self.block_interval,
-                                                                            self.conse_index, self.conse_border)
-            end_number = block_list[0][0]
-            effect_number = block_list[0][1]
-
-            # 发起升级提案
-            self.submit_version(new_version,end_number, effect_number)
-        else:
-            log.info('有可投票的升级提案，直接进行投票')
+        # 发起升级提案
+        self.submit_version(flag=0)
 
         log.info('等待一段时间={}秒，再去获取提案信息'.format(self.time_interval))
         time.sleep(self.time_interval)
 
         # 提案ID，升级版本号，截止块高
         proposal_id, new_version, end_block_number = get_effect_proposal_info_for_vote(rpc_link)
+        log.info('提案ID={}，升级版本号={}，截止块高={}'.format(proposal_id, new_version, end_block_number))
 
         # 等待一定的块高，再投票
         is_cur_block_number_big_than_end_block_number(rpc_link, end_block_number)
 
-        result = rpc_link.vote(verifier=node_id, proposalID=proposal_id, option=option, programVersion=new_version)
-        assert result.get('Status') == False, '发起升级投票交易时，不在投票周期，投票不成功'
-        log.info('10-test_vote_notin_vote_cycle_a-对升级提案进行投票-是否在投票周期内的验证 conse_size * N - 20-结束')
+        while 1:
+            # 获取验证人节点ID列表
+            nodeid_list = get_current_verifier(rpc_link)
+            if nodeid_list:
+                break
 
-    @allure.title('11-对升级提案进行投票-是否在投票周期内的验证 conse_size * (M-1) - 20')
+        node_id = nodeid_list[0]
+        log.info('获取到了验证人节点ID={}'.format(node_id))
+
+        address = get_stakingaddree(rpc_link, nodeid_list[0])
+        log.info('节点ID={},钱包地址={}'.format(node_id, address))
+
+        # 获取验证人的质押钱包地址和私钥
+        check_address = Web3.toChecksumAddress(address)
+        private_key = get_privatekey(check_address)
+
+        # 新建一个链接连接到链上 用上面的质押钱包地址和私钥
+        rpc_link = Ppos(self.rpc_list[2], check_address, chainid=101, privatekey=private_key)
+
+        option = 1
+
+        block_number = rpc_link.eth.blockNumber
+        log.info('开始投票前,当前块高={}'.format(block_number))
+        result = rpc_link.vote(verifier=node_id, proposalID=proposal_id, option=option,
+                               programVersion=new_version)
+        assert result.get('Status') == False,'发起升级投票交易时，不在投票周期，投票不成功'
+
+        block_number = rpc_link.eth.blockNumber
+        log.info('完成投票后,当前块高={}'.format(block_number))
+        log.info('10-test_vote_notin_vote_cycle_a-对升级提案进行投票-是否在投票周期内的验证 block_count * conse_border - 20-结束')
+
+    @allure.title('11-对升级提案进行投票-是否在投票周期内的验证 block_count * (conse_border-1) - 20')
     def test_vote_notin_vote_cycle_b(self):
         '''
         用例id 52,55
-        对升级提案进行投票-是否在投票周期内的验证 conse_size * (M-1) - 20
+        对升级提案进行投票-是否在投票周期内的验证 block_count * (conse_border-1) - 20
         '''
-        log.info('对升级提案进行投票-是否在投票周期内的验证 conse_size * (M-1)  - 20')
+        log.info('对升级提案进行投票-是否在投票周期内的验证 block_count * (conse_border-1)  - 20')
 
         # 重新部署链
         log.info('重新部署链开始-re_deploy')
@@ -912,51 +1003,60 @@ class TestGovern:
         time.sleep(self.time_interval)
 
         rpc_link = self.link_1
-        node_id = self.nodeid_list[0]
-        option = 1
 
-        # 判断是否存在可投票的提案，没有则需要先发起一个升级提案，然后再进行投票
-        flag = is_exist_ineffective_proposal_info_for_vote(rpc_link)
+        log.info('先发起一个升级提案成功后，再投票')
 
-        # 升级版本号
-        new_version = get_version(rpc_link, flag=3)
-        log.info('升级提案版本号={}'.format(new_version))
-
-        # True 没有可投票的升级提案
-        if not flag:
-            log.info('没有可投票的升级提案，需先发起一个升级提案成功后，再投票')
-
-            # 截止块高 生效块高 在第几个共识周期 共识周期最大边界
-            block_list = get_all_legal_end_and_effect_block_number_for_vote(rpc_link, self.block_count,self.block_interval,
-                                                                            self.conse_index, self.conse_border)
-            end_number = block_list[1][0]
-            effect_number = block_list[1][1]
-
-            # 发起升级提案
-            self.submit_version(new_version,end_number, effect_number)
-        else:
-            log.info('有可投票的升级提案，直接进行投票')
+        # 发起升级提案
+        self.submit_version(flag=1)
 
         log.info('等待一段时间={}秒，再去获取提案信息'.format(self.time_interval))
         time.sleep(self.time_interval)
 
         # 提案ID，升级版本号，截止块高
         proposal_id, new_version, end_block_number = get_effect_proposal_info_for_vote(rpc_link)
+        log.info('提案ID={}，升级版本号={}，截止块高={}'.format(proposal_id, new_version, end_block_number))
 
         # 等待一定的块高，再投票
         is_cur_block_number_big_than_end_block_number(rpc_link, end_block_number)
 
-        result = rpc_link.vote(verifier=node_id, proposalID=proposal_id, option=option, programVersion=new_version)
-        assert result.get('Status') == False, '发起升级投票交易时，不在投票周期，投票不成功'
-        log.info('11-test_vote_notin_vote_cycle_b-对升级提案进行投票-是否在投票周期内的验证 conse_size * (M-1) - 20-结束')
+        while 1:
+            # 获取验证人节点ID列表
+            nodeid_list = get_current_verifier(rpc_link)
+            if nodeid_list:
+                break
 
-    @allure.title('12-对升级提案进行投票-是否在投票周期内的验证 conse_size * M- 20')
+        node_id = nodeid_list[0]
+        log.info('获取到了验证人节点ID={}'.format(node_id))
+
+        address = get_stakingaddree(rpc_link, nodeid_list[0])
+        log.info('节点ID={},钱包地址={}'.format(node_id, address))
+
+        # 获取验证人的质押钱包地址和私钥
+        check_address = Web3.toChecksumAddress(address)
+        private_key = get_privatekey(check_address)
+
+        # 新建一个链接连接到链上 用上面的质押钱包地址和私钥
+        rpc_link = Ppos(self.rpc_list[2], check_address, chainid=101, privatekey=private_key)
+
+        option = 1
+
+        block_number = rpc_link.eth.blockNumber
+        log.info('开始投票前,当前块高={}'.format(block_number))
+        result = rpc_link.vote(verifier=node_id, proposalID=proposal_id, option=option,
+                               programVersion=new_version)
+        assert result.get('Status') == False, '发起升级投票交易时，不在投票周期，投票不成功'
+
+        block_number = rpc_link.eth.blockNumber
+        log.info('完成投票后,当前块高={}'.format(block_number))
+        log.info('11-test_vote_notin_vote_cycle_b-对升级提案进行投票-是否在投票周期内的验证 block_count * (conse_border-1) - 20-结束')
+
+    @allure.title('12-对升级提案进行投票-是否在投票周期内的验证 block_count * conse_border- 20')
     def test_vote_notin_vote_cycle_c(self):
         '''
         用例id 53,56
-        对升级提案进行投票-是否在投票周期内的验证 conse_size * M- 20
+        对升级提案进行投票-是否在投票周期内的验证 block_count * conse_border- 20
         '''
-        log.info('对升级提案进行投票-是否在投票周期内的验证 conse_size * (M)  - 20')
+        log.info('对升级提案进行投票-是否在投票周期内的验证 block_count * (conse_border)  - 20')
 
         # 重新部署链
         log.info('重新部署链开始-re_deploy')
@@ -967,43 +1067,52 @@ class TestGovern:
         time.sleep(self.time_interval)
 
         rpc_link = self.link_1
-        node_id = self.nodeid_list[0]
-        option = 1
 
-        # 判断是否存在可投票的提案，没有则需要先发起一个升级提案，然后再进行投票
-        flag = is_exist_ineffective_proposal_info_for_vote(rpc_link)
+        log.info('先发起一个升级提案成功后，再投票')
 
-        # 升级版本号
-        new_version = get_version(rpc_link, flag=3)
-        log.info('升级提案版本号={}'.format(new_version))
-
-        # True 没有可投票的升级提案
-        if not flag:
-            log.info('没有可投票的升级提案，需先发起一个升级提案成功后，再投票')
-
-            # 截止块高 生效块高 在第几个共识周期 共识周期最大边界
-            block_list = get_all_legal_end_and_effect_block_number_for_vote(rpc_link, self.block_count,self.block_interval,
-                                                                            self.conse_index, self.conse_border)
-            end_number = block_list[2][0]
-            effect_number = block_list[2][1]
-
-            # 发起升级提案
-            self.submit_version(new_version,end_number, effect_number)
-        else:
-            log.info('有可投票的升级提案，直接进行投票')
+        # 发起升级提案
+        self.submit_version(flag=2)
 
         log.info('等待一段时间={}秒，再去获取提案信息'.format(self.time_interval))
         time.sleep(self.time_interval)
 
         # 提案ID，升级版本号，截止块高
         proposal_id, new_version, end_block_number = get_effect_proposal_info_for_vote(rpc_link)
+        log.info('提案ID={}，升级版本号={}，截止块高={}'.format(proposal_id, new_version, end_block_number))
 
         # 等待一定的块高，再投票
         is_cur_block_number_big_than_end_block_number(rpc_link, end_block_number)
 
-        result = rpc_link.vote(verifier=node_id, proposalID=proposal_id, option=option, programVersion=new_version)
+        while 1:
+            # 获取验证人节点ID列表
+            nodeid_list = get_current_verifier(rpc_link)
+            if nodeid_list:
+                break
+
+        node_id = nodeid_list[0]
+        log.info('获取到了验证人节点ID={}'.format(node_id))
+
+        address = get_stakingaddree(rpc_link, nodeid_list[0])
+        log.info('节点ID={},钱包地址={}'.format(node_id, address))
+
+        # 获取验证人的质押钱包地址和私钥
+        check_address = Web3.toChecksumAddress(address)
+        private_key = get_privatekey(check_address)
+
+        # 新建一个链接连接到链上 用上面的质押钱包地址和私钥
+        rpc_link = Ppos(self.rpc_list[2], check_address, chainid=101, privatekey=private_key)
+
+        option = 1
+
+        block_number = rpc_link.eth.blockNumber
+        log.info('开始投票前,当前块高={}'.format(block_number))
+        result = rpc_link.vote(verifier=node_id, proposalID=proposal_id, option=option,
+                               programVersion=new_version)
         assert result.get('Status') == False, '发起升级投票交易时，不在投票周期，投票不成功'
-        log.info('12-test_vote_notin_vote_cycle_c-对升级提案进行投票-是否在投票周期内的验证 conse_size * M- 20-结束')
+
+        block_number = rpc_link.eth.blockNumber
+        log.info('完成投票后,当前块高={}'.format(block_number))
+        log.info('12-test_vote_notin_vote_cycle_c-对升级提案进行投票-是否在投票周期内的验证 block_count * conse_border- 20-结束')
 
     @allure.title('13-对升级提案进行投票-是否是验证人节点的验证（新节点发起投票）')
     def test_vote_new_node_vote(self):
@@ -1012,29 +1121,22 @@ class TestGovern:
         对升级提案进行投票-是否是验证人节点的验证（新节点发起投票）
         '''
         rpc_link = self.link_1
-        option = 1
 
         # 判断是否存在可投票的提案，没有则需要先发起一个升级提案
         flag = is_exist_ineffective_proposal_info_for_vote(rpc_link)
-
-        # 升级版本号
-        new_version = get_version(rpc_link, flag=3)
-        log.info('升级提案版本号={}'.format(new_version))
 
         # True 没有可投票的升级提案
         if not flag:
             log.info('没有可投票的升级提案，需先发起一个升级提案成功后，再投票')
 
-            # 获取截止、生效块高
-            end_number, effect_number = get_single_valid_end_and_effect_block_number(rpc_link, self.block_count,self.block_interval,self.conse_index)
-
             # 发起升级提案
-            self.submit_version(new_version,end_number, effect_number)
-        else:
-            log.info('有可投票的升级提案，直接进行投票')
+            self.submit_version()
+
+        log.info('有可投票的升级提案，直接进行投票')
 
         # 提案ID，升级版本号，截止块高
         proposal_id, new_version, end_block_number = get_effect_proposal_info_for_vote(rpc_link)
+        option = 1
 
         revice = rpc_link.getCandidateList()
         node_info = revice.get('Data')
@@ -1068,71 +1170,65 @@ class TestGovern:
         对升级提案进行投票-是否是验证人节点的验证（候选人节点发起投票）
         '''
         rpc_link = self.link_1
-        option = 1
 
         # 判断是否存在可投票的提案，没有则需要先发起一个升级提案
         flag = is_exist_ineffective_proposal_info_for_vote(rpc_link)
-
-        # 升级版本号
-        new_version = get_version(rpc_link, flag=3)
-        log.info('升级提案版本号={}'.format(new_version))
 
         # True 没有可投票的升级提案
         if not flag:
             log.info('没有可投票的升级提案，需先发起一个升级提案成功后，再投票')
 
-            # 获取截止、生效块高
-            end_number, effect_number = get_single_valid_end_and_effect_block_number(rpc_link, self.block_count,self.block_interval,self.conse_index)
-
             # 发起升级提案
-            self.submit_version(new_version,end_number, effect_number)
-        else:
-            log.info('有可投票的升级提案，直接进行投票')
+            self.submit_version()
+
+        log.info('有可投票的升级提案，直接进行投票')
 
         # 当前版本号
         cur_version = get_version(rpc_link)
+        log.info('当前链上版本号={}'.format(cur_version))
 
         # 获取当前结算周期非验证人的候选人列表
-        n_list = get_current_settle_account_candidate_list(rpc_link)
+        not_verify_list = get_current_settle_account_candidate_list(rpc_link)
 
         # 判断是否存在候选人节点(非验证人)，存在则直接用该节点进行升级提案，不存在就先进行质押
-        if n_list:
-            dv_nodeid = n_list[0]
-            log.info('存在候选人节点，取第一个候选人节点={}'.format(dv_nodeid))
+        if not_verify_list:
+            node_id = not_verify_list[0]
+            log.info('存在候选人节点，取第一个候选人节点={}'.format(node_id))
         else:
             # 获取候选人节点id列表
-            revice = rpc_link.getCandidateList()
-            node_info = revice.get('Data')
+            receive = rpc_link.getCandidateList()
+            node_info = receive.get('Data')
             candidate_list = []
 
-            rpc_link = self.no_link_3
+            rpc_link = self.no_link_2
 
             for nodeid in node_info:
                 candidate_list.append(nodeid.get('NodeId'))
 
             for i in range(0, len(self.nodeid_list2)):
                 if self.nodeid_list2[i] not in candidate_list:
-                    result = rpc_link.createStaking(0, self.address_list[2], self.nodeid_list2[i],
+                    self.transaction(self.w3_list[0], self.address, to_address=self.address_list[1])
+                    result = rpc_link.createStaking(0, self.address_list[1], self.nodeid_list2[i],
                                                     externalId=self.external_id, nodeName=self.node_name,
                                                     website=self.website, details=self.details,
                                                     amount=self.staking_amount,
-                                                    programVersion=cur_version, from_address=self.address_list[2],
+                                                    programVersion=cur_version, from_address=self.address_list[1],
                                                     gasPrice=self.base_gas_price, gas=self.staking_gas)
-                    dv_nodeid = self.nodeid_list2[i]
-                    log.info('不存在候选人节点，质押后的候选人节点={}'.format(dv_nodeid))
+                    node_id = self.nodeid_list2[i]
+                    log.info('不存在候选人节点，质押后的候选人节点={}'.format(node_id))
                     log.info('候选人节点质押成功')
                     assert result.get('Status') == True
                     assert result.get('ErrMsg') == 'ok'
                 break
 
         log.info('候选人节点质押完成')
-
-        log.info('test_vote_new_node_vote-候选人节点进行投票')
+        log.info('test_vote_candidate_node_vote-候选人节点进行投票')
 
         # 提案ID，升级版本号，截止块高
         proposal_id, new_version, end_block_number = get_effect_proposal_info_for_vote(rpc_link)
+        option=1
 
-        result = rpc_link.vote(verifier=dv_nodeid, proposalID=proposal_id, option=option,programVersion=new_version)
+        result = rpc_link.vote(verifier=node_id, proposalID=proposal_id, option=option,programVersion=new_version)
 
         log.info('候选人节点进行投票，投票失败')
         info = result.get('ErrMsg')
@@ -1148,35 +1244,47 @@ class TestGovern:
         对升级提案进行投票-升级投票通过（验证人节点发起升级投票）
         '''
         rpc_link = self.link_1
-        node_id=self.nodeid_list[0]
-        option = 1
 
         # 判断是否存在可投票的提案，没有则需要先发起一个升级提案
         flag = is_exist_ineffective_proposal_info_for_vote(rpc_link)
-
-        # 升级版本号
-        new_version = get_version(rpc_link, flag=3)
-        log.info('升级提案版本号={}'.format(new_version))
 
         # True 没有可投票的升级提案
         if not flag:
             log.info('没有可投票的升级提案，需先发起一个升级提案成功后，再投票')
 
-            # 获取截止、生效块高
-            end_number, effect_number = get_single_valid_end_and_effect_block_number(rpc_link, self.block_count,self.block_interval,
-                                                                                     self.conse_index)
-
             # 发起升级提案
-            self.submit_version(new_version,end_number, effect_number)
-        else:
-            log.info('有可投票的升级提案，直接进行投票')
+            self.submit_version()
+
+        log.info('有可投票的升级提案，直接进行投票')
 
         # 在等待一定时间后，进行首次进行投票
         log.info('等待一段时间={}秒后，进行首次进行投票'.format(self.time_interval))
         time.sleep(self.time_interval)
 
+        while 1:
+            # 获取验证人节点ID列表
+            nodeid_list = get_current_verifier(rpc_link)
+            if nodeid_list:
+                break
+
+        node_id = nodeid_list[0]
+        log.info('获取到了验证人节点ID={}'.format(node_id))
+
+        address = get_stakingaddree(rpc_link, nodeid_list[0])
+        log.info('节点ID={},钱包地址={}'.format(node_id, address))
+
+        # 获取验证人的质押钱包地址和私钥
+        check_address = Web3.toChecksumAddress(address)
+        private_key = get_privatekey(check_address)
+
+        # 新建一个链接连接到链上 用上面的质押钱包地址和私钥
+        rpc_link = Ppos(self.rpc_list[2], check_address, chainid=101, privatekey=private_key)
+
         # 提案ID，升级版本号，截止块高
         proposal_id, new_version, end_block_number = get_effect_proposal_info_for_vote(rpc_link)
+        log.info('提案ID={}，升级版本号={}，截止块高={}'.format(proposal_id, new_version, end_block_number))
+
+        option=1
 
         # 进行投票操作
         result = rpc_link.vote(verifier=node_id, proposalID=proposal_id, option=option,programVersion=new_version)
@@ -1190,34 +1298,46 @@ class TestGovern:
         对升级提案进行投票-是否已经投票过的验证
         '''
         rpc_link = self.link_1
-        node_id=self.nodeid_list[1]
-        option = 1
 
         # 判断是否存在可投票的提案，没有则需要先发起一个升级提案
         flag = is_exist_ineffective_proposal_info_for_vote(rpc_link)
-
-        # 升级版本号
-        new_version = get_version(rpc_link, flag=3)
-        log.info('升级提案版本号={}'.format(new_version))
 
         # True 没有可投票的升级提案
         if not flag:
             log.info('没有可投票的升级提案，需先发起一个升级提案成功后，再投票')
 
-            # 获取截止、生效块高
-            end_number, effect_number = get_single_valid_end_and_effect_block_number(rpc_link, self.block_count,self.block_interval,self.conse_index)
-
             # 发起升级提案
-            self.submit_version(new_version,end_number, effect_number)
-        else:
-            log.info('有可投票的升级提案，直接进行投票')
+            self.submit_version()
+
+        log.info('有可投票的升级提案，直接进行投票')
 
         # 在等待一定时间后，进行首次进行投票
         log.info('等待一段时间={}秒后，进行首次进行投票'.format(self.time_interval))
         time.sleep(self.time_interval)
 
+        while 1:
+            # 获取验证人节点ID列表
+            nodeid_list = get_current_verifier(rpc_link)
+            if nodeid_list:
+                break
+
+        node_id = nodeid_list[0]
+        log.info('获取到了验证人节点ID={}'.format(node_id))
+
+        address = get_stakingaddree(rpc_link, nodeid_list[0])
+        log.info('节点ID={},钱包地址={}'.format(node_id, address))
+
+        # 获取验证人的质押钱包地址和私钥
+        check_address = Web3.toChecksumAddress(address)
+        private_key = get_privatekey(check_address)
+
+        # 新建一个链接连接到链上 用上面的质押钱包地址和私钥
+        rpc_link = Ppos(self.rpc_list[2], check_address, chainid=101, privatekey=private_key)
+
         # 提案ID，升级版本号，截止块高
         proposal_id, new_version, end_block_number = get_effect_proposal_info_for_vote(rpc_link)
+        log.info('提案ID={}，升级版本号={}，截止块高={}'.format(proposal_id, new_version, end_block_number))
+        option=1
 
         log.info('开始首次投票')
         # 进行投票操作
@@ -1241,56 +1361,93 @@ class TestGovern:
                          len(info)) > 0, '对升级提案进行投票时，是否已经投票过的验证，已经进行投票后，不能再次重复投票，投票失败'
         log.info('16-test_vote_vote_double_cycle-对升级提案进行投票-是否已经投票过的验证，已经进行投票后，不能再次重复投票-结束')
 
-    @allure.title('17-对升级提案进行投票-候选人在投票周期成为验证人-候选人在投票周期成为验证人后发起投票')
+    @allure.title('17-对升级提案进行投票-候选人在投票周期成为验证人后发起投票')
     def test_vote_candidate_to_verifier(self):
         '''
         用例id 57
-        对升级提案进行投票-候选人在投票周期成为验证人-候选人在投票周期成为验证人后发起投票
+        对升级提案进行投票-候选人在投票周期成为验证人后发起投票
         '''
-        rpc_link = self.link_2
-        node_id = self.nodeid_list[1]
-        option = 1
+        # 重新部署链
+        log.info('重新部署链开始-re_deploy')
+        self.re_deploy()
+        log.info('重新部署链结束-re_deploy')
 
-        # 判断是否存在可投票的提案，没有则需要先发起一个升级提案
-        flag = is_exist_ineffective_proposal_info_for_vote(rpc_link)
-
-        # 升级版本号
-        new_version = get_version(rpc_link, flag=3)
-        log.info('升级提案版本号={}'.format(new_version))
-
-        # True 没有可投票的升级提案
-        if not flag:
-            log.info('没有可投票的升级提案，需先发起一个升级提案成功后，再投票')
-
-            # 获取截止、生效块高
-            end_number, effect_number = get_single_valid_end_and_effect_block_number(rpc_link, self.block_count,self.block_interval,
-                                                                                     self.conse_index)
-
-            # 发起升级提案
-            self.submit_version(new_version, end_number, effect_number)
-        else:
-            log.info('有可投票的升级提案，直接进行投票')
-
-        # 在等待一定时间后，进行首次进行投票
-        log.info('等待一段时间={}秒后，进行进行投票'.format(self.time_interval))
+        log.info('等待一段时间={}秒'.format(self.time_interval))
         time.sleep(self.time_interval)
+
+        rpc_link = self.link_1
+
+        log.info('先发起一个升级提案成功后，再投票')
+        # 发起升级提案
+        self.submit_version()
+
+        # 版本号
+        cur_version = get_version(rpc_link)
+        log.info('当前版本号={}'.format(cur_version))
+
+        # 获取当前结算周期非验证人的候选人列表
+        not_verify_list = get_current_settle_account_candidate_list(rpc_link)
+
+        # 判断是否存在候选人节点(非验证人)，存在则直接用该节点进行升级提案，不存在就先进行质押
+        if not_verify_list:
+            node_id = not_verify_list[0]
+            log.info('存在候选人节点，取第一个候选人节点={}'.format(node_id))
+        else:
+            log.info('不存在候选人节点，需要获取验证人去投票')
+            # 获取候选人节点id列表
+            receive = rpc_link.getCandidateList()
+            node_info = receive.get('Data')
+            candidate_list = []
+
+            rpc_link = self.no_link_3
+
+            for nodeid in node_info:
+                candidate_list.append(nodeid.get('NodeId'))
+
+            for i in range(0, len(self.nodeid_list2)):
+                if self.nodeid_list2[i] not in candidate_list:
+                    self.transaction(self.w3_list[0], self.address, to_address=self.address_list[2])
+                    result = rpc_link.createStaking(0, self.address_list[2], self.nodeid_list2[i],
+                                                    externalId=self.external_id, nodeName=self.node_name,
+                                                    website=self.website, details=self.details,
+                                                    amount=self.staking_amount,
+                                                    programVersion=cur_version, from_address=self.address_list[2],
+                                                    gasPrice=self.base_gas_price, gas=self.staking_gas)
+                    node_id = self.nodeid_list2[i]
+                    log.info('不存在候选人节点，质押后的候选人节点={}'.format(node_id))
+                    log.info('候选人节点质押成功')
+                    assert result.get('Status') == True
+                    assert result.get('ErrMsg') == 'ok'
+                break
+
+        log.info('候选人节点质押完成')
+
+        # 获取指定结算算周期的截止区块、生效区块块高
+        block_number_list = get_cross_sellte_cycle_legal_end_and_effect_block_number(rpc_link, self.block_count,
+                                                                                     self.block_interval,
+                                                                                     self.conse_border)
+
+        end_number = block_number_list[0][0]
+        effect_number = block_number_list[0][1]
+        border_number = block_number_list[0][2]
+
+        log.info('截止块高={},生效块高={}，投票开始块高={}'.format(end_number, effect_number, border_number))
+
+        # 等待下一个结算周期后,再进行投票
+        is_cur_block_number_big_than_end_block_number(rpc_link,border_number)
 
         # 提案ID，升级版本号，截止块高
         proposal_id, new_version, end_block_number = get_effect_proposal_info_for_vote(rpc_link)
-
-        log.info('撤销质押开始')
-        # 验证人撤销质押
-        rpc_link.unStaking(node_id)
-
-        log.info('撤销质押结束')
+        log.info('提案ID={}，升级版本号={}，截止块高={}'.format(proposal_id, new_version, end_block_number))
+        option=1
 
         log.info('开始投票')
         # 进行投票操作
         result = rpc_link.vote(verifier=node_id, proposalID=proposal_id, option=option, programVersion=new_version)
         log.info('结束投票')
 
-        assert result.get('Status') == True, '对升级提案进行投票-候选人在投票周期成为验证人-候选人在投票周期成为验证人后发起投票，投票成功'
-        log.info('17-test_vote_verifier_withdraw-对升级提案进行投票-候选人在投票周期成为验证人-候选人在投票周期成为验证人后发起投票-结束')
+        assert result.get('Status') == True, '对升级提案进行投票-候选人在投票周期成内为验证人后发起投票，投票成功'
+        log.info('17-test_vote_candidate_to_verifier-对升级提案进行投票-候选人在投票周期内成为验证人后发起投票-结束')
 
     @allure.title('18-对升级提案进行投票-节点是否处于退出状态的验证-发起升级投票申请前已经退出节点')
     def test_vote_verifier_withdraw(self):
@@ -1298,64 +1455,130 @@ class TestGovern:
         用例id 57
         对升级提案进行投票-节点是否处于退出状态的验证-发起升级投票申请前已经退出节点
         '''
-        rpc_link = self.link_2
-        node_id = self.nodeid_list[1]
-        option = 1
+        rpc_link = self.link_1
 
         # 判断是否存在可投票的提案，没有则需要先发起一个升级提案
         flag = is_exist_ineffective_proposal_info_for_vote(rpc_link)
-
-        # 升级版本号
-        new_version = get_version(rpc_link, flag=3)
-        log.info('升级提案版本号={}'.format(new_version))
 
         # True 没有可投票的升级提案
         if not flag:
             log.info('没有可投票的升级提案，需先发起一个升级提案成功后，再投票')
 
-            # 获取截止、生效块高
-            end_number, effect_number = get_single_valid_end_and_effect_block_number(rpc_link, self.block_count,self.block_interval,
-                                                                                     self.conse_index)
-
             # 发起升级提案
-            self.submit_version(new_version, end_number, effect_number)
-        else:
-            log.info('有可投票的升级提案，直接进行投票')
+            self.submit_version()
+
+        log.info('有可投票的升级提案，直接进行投票')
+
+        log.info('先获取一个验证人,然后进行撤销质押操作,之后再进行投票')
+        while 1:
+            # 获取验证人节点ID列表
+            nodeid_list = get_current_verifier(rpc_link)
+            if nodeid_list:
+                break
+
+        node_id = nodeid_list[0]
+        log.info('获取到了验证人节点ID={}'.format(node_id))
+
+        address = get_stakingaddree(rpc_link, nodeid_list[0])
+        log.info('节点ID={},钱包地址={}'.format(node_id, address))
+
+        # 获取验证人的质押钱包地址和私钥
+        check_address = Web3.toChecksumAddress(address)
+        private_key = get_privatekey(check_address)
+
+        # 新建一个链接连接到链上 用上面的质押钱包地址和私钥
+        rpc_link = Ppos(self.rpc_list[2], check_address, chainid=101, privatekey=private_key)
+
+        log.info('撤销质押开始')
+        # 验证人撤销质押
+        rpc_link.unStaking(node_id,privatekey=private_key,from_address=address,gasPrice=self.base_gas_price,gas=self.unstaking_gas)
+        log.info('撤销质押结束')
+
+        # 提案ID，升级版本号，截止块高
+        proposal_id, new_version, end_block_number = get_effect_proposal_info_for_vote(rpc_link)
+        log.info('提案ID={},升级版本号={},截止块高={}'.format(proposal_id, new_version, end_block_number))
 
         # 在等待一定时间后，进行首次进行投票
         log.info('等待一段时间={}秒后，进行进行投票'.format(self.time_interval))
         time.sleep(self.time_interval)
-
-        # 提案ID，升级版本号，截止块高
-        proposal_id, new_version, end_block_number = get_effect_proposal_info_for_vote(rpc_link)
-
-        log.info('撤销质押开始')
-        # 验证人撤销质押
-        rpc_link.unStaking(node_id)
-
-        log.info('撤销质押结束')
+        option=1
 
         log.info('开始投票')
         # 进行投票操作
         result = rpc_link.vote(verifier=node_id, proposalID=proposal_id, option=option, programVersion=new_version)
         log.info('结束投票')
 
-        # info = result.get('ErrMsg')
+        info = result.get('ErrMsg')
         assert result.get('Status') == False
-        # assert info.find('node has voted this proposal', 0,
-        #                  len(info)) > 0, '对升级提案进行投票-节点是否处于退出状态的验证-发起升级投票申请前已经退出节点，不能进行投票，投票失败'
+        assert info.find('verifier\'s status is invalid', 0,len(info)) > 0, '对升级提案进行投票-节点是否处于退出状态的验证-发起升级投票申请前已经退出节点，不能进行投票，投票失败'
         log.info('18-test_vote_verifier_withdraw-对升级提案进行投票-节点是否处于退出状态的验证-发起升级投票申请前已经退出节点-结束')
 
+    @allure.title('19-实施升级-发起提案及投票成功后,到达生效块高,且验证人符合要求,则开始升级')
+    def test_implementing_upgrade_a(self):
+        '''
+        用例id
+        发起升级提案-升级提案成功的验证
+        '''
+        # 链上是否有未生效的升级提案，为True则有
+        flag = is_exist_ineffective_proposal_info(self.link_1)
 
+        # 存在有效的升级提案，需要重新部署链
+        if flag:
+            log.info('存在有效的升级提案，需要重新部署链')
 
+            # 重新部署链
+            log.info('重新部署链开始-re_deploy')
+            self.re_deploy()
+            log.info('重新部署链结束-re_deploy')
 
+            log.info('等待一段时间={}秒'.format(self.time_interval))
+            time.sleep(self.time_interval)
 
+        log.info('没有有效的升级提案，可以发起升级提案')
+        log.info('进入发起升级提案的处理过程')
+        self.submit_version()
 
+        rpc_link = self.link_1
+        log.info('等待一段时间={}秒'.format(self.time_interval))
+        time.sleep(self.time_interval)
 
+        log.info('进入投票处理过程')
 
+        while 1:
+            # 获取验证人节点ID列表
+            nodeid_list = get_current_verifier(rpc_link)
+            if nodeid_list:
+                break
 
+        option = 1
 
+        # 提案ID，升级版本号，截止块高
+        proposal_id, new_version, end_block_number = get_effect_proposal_info_for_vote(rpc_link)
+        log.info('提案ID={}，升级版本号={}，截止块高={}'.format(proposal_id, new_version, end_block_number))
 
+        ver_len=len(nodeid_list)
+
+        for index in range(ver_len):
+            node_id=self.nodeid_list[index]
+            log.info('第{}个节点={}'.format(index+1,node_id))
+
+            log.info('等待一段时间={}秒,再投票'.format(self.time_interval))
+            time.sleep(self.time_interval)
+
+            # 进行投票操作
+            result = rpc_link.vote(verifier=node_id, proposalID=proposal_id, option=option, programVersion=new_version)
+            # assert result.get('Status') == True, '对升级提案进行投票时，升级投票通过（验证人节点发起升级投票），投票成功'
+
+            block_number = rpc_link.eth.blockNumber
+            log.info('每次完成投票后,当前块高={}'.format(block_number))
+
+            if (index+1) / ver_len> 0.6:
+                break
+
+        block_number=rpc_link.eth.blockNumber
+        log.info('完成所有投票后,当前块高={}'.format(block_number))
+
+        log.info('19-test_implementing_upgrade_a-实施升级-发起提案及投票成功后,到达生效块高,且验证人符合要求,则开始升级-结束')
 
 
     @allure.title('16-非质押钱包进行版本声明')
