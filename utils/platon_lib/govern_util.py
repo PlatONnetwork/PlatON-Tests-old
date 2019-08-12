@@ -385,7 +385,7 @@ def is_exist_ineffective_proposal_info(rpc_link):
             block_number = rpc_link.eth.blockNumber
             for i in range(0, len(proposal_list)):
                 if endvotingblock_list[i] > block_number:
-                    log.info('有可投票的升级提案')
+                    log.info('有升级提案')
                     flag = True
                     break
                 else:
@@ -422,10 +422,10 @@ def is_exist_ineffective_proposal_info_for_vote(rpc_link):
     proposal_info = result.get('Data')
 
     if not proposal_info:
-        log.info('查询提案失败')
+        log.info('查询提案信息失败')
         log.info('is_exist_ineffective_proposal_info_for_vote-结束')
     else:
-        log.info('查询提案成功')
+        log.info('查询提案信息成功')
         proposal_info = json.loads(proposal_info)
 
         if proposal_info is None:
@@ -506,9 +506,10 @@ def get_effect_proposal_info_for_vote(rpc_link):
     :return:
     '''
     if not is_exist_ineffective_proposal_info_for_vote(rpc_link):
-        log.info('链上不存在可投票的升级提案')
+        log.info('链上不存在升级提案')
         return None
     else:
+        log.info('链上存在升级提案')
         result = rpc_link.listProposal()
         proposal_info = result.get('Data')
         proposal_info = json.loads(proposal_info)
@@ -526,6 +527,7 @@ def get_effect_proposal_info_for_vote(rpc_link):
         block_number = rpc_link.eth.blockNumber
         for i in range(0, len(proposalid_list)):
             if endvotingblock_list[i] > block_number:
+                log.info('链上存在可投票的升级提案')
                 return proposalid_list[i], newversion_list[i], endvotingblock_list[i]
 
 

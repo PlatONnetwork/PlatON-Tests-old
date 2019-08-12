@@ -197,7 +197,7 @@ class TestGovern:
     def submit_version(self,flag=None):
         '''
         提交升级提案
-        :param new_version,flag=0、1、2 获取特定截止和生效块高
+        :param new_version,flag=0、1、2、3 获取特定截止和生效块高
         :return: list
         '''
         rpc_link=self.link_1
@@ -214,10 +214,10 @@ class TestGovern:
 
         # 获取验证人的质押钱包地址和私钥
         check_address = Web3.toChecksumAddress(address)
-        privatekey = get_privatekey(check_address)
+        private_key = get_privatekey(check_address)
 
         # 新建一个链接连接到链上 用上面的质押钱包地址和私钥
-        rpc_link = Ppos(self.rpc_list[2], check_address, chainid=101, privatekey=privatekey)
+        rpc_link = Ppos(self.rpc_list[2], check_address, chainid=101, privatekey=private_key)
 
         new_version = get_version(rpc_link, 3)
         log.info('升级提案版本号={}'.format(new_version))
@@ -242,11 +242,21 @@ class TestGovern:
                                                                                    self.block_interval,
                                                                                    self.conse_index, self.conse_border)
             end_number,effect_number = block_number_list[flag][0],block_number_list[flag][1]
+        elif flag==3:
+            # 获取指定结算算周期的截止区块、生效区块块高
+            block_number_list = get_cross_sellte_cycle_legal_end_and_effect_block_number(rpc_link, self.block_count,
+                                                                                         self.block_interval,
+                                                                                         self.conse_border)
+
+            end_number = block_number_list[0][0]
+            effect_number = block_number_list[0][1]
         else:
             pass
 
+        log.info('升级提案的截止块高={},生效块高={}'.format(end_number, effect_number))
+
         # 发起升级提案
-        result = rpc_link.submitVersion(node_id, self.website, new_version, end_number, effect_number,from_address=address, privatekey=privatekey)
+        result = rpc_link.submitVersion(node_id, self.website, new_version, end_number, effect_number,from_address=address, privatekey=private_key)
         log.info('升级提案后的结果为={}'.format(result))
         return result
 
@@ -798,8 +808,7 @@ class TestGovern:
         result = rpc_link.submitVersion(verifier=node_id, url=self.website, newVersion=new_version,
                                         endVotingBlock=end_number, activeBlock=effect_number)
         log.info('result='.format(result))
-        assert result.get('Status') == True
-        assert result.get('ErrMsg') == 'ok', '发起升级提案成功'
+        assert result.get('Status') == True, '发起升级提案成功'
         log.info('7-test_submit_version_success-发起升级提案-升级提案成功的验证-结束')
 
     @allure.title('8-发起升级提案-未生效的升级提案的验证')
@@ -831,8 +840,7 @@ class TestGovern:
             result = self.submit_version()
             log.info('升级提案后的结果='.format(result))
 
-            assert result.get('Status') == True
-            assert result.get('ErrMsg')=='ok', '没有未生效的升级提案，发起升级提案成功'
+            assert result.get('Status') == True, '没有未生效的升级提案，发起升级提案成功'
 
             log.info('等待一段时间={}秒'.format(self.time_interval))
             time.sleep(self.time_interval)
@@ -1379,7 +1387,7 @@ class TestGovern:
 
         log.info('先发起一个升级提案成功后，再投票')
         # 发起升级提案
-        self.submit_version()
+        self.submit_version(flag=3)
 
         # 版本号
         cur_version = get_version(rpc_link)
@@ -1422,23 +1430,13 @@ class TestGovern:
 
         log.info('候选人节点质押完成')
 
-        # 获取指定结算算周期的截止区块、生效区块块高
-        block_number_list = get_cross_sellte_cycle_legal_end_and_effect_block_number(rpc_link, self.block_count,
-                                                                                     self.block_interval,
-                                                                                     self.conse_border)
-
-        end_number = block_number_list[0][0]
-        effect_number = block_number_list[0][1]
-        border_number = block_number_list[0][2]
-
-        log.info('截止块高={},生效块高={}，投票开始块高={}'.format(end_number, effect_number, border_number))
-
-        # 等待下一个结算周期后,再进行投票
-        is_cur_block_number_big_than_end_block_number(rpc_link,border_number)
-
         # 提案ID，升级版本号，截止块高
         proposal_id, new_version, end_block_number = get_effect_proposal_info_for_vote(rpc_link)
         log.info('提案ID={}，升级版本号={}，截止块高={}'.format(proposal_id, new_version, end_block_number))
+        border_number=end_block_number-self.block_count
+
+        # 等待下一个结算周期后,再进行投票
+        is_cur_block_number_big_than_end_block_number(rpc_link,border_number)
         option=1
 
         log.info('开始投票')

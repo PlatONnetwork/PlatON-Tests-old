@@ -26,32 +26,45 @@ if __name__ == "__main__":
     # # 共识节点信息
     # rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get('nocollusion')
 
-    # address = Web3.toChecksumAddress('0x493301712671ada506ba6ca7891f436d29185821')
-    # new_address = Web3.toChecksumAddress('0xb2fC346DF94cBE871AF2ea56B9E56E477569FcDb')
-    # privatekey = '0aea84e2169919c796b4983b130bf31ac152f78319f91f56563bd75cf842314c'
+    address = Web3.toChecksumAddress('0x493301712671ada506ba6ca7891f436d29185821')
+    new_address = Web3.toChecksumAddress('0xb2fC346DF94cBE871AF2ea56B9E56E477569FcDb')
+    privatekey = '0aea84e2169919c796b4983b130bf31ac152f78319f91f56563bd75cf842314c'
 
     # rpc_link = Ppos('http://10.10.8.157:6789', address, chainid=102, privatekey=privatekey)
     # rpc_link = Ppos('http://192.168.9.221:6789',address,chainid=101)
-    # rpc_link = Ppos('http://192.168.120.121:6789', new_address, chainid=101,privatekey=privatekey)
+    # rpc_link = Ppos('http://192.168.120.124:6789', new_address, chainid=101,privatekey=privatekey)
+    # v_l1=rpc_link.getVerifierList()
+    # v_l2=rpc_link.getValidatorList()
+    # v_l3=rpc_link.getCandidateList()
+    #
+    # log.info(v_l1)
+    # log.info(v_l2)
+    # log.info(v_l3)
+
 
     test = TestGovern()
     test.setup_class()
+    test.test_implementing_upgrade_a()
 
     # test.test_submit_version_version_not_empty()
-    # test.test_submit_version_end_block_number()
-    # test.test_submit_version_effect_block_number()
+    # test.test_submit_version_end_block_number() #有问题
+    # test.test_submit_version_effect_block_number() #有问题
     # test.test_submit_version_on_newnode()
     # test.test_submit_version_on_candidatenode()
     # test.test_submit_version_success()
     # test.test_submit_ineffective_verify()
+
+    # node have not upgraded to a new version
+
     # test.test_vote_vote_trans()
-    # test.test_vote_notin_vote_cycle_a()
-    # test.test_vote_notin_vote_cycle_b()
-    # test.test_vote_notin_vote_cycle_c()
+    # test.test_vote_notin_vote_cycle_a() #有问题
+    # test.test_vote_notin_vote_cycle_b() #有问题
+    # test.test_vote_notin_vote_cycle_c() #有问题
     # test.test_vote_new_node_vote()
     # test.test_vote_candidate_node_vote()
-    # test.test_vote_vote_double_cycle()
     # test.test_vote_vote_success()
+    # test.test_vote_vote_double_cycle()
+
     # test.test_vote_candidate_to_verifier()
     # test.test_vote_verifier_withdraw()
 
@@ -62,7 +75,7 @@ if __name__ == "__main__":
     # test.test_declare_version_propsal_verifier()
     # test.test_declare_version_nopropsal_verifier()
 
-    test.test_implementing_upgrade_a()
+
 
     # test.test_get_active_version()
     # test.test_get_proposal_list()

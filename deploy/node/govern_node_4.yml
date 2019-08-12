@@ -36,7 +36,6 @@ nocollusion:
   sshport: 22
   username: platon
   password: Platon123!
-  url: http://192.168.120.125:6788
 - host: 192.168.120.126
   port: 16788
   rpcport: 6788

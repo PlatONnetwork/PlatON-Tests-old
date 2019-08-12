@@ -1,5 +1,4 @@
 import os
-from common import log
 
 # 项目基本路径
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
