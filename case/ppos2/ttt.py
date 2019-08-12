@@ -12,22 +12,9 @@ from client_sdk_python import (
 )
 import random
 
-
-
-#a:结算周期时长
-#b:当前验证人
-#c:每个验证人出的块数
-#d:出块间隔
-#e:每个结算周期的共识轮数
-
-#结算周期 e = a / b * c * d
-
-#下个结算期的块数 = 当前块高 + 150
-
-a  = 2173 % 150
+a = Web3.toWei (1000, 'ether')
+b = Web3.toWei (800, 'ether')
+a =1042190400000000000000 +50000000000000000000
 print(a)
-b = 150 - 73
+b = 1092190400000000000000 - a
 print(b)
-
-c = 2173 + b
-print(c)

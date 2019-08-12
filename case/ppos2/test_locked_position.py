@@ -625,12 +625,12 @@ class TestLockeDposition:
                                                    conf.PRIVATE_KEY)
         return_info = platon_ppos.eth.waitForTransactionReceipt (result)
 
-        if return_info is not None:
-            #申请委托验证人节点
-            amount = 500
-            delegate_info = platon_ppos.delegate (1, nodeId, amount,privatekey=private_key2,from_address=address2,                                            gasPrice=self.base_gas_price , gas=self.staking_gas)
-            log.info("申请委托地址：{}".format(address2))
-            assert delegate_info['Status'] == True, "申请委托返回的状态：{},用例失败".format (result['Status'])
+        assert return_info is not None, "转账锁仓账号手续费：{}失败".format (self.value)
+        #申请委托验证人节点
+        amount = 500
+        delegate_info = platon_ppos.delegate (1, nodeId, amount,privatekey=private_key2,from_address=address2,                                            gasPrice=self.base_gas_price , gas=self.staking_gas)
+        log.info("申请委托地址：{}".format(address2))
+        assert delegate_info['Status'] == True, "申请委托返回的状态：{},用例失败".format (result['Status'])
 
         lockup_before = platon_ppos.eth.getBalance (conf.FOUNDATIONLOCKUPADDRESS)
         log.info ("申请委托之后锁仓账户金额：{}".format (lockup_before))

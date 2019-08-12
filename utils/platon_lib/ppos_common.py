@@ -32,6 +32,10 @@ class CommonMethod():
     chainid = 101
 
     def link_list(self):
+        '''
+        获取随机一个可以连接正常节点url
+        :return:
+        '''
         rpc_lastlist = []
         node_info = get_node_info (self.node_yml_path)
         self.rpc_list, enode_list, self.nodeid_list, ip_list, port_list = node_info.get (
@@ -47,12 +51,17 @@ class CommonMethod():
         return url
 
     def get_block_number(self,ConsensusSize):
+        '''
+        获取下个结算周期块数或者下个共识轮块数
+        :param ConsensusSize:一个共识轮块数或者一个结算周期块数
+        :return:
+        '''
         url = CommonMethod.link_list (self)
         platon_ppos = Ppos (url, self.address, self.chainid)
         current_block = platon_ppos.eth.blockNumber
         differ_block = ConsensusSize - (current_block % ConsensusSize)
         current_end_block = current_block + differ_block
-        log.info ('当前块高：{} ，下周期结束块高：{}'.format (current_block,current_end_block))
+        log.info ('当前块高：{} ，下个周期结束块高：{}'.format (current_block,current_end_block))
 
         while 1:
             time.sleep (self.time_interval)
@@ -62,13 +71,14 @@ class CommonMethod():
             if current_block > current_end_block :
                 break
 
-    def get_settlement_interval(self):
-        url = CommonMethod.link_list (self)
-        platon_ppos = Ppos (url, self.address, self.chainid)
-        current_block = platon_ppos.eth.blockNumber
 
 
     def read_out_nodeId(self, code):
+        """
+        读取节点id列表
+        :param code: 共识节点或者非共识节点标识
+        :return:
+        """
         node_info = get_node_info (self.node_yml_path)
         self.rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get (
             code)
@@ -93,6 +103,15 @@ class CommonMethod():
 
 
     def update_config(self,key1, key2, key3=None, value=None,file = conf.PLATON_CONFIG_PATH):
+        '''
+        修改config配置参数
+        :param key1: 第一层级key
+        :param key2: 第二层级key
+        :param key3: 第三层级key
+        :param value:
+        :param file:
+        :return:
+        '''
         data = LoadFile (file).get_data ()
         if key3 == None:
             data[key1][key2] = value
@@ -105,11 +124,36 @@ class CommonMethod():
             f.close ()
 
     def read_private_key_list(file=conf.PRIVATE_KEY_LIST):
+        '''
+        随机获取一组钱包地址和私钥
+        :return:
+        '''
         with open (file, 'r') as f:
             private_key_list = f.read ().split ("\n")
             index = random.randrange (1, len (private_key_list) - 1)  # 生成随机行数
             address, private_key = private_key_list[index].split (',')
         return address, private_key
+
+    def get_no_candidate_list(self):
+        '''
+        获取未被质押的节点ID列表
+        :return:
+        '''
+        url = CommonMethod.link_list (self)
+        platon_ppos = Ppos (url, self.address, self.chainid)
+        node_info = get_node_info (self.node_yml_path)
+        self.rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get (
+            '')
+        no_candidate_list = []
+        for index in range (len (nodeid_list)):
+            nodeid = nodeid_list[index]
+
+            result = platon_ppos.getCandidateInfo (nodeid)
+            flag = result['Status']
+
+            if not flag:
+                no_candidate_list.append (nodeid)
+            return no_candidate_list
 
 
 if __name__ == '__main__':
