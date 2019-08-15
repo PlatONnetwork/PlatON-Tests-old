@@ -21,7 +21,7 @@ static_node_file = conf.STATIC_NODE_FILE
 
 
 def teardown_function():
-    log.info("每个用例结束后都会执行")
+    log.info("关闭所有节点")
     auto.kill_of_yaml(node_yml)
 
 
@@ -107,6 +107,7 @@ def test_start_2f1_node_and_start_one(t):
     用例id：53,54,55
     先启动2f+1个，n秒后在启动一个
     """
+    log.info("该case可能出现不出快的情况")
     num = int(2*f+1)
     log.info("部署{}个节点".format(num))
     auto.start_of_list(

@@ -493,7 +493,7 @@ class BaseDeploy:
             ssh, sftp, t = connect_linux(nodedict["host"],
                                          nodedict["username"],
                                          nodedict["password"],
-                                         nodedict["sshport"])
+                                         nodedict.get("sshport", 22))
         except Exception as e:
             raise e
         self.run_ssh(ssh, "sudo -S -p '' ntpdate 0.centos.pool.ntp.org",
@@ -813,7 +813,7 @@ class AutoDeployPlaton(BaseDeploy):
         tmp = os.path.join(tmp_dir, "supervisord.conf")
         self.update_conf(node, self.sup_template, tmp)
         ssh, sftp, t = connect_linux(node["host"], node["username"],
-                                     node["password"], node["sshport"])
+                                     node["password"], node.get("sshport", 22))
         self.run_ssh(ssh, "mkdir -p ./tmp")
         sftp.put(tmp, "./tmp/supervisord.conf")
         supervisor_pid_str = self.run_ssh(
@@ -886,7 +886,7 @@ class AutoDeployPlaton(BaseDeploy):
         port = str(node["port"])
         node_name = "node-" + port
         ssh, sftp, t = connect_linux(node["host"], node["username"],
-                                     node["password"], node["sshport"])
+                                     node["password"], node.get("sshport", 22))
         pwd_list = self.run_ssh(ssh, "pwd")
         pwd = pwd_list[0].strip("\r\n")
         with open(
@@ -1006,6 +1006,7 @@ class AutoDeployPlaton(BaseDeploy):
         password = nodedict['password']
         sshport = nodedict.get('sshport', 22)
         ssh, _, t = connect_linux(ip, username, password, sshport)
+        log.info("stop node-{}-{}".format(ip, nodedict["port"]))
         self.run_ssh(ssh,
                      "supervisorctl stop node-{}".format(nodedict["port"]))
         t.close()
