@@ -12,15 +12,17 @@ from client_sdk_python import (
 )
 import random
 
-a = Web3.toWei (1000, 'ether')
-b = Web3.toWei (800, 'ether')
-c =900000000000000000000 - (900000000000000000000 *  0.2)
-d = c -576000000000000000000
-print('d',int(d))
-print('c',int(c))
 
-a =995851360000000000000 + 800000000000000000000 - int(c)
-print(a)
-b = 995851360000000000000 - a
-print(b)
 
+
+
+# a = 900000000000000000000 - (900000000000000000000*(20/100))
+# b = 997076800000000000000
+# c = a -b
+# print(c)
+# print(int(a))
+# 720000000000000000000
+# 720000000000000000000
+amount = 900
+aa = Web3.toWei (amount-(amount * 0.2), 'ether')
+print(aa)

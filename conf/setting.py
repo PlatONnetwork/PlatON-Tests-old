@@ -4,7 +4,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 节点配置文件路径
-# NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/test_node.yml"))
+NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/ppos2_10.yml"))
 
 # FOUR_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/cbft_4.yml"))
 

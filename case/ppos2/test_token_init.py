@@ -24,13 +24,14 @@ class TestDposinit:
     node_yml_path = conf.PPOS_NODE_TEST_YML
     file = conf.CASE_DICT
     privatekey = conf.PRIVATE_KEY
-    gasPrice = Web3.toWei(0.000000000000000001,'ether')
-    gas = 21000
-    transfer_gasPrice = Web3.toWei(1,'ether')
+    base_gas_price = 60000000000000
+    base_gas = 21000
+    staking_gas = base_gas + 32000 + 6000 + 100000
+    transfer_gasPrice = Web3.toWei (1, 'ether')
     transfer_gas = 210000000
     value = 1000
-    chainid = 101
-    ConsensusSize = 250
+    chainid = 120
+    ConsensusSize = 150
     time_interval = 10
     initial_amount = {'FOUNDATION': 905000000000000000000000000,
                       'FOUNDATIONLOCKUP': 20000000000000000000000000,
@@ -39,24 +40,28 @@ class TestDposinit:
                       'DEVELOPERS': 5000000000000000000000000
                       }
 
-    def test(self):
+    def start_init(self):
+        # 修改config参数
+        CommonMethod.update_config (self, 'EconomicModel', 'Common', 'ExpectedMinutes', 3)
+        CommonMethod.update_config (self, 'EconomicModel', 'Common', 'PerRoundBlocks', 5)
+        CommonMethod.update_config (self, 'EconomicModel', 'Common', 'ValidatorCount', 10)
+        CommonMethod.update_config (self, 'EconomicModel', 'Staking', 'ElectionDistance', 10)
+        CommonMethod.update_config (self, 'EconomicModel', 'Staking', 'StakeThreshold', 1000)
+        # 启动节点
         self.auto = AutoDeployPlaton ()
         self.auto.start_all_node (self.node_yml_path)
-        #print(self.nodeid_list)
 
     def test_init_token(self):
         '''
         验证链初始化后token各内置账户初始值
         :return:
         '''
-
         url = CommonMethod.link_list(self)
         platon_ppos = Ppos(url,self.address,self.chainid)
         FOUNDATION = platon_ppos.eth.getBalance(Web3.toChecksumAddress (conf.FOUNDATIONADDRESS))
         FOUNDATIONLOCKUP = platon_ppos.eth.getBalance(Web3.toChecksumAddress (conf.FOUNDATIONLOCKUPADDRESS))
         STAKING = platon_ppos.eth.getBalance(Web3.toChecksumAddress (conf.STAKINGADDRESS))
         INCENTIVEPOOL = platon_ppos.eth.getBalance (Web3.toChecksumAddress (conf.INCENTIVEPOOLADDRESS))
-        log.info("奖励池初始金额:{}".format(INCENTIVEPOOL))
         DEVELOPERS = platon_ppos.eth.getBalance (Web3.toChecksumAddress (conf.DEVELOPERSADDRESS))
         token_init_total = conf.TOKENTOTAL
         if self.initial_amount['FOUNDATION'] != FOUNDATION:
@@ -79,83 +84,40 @@ class TestDposinit:
         '''
         url = CommonMethod.link_list (self)
         platon_ppos = Ppos (url, self.address, self.chainid)
-        address1,private_key1 = CommonMethod.read_private_key_list()
-        result = platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
-                                          Web3.toChecksumAddress (address1), self.transfer_gasPrice, self.gas, self.value,
-                                          conf.PRIVATE_KEY)
-        return_info= platon_ppos.eth.waitForTransactionReceipt(result)
-        if return_info is not None:
-            Balance = platon_ppos.eth.getBalance(address1)
-            log.info("转账金额{}",Balance)
-            assert Web3.toWei(self.value,'ether') == Balance,"转账金额:{}失败".format(Balance)
-        else:
-            status = 1
-            assert status == 0, "转账金额:{}失败".format(self.value)
-
-
-    # def test_transfer_notsufficientfunds(self):
-    #     '''
-    #     账户余额不足的情况下进行转账
-    #     :return:
-    #     '''
-    #     platon_ppos = CommonMethod.ppos_link (self)
-    #     #账户1
-    #     address1,private_key1 = CommonMethod.read_private_key_list()
-    #     #账户2
-    #     address2,private_key2 = CommonMethod.read_private_key_list()
-    #     balance = platon_ppos.eth.getBalance(address1)
-    #     result = platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (address1),
-    #                                       Web3.toChecksumAddress (address2), self.transfer_gasPrice, self.gas, self.value,
-    #                                       private_key1)
-    #     print('报错',result)
-
-    def test_transfer_funds(self):
-        '''
-        验证初始化之后普通账户转账内置账户
-        :return:
-        '''
-        url = CommonMethod.link_list (self)
-        platon_ppos = Ppos (url, self.address, self.chainid)
-        lockup_balancebe_before = platon_ppos.eth.getBalance (Web3.toChecksumAddress (conf.INCENTIVEPOOLADDRESS))
-        log.info("转账前激励池余额：".format(lockup_balancebe_before))
+        address1, private_key1 = CommonMethod.read_private_key_list ()
         # 签名转账
-        result = platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (conf.ADDRESS),
-                                          Web3.toChecksumAddress (conf.INCENTIVEPOOLADDRESS), self.transfer_gasPrice, self.gas,                                                          self.value,conf.PRIVATE_KEY)
+        result = platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (self.address),
+                                                   Web3.toChecksumAddress (address1),
+                                                   self.base_gas_price, self.base_gas, self.value, self.privatekey)
         return_info = platon_ppos.eth.waitForTransactionReceipt (result)
-        if return_info is not None:
-            lockup_balancebe_after = platon_ppos.eth.getBalance (Web3.toChecksumAddress (conf.INCENTIVEPOOLADDRESS))
-            log.info ("转账后激励池余额：".format (lockup_balancebe_before))
-            assert lockup_balancebe_before + Web3.toWei (self.value, 'ether') == lockup_balancebe_after,"转账金额:{}失败".format(                                                             self.value)
-        else:
-            status = 1
-            assert status == 0, "转账激励池账户金额:{}失败".format (self.value)
-
+        assert return_info is not None, "转账：{}失败".format (self.value)
+        balance = platon_ppos.eth.getBalance(address1)
+        log.info("转账金额{}".format(balance))
+        assert Web3.toWei(self.value,'ether') == balance,"转账金额:{}失败".format(balance)
 
 
     def test_fee_income(self):
         '''
-        验证初始内置账户没有基金会Staking奖励和出块奖励只有手续费收益
+        1、验证初始化之后普通账户转账内置账户
+        2、验证初始内置账户没有基金会Staking奖励和出块奖励只有手续费收益
         :return:
         '''
         url = CommonMethod.link_list (self)
         platon_ppos = Ppos (url, self.address, self.chainid)
         incentive_pool_balance_befor = platon_ppos.eth.getBalance (conf.INCENTIVEPOOLADDRESS)
         log.info('交易前激励池查询余额：{}'.format(incentive_pool_balance_befor))
+        address1, private_key1 = CommonMethod.read_private_key_list ()
         # 签名转账
-        address1,private_key1 = CommonMethod.read_private_key_list()
         result = platon_ppos.send_raw_transaction ('', Web3.toChecksumAddress (self.address),
-                                          Web3.toChecksumAddress (address1), self.transfer_gasPrice, self.gas, self.value,
-                                          self.privatekey)
+                                                   Web3.toChecksumAddress (address1),
+                                                   self.base_gas_price, self.base_gas, self.value, self.privatekey)
         return_info = platon_ppos.eth.waitForTransactionReceipt (result)
-        if return_info is not None:
-            incentive_pool_balance_after = platon_ppos.eth.getBalance (conf.INCENTIVEPOOLADDRESS)
-            log.info('交易后激励池查询余额：{}'.format(incentive_pool_balance_after))
-            difference = incentive_pool_balance_after - incentive_pool_balance_befor
-            log.info('手续费的金额：{}'.format(difference))
-            assert difference == (self.gas * self.transfer_gasPrice),"手续费{}有误".format(difference)
-        else:
-            status = 1
-            assert status == 0, "转账{}金额错误".format(Web3.toWei (self.value, 'ether'))
+        assert return_info is not None, "转账：{}失败".format (self.value)
+        incentive_pool_balance_after = platon_ppos.eth.getBalance (conf.INCENTIVEPOOLADDRESS)
+        log.info('交易后激励池查询余额：{}'.format(incentive_pool_balance_after))
+        difference = incentive_pool_balance_after - incentive_pool_balance_befor
+        log.info('手续费的金额：{}'.format(difference))
+        assert difference == 1260000000000000000,"手续费{}有误".format(difference)
 
 
     def test_punishment_income(self):
@@ -169,47 +131,38 @@ class TestDposinit:
         log.info ('处罚之前激励池查询余额：{}'.format (incentive_pool_balance_befor))
 
         #获取节点内置质押节点信息
-        node_info = get_node_list (self.node_yml_path)
-        node_info_length = len (node_info) - 1
-        index = random.randint (0, node_info_length)
-        node_data = node_info[0][index]
+        nodeId = CommonMethod.read_out_nodeId(self,'collusion')
+        log.info("节点ID：{}".format(nodeId))
+        con_node, no_node = get_node_list (self.node_yml_path)
+        nodes = con_node + no_node
+        for node in nodes:
+            if nodeId in node.values ():
+                node_data = node
 
         #获取节点质押金额
-        punishment_CandidateInfo = platon_ppos.getCandidateInfo (node_data['id'])
+        punishment_CandidateInfo = platon_ppos.getCandidateInfo (nodeId)
         assert punishment_CandidateInfo['Status'] == True, "查询锁仓信息失败"
-        punishment_amount = punishment_CandidateInfo['Data']['Released'] * (20 / 100)
-        print(punishment_amount)
+        pledge_amount1 = punishment_CandidateInfo['Data']['Released']
+        log.info("质押节点质押金：{}".format(pledge_amount1))
 
-        #停止其中一个正在出块的节点信息
+        # 停止其中一个正在出块的节点信息
         self.auto = AutoDeployPlaton ()
-        self.auto.kill(node_data)
-        platon_ppos1 = connect_web3(node_data['url'])
-
-        if not platon_ppos1.isConnected():
-
-            url = CommonMethod.link_list (self)
-            platon_ppos = Ppos (url, self.address, self.chainid)
-            CommonMethod.get_block_number(self)
-
-            incentive_pool_balance_after = platon_ppos.eth.getBalance (conf.INCENTIVEPOOLADDRESS)
-            log.info ('处罚之后激励池查询余额：{}'.format (incentive_pool_balance_after))
-
-            assert incentive_pool_balance_after == incentive_pool_balance_befor + punishment_amount
-
-        else:
-            status = 1
-            assert status == 0, '停止节点:{}失败'.format (node_data['host'])
+        self.auto.kill (node_data)
+        platon_ppos1 = connect_web3 (node_data['url'])
+        assert not platon_ppos1.isConnected (), "节点：{} 连接异常".format (node_data['host'])
+        CommonMethod.get_next_settlement_interval(self)
+        punishment_CandidateInfo = platon_ppos.getCandidateInfo (nodeId)
+        pledge_amount3 = punishment_CandidateInfo['Data']['Released']
+        log.info ("节点低出块率后节点质押金：{}".format (pledge_amount3))
+        incentive_pool_balance_after = platon_ppos.eth.getBalance (conf.INCENTIVEPOOLADDRESS)
+        log.info ('处罚之后激励池查询余额：{}'.format (incentive_pool_balance_after))
+        assert incentive_pool_balance_after == incentive_pool_balance_befor + (pledge_amount1 - pledge_amount3)
 
 
 
-    def test_Staking_reward(self):
-        pass
 
-    def test_packaging_reward(self):
-        pass
 
-    def test_poundage_reward(self):
-        pass
+
 
 
 
@@ -218,6 +171,6 @@ class TestDposinit:
 
 if __name__ == "__main__":
     a = TestDposinit()
-    a.test()
+    a.start_init()
     #a.test_init_token()
-    #a.test_punishment_income()
+    a.test_punishment_income()
