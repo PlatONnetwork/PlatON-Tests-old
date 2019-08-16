@@ -23,6 +23,7 @@ def send_raw_transaction(account, privatekey, to, w3, value, data):
             "nonce": nonce,
             "data": data,
             "value": w3.toWei(value, "ether"),
+            "chainId": 101,
         }
     elif not to:
         transaction_dict = {
@@ -30,6 +31,7 @@ def send_raw_transaction(account, privatekey, to, w3, value, data):
             "gas": "0x6fffffff",
             "nonce": nonce,
             "data": data,
+            "chainId": 101,
         }
     else:
         transaction_dict = {
@@ -38,6 +40,7 @@ def send_raw_transaction(account, privatekey, to, w3, value, data):
             "gas": "0x6fffffff",
             "nonce": nonce,
             "data": data,
+            "chainId": 101,
         }
     signedTransactionDict = w3.eth.account.signTransaction(
         transaction_dict, privatekey

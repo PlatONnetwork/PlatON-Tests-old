@@ -1,22 +1,4 @@
 collusion:
-- host: 192.168.120.121
-  port: 16789
-  rpcport: 6789
-  sshport: 22
-  username: platon
-  password: Platon123!
-- host: 192.168.120.122
-  port: 16789
-  rpcport: 6789
-  sshport: 22
-  username: platon
-  password: Platon123!
-- host: 192.168.120.123
-  port: 16789
-  rpcport: 6789
-  sshport: 22
-  username: platon
-  password: Platon123!
 - host: 192.168.120.124
   port: 16789
   rpcport: 6789
@@ -35,8 +17,26 @@ collusion:
   sshport: 22
   username: platon
   password: Platon123!
-nocollusion:
 - host: 192.168.120.127
+  port: 16789
+  rpcport: 6789
+  sshport: 22
+  username: platon
+  password: Platon123!
+nocollusion:
+- host: 192.168.120.124
+  port: 16788
+  rpcport: 6788
+  sshport: 22
+  username: platon
+  password: Platon123!
+- host: 192.168.120.125
+  port: 16788
+  rpcport: 6788
+  sshport: 22
+  username: platon
+  password: Platon123!
+- host: 192.168.120.126
   port: 16788
   rpcport: 6788
   sshport: 22

@@ -153,3 +153,16 @@ def get_node_info(node_yml: str)->dict:
         port_list.append(str(nodedict.get("port", 16789)))
     data["nocollusion"] = [rpc_list, enode_list, nodeid_list, ip_list, port_list]
     return data
+
+
+if  __name__=='__main__':
+    node_yml_path = conf.GOVERN_NODE_YML
+    node_info = get_node_info(node_yml_path)
+
+    # 共识节点信息
+    rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get('collusion')
+
+    # 非共识节点信息
+    rpc_list2, enode_list2, nodeid_list2, ip_list2, port_list2 = node_info.get('nocollusion')
+
+    print(nodeid_list)
