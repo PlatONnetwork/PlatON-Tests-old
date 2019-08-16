@@ -349,7 +349,7 @@ class BaseDeploy:
         :return:
         """
         fail_list = []
-        time.sleep(10)
+        time.sleep(20)
         for node in node_list:
             w3 = connect_web3(node["url"])
             if not w3.isConnected():
@@ -944,6 +944,7 @@ class AutoDeployPlaton(BaseDeploy):
                     "{}/{}/{}/data/nodekey".format(pwd,
                                                    self.deploy_path, node_name)
                 cmd = cmd + " --config {}/{}/{}/config.json".format (pwd,self.deploy_path, node_name)
+            #cmd = cmd + " --pprof --pprofaddr 0.0.0.0 --pprofport 6060"
             fp.write("command=" + cmd + "\n")
             fp.write("environment=LD_LIBRARY_PATH={}/mpclib\n".format(pwd))
             fp.write("numprocs=1\n")

@@ -122,6 +122,7 @@ class Ppos:
         if not gas:
             transactiondict = {"to": to_address, "data": data}
             gas = self.eth.estimateGas(transactiondict)
+            print("gas费用：",gas)
         result = self.send_raw_transaction(data, from_address, to_address, gasPrice,gas,0,privatekey)
         return self.get_result(result)
 
