@@ -20,8 +20,7 @@ BOB_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/bob.yml"))
 PPOS_NODE_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/ppos_wyq.yml"))
 
 
-PPOS_NODE_TEST_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/ppos2_10.yml"))
-
+PPOS_NODE_TEST_YML = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/ppos_7.yml"))
 
 # ppos系统参数配置文件
 PLATON_CONFIG_PATH = os.path.abspath(os.path.join(BASE_DIR, "deploy/config.json"))
