@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+"""
+@Author: wuyiqin
+@Date: 2019/8/16 11:45
+@Description:主要是增持和修改节点信息用例
+"""
 
 import json
 import math
@@ -22,9 +27,6 @@ from client_sdk_python.eth import Eth
 
 
 
-"""
-主要是增持和修改节点信息用例
-"""
 class TestAddstaking():
     node_yml_path = conf.NODE_YML
     node_info = get_node_info(node_yml_path)

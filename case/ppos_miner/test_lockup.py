@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-
+"""
+@Author: wuyiqin
+@Date: 2019/8/16 11:45
+@Description:主要是ppos锁定期的用例
+"""
 import json
 import math
 import time
@@ -20,9 +24,6 @@ from client_sdk_python.eth import Eth
 from utils.platon_lib.ppos_tool import get_block_number,getVerifierList
 
 
-"""
-主要是锁定期的用例
-"""
 class TestLockup():
     node_yml_path = conf.NODE_YML
     node_info = get_node_info(node_yml_path)

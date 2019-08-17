@@ -12,10 +12,17 @@ from client_sdk_python import (
 )
 import random
 
-gasPrice = Web3.toWei (0.000000000000000001, 'ether')
-a = 159000
-b = 60000000000000
-c = 9540000000000000000
-print(a*b)
-d = (a*b) - c
-print(d)
+
+
+
+
+# a = 900000000000000000000 - (900000000000000000000*(20/100))
+# b = 997076800000000000000
+# c = a -b
+# print(c)
+# print(int(a))
+# 720000000000000000000
+# 720000000000000000000
+amount = 900
+aa = Web3.toWei (amount-(amount * 0.2), 'ether')
+print(aa)

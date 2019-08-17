@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-
+"""
+@Author: wuyiqin
+@Date: 2019/8/16 11:45
+@Description:主要是ppos赎回的用例
+"""
 import json
 import math
 import time
@@ -19,9 +23,7 @@ from hexbytes import HexBytes
 from client_sdk_python.eth import Eth
 
 
-"""
-主要是赎回的用例
-"""
+
 
 class TestDelegate():
     node_yml_path = conf.NODE_YML

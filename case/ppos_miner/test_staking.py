@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-
+"""
+@Author: wuyiqin
+@Date: 2019/8/16 11:45
+@Description:主要是ppos初始验证人和质押用例
+"""
 import json
 import math
 import time
@@ -19,9 +23,7 @@ from hexbytes import HexBytes
 from client_sdk_python.eth import Eth
 from utils.platon_lib.ppos_tool import get_block_number
 
-"""
-主要是初始验证人和质押用例
-"""
+
 class TestStaking():
     node_yml_path = conf.NODE_YML
     node_info = get_node_info(node_yml_path)

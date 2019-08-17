@@ -4,7 +4,7 @@
 @Date: 2019-01-08 10:20:33
 @LastEditors: wuyiqin
 @LastEditTime: 2019-03-20 14:24:09
-@Description: file content
+@Description: 转账用例
 '''
 import time
 
@@ -16,6 +16,7 @@ from common.connect import connect_web3
 from common.load_file import get_node_list, get_f
 from conf import setting as conf
 from utils.platon_lib.send_raw_transaction import send_raw_transaction
+from deploy.deploy import generate_init_node
 
 node_yml = conf.NODE_YML
 collusion_list, nocollusion_list = get_node_list(node_yml)
@@ -23,6 +24,14 @@ f = get_f(collusion_list)
 send_address = Web3.toChecksumAddress("0xdB245C0ebbCa84395c98c3b2607863cA36ABBD79")
 send_privatekey = "b735b2d48e5f6e1dc897081f8655fdbb376ece5b2b648c55eee72c38102a0357"
 
+
+def setup_module():
+    collusion_list_p2p, _ = generate_init_node(collusion_list)
+    for node in nocollusion_list:
+        w3 = connect_web3(node["url"])
+        for p2p in collusion_list_p2p:
+            w3.admin.addPeer(p2p)
+    time.sleep(10)
 
 
 def transaction(w3, from_address, to_address=None, value=1000000000000000000000, gas=91000000, gasPrice=9000000000):
