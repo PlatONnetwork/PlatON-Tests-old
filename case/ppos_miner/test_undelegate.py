@@ -21,6 +21,7 @@ from client_sdk_python.personal import (
 )
 from hexbytes import HexBytes
 from client_sdk_python.eth import Eth
+from utils.platon_lib.ppos_tool import get_config_data
 
 
 
@@ -48,6 +49,8 @@ class TestDelegate():
     genesis_dict = LoadFile(genesis_path).get_data()
     chainid = int(genesis_dict["config"]["chainId"])
 
+    """替换config.json"""
+    get_config_data()
     config_json_path = conf.PLATON_CONFIG_PATH
     config_dict = LoadFile(config_json_path).get_data()
     amount_delegate = Web3.fromWei(

@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
-
+"""
+@Author: wuyiqin
+@Date: 2019/8/16 11:45
+@Description:主要是增持和修改节点信息用例
+"""
 from client_sdk_python import Web3
 from common.connect import connect_web3
 import json

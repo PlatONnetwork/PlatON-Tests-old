@@ -21,7 +21,7 @@ from client_sdk_python.personal import (
 )
 from hexbytes import HexBytes
 from client_sdk_python.eth import Eth
-from utils.platon_lib.ppos_tool import get_block_number,getVerifierList
+from utils.platon_lib.ppos_tool import get_block_number,getVerifierList,get_config_data
 
 
 class TestLockup():
@@ -47,6 +47,7 @@ class TestLockup():
     genesis_dict = LoadFile(genesis_path).get_data()
     chainid = int(genesis_dict["config"]["chainId"])
 
+    get_config_data()
     config_json_path = conf.PLATON_CONFIG_PATH
     config_dict = LoadFile(config_json_path).get_data()
     amount_delegate = Web3.fromWei(
@@ -57,8 +58,8 @@ class TestLockup():
 
 
     def setup_class(self):
-        # self.auto = AutoDeployPlaton()
-        # self.auto.start_all_node(self.node_yml_path)
+        self.auto = AutoDeployPlaton()
+        self.auto.start_all_node(self.node_yml_path)
         self.ppos_link = Ppos(
             self.rpc_list[0],self.address,self.chainid)
         self.w3_list = [connect_web3(url) for url in self.rpc_list]
