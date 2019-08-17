@@ -43,7 +43,10 @@ class TestStaking():
     details = "supper node"
     programVersion = 1792
     illegal_nodeID = conf.illegal_nodeID
-    chainid = 101
+
+    genesis_path = conf.GENESIS_TMP
+    genesis_dict = LoadFile(genesis_path).get_data()
+    chainid = int(genesis_dict["config"]["chainId"])
 
     config_json_path = conf.PLATON_CONFIG_PATH
     config_dict = LoadFile(config_json_path).get_data()
@@ -54,8 +57,8 @@ class TestStaking():
 
 
     def setup_class(self):
-        self.auto = AutoDeployPlaton()
-        self.auto.start_all_node(self.node_yml_path)
+        # self.auto = AutoDeployPlaton()
+        # self.auto.start_all_node(self.node_yml_path)
         self.ppos_link = Ppos(
             self.rpc_list[0],self.address,self.chainid)
         self.ppos_link1 = Ppos(
@@ -139,12 +142,15 @@ class TestStaking():
         用例id 57 初始验证人增持质押
         """
         value = 1000
+        print(self.nodeid_list[0])
         msg = self.ppos_link.addStaking(nodeId=self.nodeid_list[0],typ=0,amount=value)
         print(msg)
         assert msg.get("Status") == True ,"初始验证人增持质押失败"
         assert msg.get("ErrMsg") == 'ok',"返回消息错误"
         msg = self.ppos_link.getCandidateInfo(self.nodeid_list[0])
-        # print(msg)
+        print(msg)
+        list_node = self.getCandidateList()
+        print(list_node)
         assert  msg["Data"]["NodeId"] == self.nodeid_list[0]
         assert self.amount+value == Web3.fromWei(msg["Data"]["Shares"], 'ether'),"增持+质押金额异常"
         assert self.amount == Web3.fromWei(msg["Data"]["Released"], 'ether'),"锁定期质押金额异常"

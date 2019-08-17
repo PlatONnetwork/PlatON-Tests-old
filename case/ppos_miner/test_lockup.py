@@ -42,9 +42,10 @@ class TestLockup():
     details = "supper node"
     programVersion = 1792
     illegal_nodeID = conf.illegal_nodeID
-    chainid = 101
 
-
+    genesis_path = conf.GENESIS_TMP
+    genesis_dict = LoadFile(genesis_path).get_data()
+    chainid = int(genesis_dict["config"]["chainId"])
 
     config_json_path = conf.PLATON_CONFIG_PATH
     config_dict = LoadFile(config_json_path).get_data()

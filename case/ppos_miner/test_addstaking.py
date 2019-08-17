@@ -46,7 +46,10 @@ class TestAddstaking():
     details = "supper node"
     programVersion = 1792
     illegal_nodeID = conf.illegal_nodeID
-    chainid = 101
+
+    genesis_path = conf.GENESIS_TMP
+    genesis_dict = LoadFile(genesis_path).get_data()
+    chainid = int(genesis_dict["config"]["chainId"])
 
     config_json_path = conf.PLATON_CONFIG_PATH
     config_dict = LoadFile(config_json_path).get_data()
@@ -57,8 +60,8 @@ class TestAddstaking():
 
 
     def setup_class(self):
-        self.auto = AutoDeployPlaton()
-        self.auto.start_all_node(self.node_yml_path)
+        # self.auto = AutoDeployPlaton()
+        # self.auto.start_all_node(self.node_yml_path)
         self.ppos_link = Ppos(
             self.rpc_list[0],self.address,self.chainid)
         self.ppos_link1 = Ppos(

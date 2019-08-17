@@ -363,7 +363,7 @@ class Ppos:
         recive = str(recive, encoding="utf8")
         recive = recive.replace('\\','').replace('"[','[').replace(']"',']')
         recive = json.loads(recive)
-        print(recive)
+        # print(recive)
         return recive
 
     def getDelegateListByAddr(self,addr):
@@ -460,7 +460,7 @@ class Ppos:
         recive = str(recive, encoding="utf8")
         recive = recive.replace('\\','').replace('"{','{').replace('}"','}')
         recive = json.loads(recive)
-        print(recive)
+        # print(recive)
         return recive
 
 #################################治理###############################

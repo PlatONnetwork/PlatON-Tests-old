@@ -5,10 +5,8 @@ from client_sdk_python import Web3
 from common.connect import connect_web3
 from utils.platon_lib.ppos_wyq import Ppos
 from conf import  setting as conf
-from common.load_file import get_node_info
 import time
 from common import log
-
 from common.load_file import LoadFile, get_node_info
 
 node_yml_path = conf.PPOS_NODE_YML
@@ -105,7 +103,9 @@ def get_block_number(w3,settlement=ConsensusSize):
         time.sleep(20)
         current_block_after = w3.eth.blockNumber
         if current_block_after == current_block:
+            log.info('区块不增长,块高：{}'.format(current_block_after))
             raise Exception('区块不增长,块高：{}'.format(current_block_after))
+
 
 
 
