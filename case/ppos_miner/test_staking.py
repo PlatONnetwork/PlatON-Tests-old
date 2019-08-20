@@ -45,8 +45,6 @@ class TestStaking():
     illegal_nodeID = conf.illegal_nodeID
 
     genesis_path = conf.GENESIS_TMP
-    genesis_dict = LoadFile(genesis_path).get_data()
-    chainid = int(genesis_dict["config"]["chainId"])
 
     """替换config.json"""
     get_config_data()
@@ -61,6 +59,8 @@ class TestStaking():
     def setup_class(self):
         self.auto = AutoDeployPlaton()
         self.auto.start_all_node(self.node_yml_path)
+        self.genesis_dict = LoadFile(self.genesis_path).get_data()
+        self.chainid = int(self.genesis_dict["config"]["chainId"])
         self.ppos_link = Ppos(
             self.rpc_list[0],self.address,self.chainid)
         self.ppos_link1 = Ppos(
@@ -332,77 +332,57 @@ class TestStaking():
             self.ppos_noconsensus_5.createStaking(0, self.account_list[4], self.nodeid_list2[4],
                                                   self.externalId, self.nodeName, self.website, self.details,
                                                   self.amount, self.programVersion)
-            account_before = self.eth.getBalance(self.account_list[4])
-            log.info("节点5对应的钱包余额{}".format(account_before))
-            log.info("节点5退出质押{}".format(self.nodeid_list2[4]))
-            msg = self.ppos_noconsensus_5.unStaking(self.nodeid_list2[4])
-            log.info(msg)
-            msg = self.ppos_noconsensus_1.getCandidateInfo(self.nodeid_list2[4])
-            if msg['Data'] == "":
-                account_after = self.eth.getBalance(self.account_list[4])
-                log.info("节点5退出质押后钱包余额{}".format(account_after))
-                assert account_after > account_before,"退出质押后，钱包余额未增加"
-                log.info("因为质押消耗的gas值大于撤销质押的gas值")
-                assert 900000000000000000000000 < account_after - account_before < 1000000000000000000000000
-                node_list = self.getCandidateList()
-                assert self.nodeid_list2[4] not in node_list, "验证节点退出异常"
-                log.info("{}已经退出验证人".format(self.nodeid_list2[4]))
-            else:
-                log.info("进入到锁定期")
-                get_block_number(self.w3_list[0])
-                log.info("进入解锁期")
-                get_block_number(self.w3_list[0])
-                account_after = self.eth.getBalance(self.account_list[4])
-                log.info("节点5退出质押后钱包余额{}".format(account_after))
-                assert account_after > account_before,"退出质押后，钱包余额未增加"
-                log.info("因为质押消耗的gas值大于撤销质押的gas值")
-                assert 900000000000000000000000 < account_after - account_before < 1000000000000000000000000
-                msg = self.ppos_noconsensus_1.getCandidateInfo(self.nodeid_list2[4])
-                assert msg['Data'] ==""
-                node_list = self.getCandidateList()
-                assert self.nodeid_list2[4] not in node_list, "验证节点退出异常"
-                log.info("{}已经退出验证人".format(self.nodeid_list2[4]))
-        else:
-            account_before = self.eth.getBalance(self.account_list[4])
-            log.info("节点5对应的钱包余额{}".format(account_before))
-            log.info("节点5退出质押{}".format(self.nodeid_list2[4]))
-            msg = self.ppos_noconsensus_5.unStaking(self.nodeid_list2[4])
-            log.info(msg)
-            msg = self.ppos_noconsensus_1.getCandidateInfo(self.nodeid_list2[4])
-            if msg['Data'] == "":
-                account_after = self.eth.getBalance(self.account_list[4])
-                log.info("节点5退出质押后钱包余额{}".format(account_after))
-                assert account_after > account_before,"退出质押后，钱包余额未增加"
-                log.info("因为质押消耗的gas值大于撤销质押的gas值")
-                assert 900000000000000000000000 < account_after - account_before < 1000000000000000000000000
-                node_list = self.getCandidateList()
-                assert self.nodeid_list2[4] not in node_list, "验证节点退出异常"
-                log.info("{}已经退出验证人".format(self.nodeid_list2[4]))
-            else:
-                log.info("进入到锁定期")
-                get_block_number(self.w3_list[0])
-                log.info("进入解锁期")
-                get_block_number(self.w3_list[0])
-                account_after = self.eth.getBalance(self.account_list[4])
-                log.info("节点5退出质押后钱包余额{}".format(account_after))
-                assert account_after > account_before,"退出质押后，钱包余额未增加"
-                log.info("因为质押消耗的gas值大于撤销质押的gas值")
-                assert 900000000000000000000000 < account_after - account_before < 1000000000000000000000000
-                msg = self.ppos_noconsensus_1.getCandidateInfo(self.nodeid_list2[4])
-                assert msg['Data'] ==""
-                node_list = self.getCandidateList()
-                assert self.nodeid_list2[4] not in node_list, "验证节点退出异常"
-                log.info("{}已经退出验证人".format(self.nodeid_list2[4]))
+        account_before = self.eth.getBalance(self.account_list[4])
+        log.info("节点5对应的钱包余额{}".format(account_before))
+        log.info("节点5退出质押{}".format(self.nodeid_list2[4]))
+        msg = self.ppos_noconsensus_5.unStaking(self.nodeid_list2[4])
+        log.info(msg)
+        msg = self.ppos_noconsensus_1.getCandidateInfo(self.nodeid_list2[4])
+        if msg['Data'] != "":
+            log.info("进入到锁定期")
+            get_block_number(self.w3_list[0])
+            log.info("进入解锁期")
+            get_block_number(self.w3_list[0])
+        account_after = self.eth.getBalance(self.account_list[4])
+        log.info("节点5退出质押后钱包余额{}".format(account_after))
+        assert account_after > account_before,"退出质押后，钱包余额未增加"
+        log.info("因为质押消耗的gas值大于撤销质押的gas值")
+        assert 900000000000000000000000 < account_after - account_before < 1000000000000000000000000
+        node_list = self.getCandidateList()
+        assert self.nodeid_list2[4] not in node_list, "验证节点退出异常"
+        log.info("{}已经退出验证人".format(self.nodeid_list2[4]))
 
 
-    # @allure.title("验证版本号过低进行质押")
-    # def test_version_low(self):
+
+    # @allure.title("质押和增持后的余额正常")
+    # def test_balance_by_staking_addstaking(self):
     #     """
-    #     测试版本号过低质押
+    #     测试质押和增持后的余额正常
+    #     """
+    #     self.auto = AutoDeployPlaton()
+    #     self.auto.start_all_node(self.node_yml_path)
+    #     log.info("转账每个钱包")
+    #     for to_account in self.account_list:
+    #         self.transaction(self.w3_list[0],self.address,to_address=to_account,value=10000000000000000000000000)
+    #     value_before = self.eth.getBalance(self.account_list[5])
+    #     log.info(value_before)
+    #     self.ppos_noconsensus_6.createStaking(0, self.account_list[5], self.nodeid_list2[5],
+    #                                           self.externalId, self.nodeName, self.website, self.details,
+    #                                           self.amount, self.programVersion)
+    #     staking_after = self.eth.getBalance(self.account_list[5])
+    #     assert value_before - staking_after > Web3.toWei(self.amount,"ether")
+    #     value = self.amount + 1000
+    #     self.ppos_noconsensus_6.addStaking(self.nodeid_list2[5], 0, value)
+    #     addstaking_after = self.eth.getBalance(self.account_list[5])
+    #     assert staking_after - addstaking_after > Web3.toWei(value,"ether")
+
+
+    # def test_(self):
+    #     """
+    #     测试成为验证人异常退出，验证重启后是否被惩罚，验证人身份是否存在
     #     :return:
     #     """
     #     pass
-
 
 
 

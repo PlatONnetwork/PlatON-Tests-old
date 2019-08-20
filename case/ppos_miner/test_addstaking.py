@@ -48,8 +48,6 @@ class TestAddstaking():
     illegal_nodeID = conf.illegal_nodeID
 
     genesis_path = conf.GENESIS_TMP
-    genesis_dict = LoadFile(genesis_path).get_data()
-    chainid = int(genesis_dict["config"]["chainId"])
 
     """替换config.json"""
     get_config_data()
@@ -59,12 +57,14 @@ class TestAddstaking():
         int(config_dict['EconomicModel']['Staking']['MinimumThreshold']), 'ether')
     amount = Web3.fromWei(
         int(config_dict['EconomicModel']['Staking']['StakeThreshold']), 'ether')
-    """启动节点"""
+
 
 
     def setup_class(self):
         self.auto = AutoDeployPlaton()
         self.auto.start_all_node(self.node_yml_path)
+        self.genesis_dict = LoadFile(self.genesis_path).get_data()
+        self.chainid = int(self.genesis_dict["config"]["chainId"])
         self.ppos_link = Ppos(
             self.rpc_list[0],self.address,self.chainid)
         self.ppos_link1 = Ppos(

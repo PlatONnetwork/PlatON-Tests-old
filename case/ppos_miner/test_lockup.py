@@ -44,8 +44,6 @@ class TestLockup():
     illegal_nodeID = conf.illegal_nodeID
 
     genesis_path = conf.GENESIS_TMP
-    genesis_dict = LoadFile(genesis_path).get_data()
-    chainid = int(genesis_dict["config"]["chainId"])
 
     get_config_data()
     config_json_path = conf.PLATON_CONFIG_PATH
@@ -58,8 +56,10 @@ class TestLockup():
 
 
     def setup_class(self):
-        self.auto = AutoDeployPlaton()
-        self.auto.start_all_node(self.node_yml_path)
+        # self.auto = AutoDeployPlaton()
+        # self.auto.start_all_node(self.node_yml_path)
+        self.genesis_dict = LoadFile(self.genesis_path).get_data()
+        self.chainid = int(self.genesis_dict["config"]["chainId"])
         self.ppos_link = Ppos(
             self.rpc_list[0],self.address,self.chainid)
         self.w3_list = [connect_web3(url) for url in self.rpc_list]
@@ -71,6 +71,7 @@ class TestLockup():
         self.ppos_noconsensus_5 = Ppos(self.rpc_list[0], self.account_list[4],self.chainid,privatekey=self.privatekey_list[4])
         self.ppos_noconsensus_6 = Ppos(self.rpc_list[0], self.account_list[5],self.chainid,privatekey=self.privatekey_list[5])
         self.eth = Eth(self.w3_list[0])
+
 
 
     def transaction(self,w3, from_address, to_address=None,value=100000000000000000000000000000000,
@@ -164,6 +165,9 @@ class TestLockup():
         用例id74 锁定期增加质押
         用例id 112 锁定期委托人进行委托
         """
+        log.info("转账每个钱包")
+        for to_account in self.account_list:
+            self.transaction(self.w3_list[0],self.address,to_address=to_account)
         msg = self.ppos_noconsensus_1.getCandidateInfo(self.nodeid_list2[0])
         if msg["Data"] == "":
             log.info("节点1质押金额{} eth".format(self.amount))
@@ -187,15 +191,25 @@ class TestLockup():
         msg = self.ppos_noconsensus_2.getCandidateInfo(self.nodeid_list2[0])
         log.info(msg)
         assert msg["Data"]["Shares"] == 1000110000000000000000000
-        # assert msg["Data"]["Released"] == 1000000000000000000000000
-        # assert msg["Data"]["ReleasedHes"] == 10000000000000000000
+        stakingBlockNum = msg["Data"]["StakingBlockNum"]
+        msg = self.ppos_noconsensus_2.getDelegateInfo(stakingBlockNum,self.account_list[1],self.nodeid_list2[0])
+        data = msg["Data"]
+        data = json.loads(data)
+        assert Web3.toChecksumAddress(data["Addr"]) == self.account_list[1]
+        assert data["NodeId"] == self.nodeid_list2[0]
+        # assert Web3.fromWei(data["ReleasedHes"], 'ether') == 10
 
 
-    @allure.title("验证根据质押金额排名")
+
+    @allure.title("验证根据质押+委托金额金额排名")
     def test_taking_cycle_ranking(self):
         """
         验证根据质押金额排名
         """
+        log.info("转账每个钱包")
+        for to_account in self.account_list:
+            self.transaction(self.w3_list[0],self.address,to_address=to_account)
+
         log.info("质押节点2")
         self.ppos_noconsensus_2.createStaking(0, self.account_list[1], self.nodeid_list2[1],
                                               self.externalId, self.nodeName, self.website, self.details,
@@ -203,28 +217,23 @@ class TestLockup():
         log.info("质押节点3")
         self.ppos_noconsensus_3.createStaking(0, self.account_list[2], self.nodeid_list2[2],
                                               self.externalId, self.nodeName, self.website, self.details,
-                                              self.amount+100, self.programVersion)
+                                              self.amount+130, self.programVersion)
         log.info("进入到下个结算周期")
         get_block_number(w3=self.w3_list[0])
         node_list = getVerifierList()
         log.info(node_list)
-        log.info(self.nodeid_list2[2])
-        log.info(self.nodeid_list2[1])
 
-        msg = self.ppos_noconsensus_2.getCandidateInfo(self.nodeid_list2[1])
+        msg = self.ppos_noconsensus_1.getCandidateInfo(self.nodeid_list2[1])
         log.info(msg)
-        msg = self.ppos_noconsensus_2.getCandidateInfo(self.nodeid_list2[2])
+        msg = self.ppos_noconsensus_1.getCandidateInfo(self.nodeid_list2[2])
         log.info(msg)
 
         assert self.nodeid_list2[2] in node_list
         assert self.nodeid_list2[1] in node_list
-        assert node_list[0] == self.nodeid_list2[2]
+        assert self.nodeid_list2[2] == node_list[0]
 
-
-    @allure.title("验证根据增持+委托金额排名")
-    def test_delegate_cycle_ranking(self):
-        log.info("钱包4委托节点2 50eth")
-        msg = self.ppos_noconsensus_4.delegate(0,nodeId=self.nodeid_list2[1],amount=50)
+        log.info("钱包4委托节点2 70eth")
+        msg = self.ppos_noconsensus_4.delegate(0,nodeId=self.nodeid_list2[1],amount=70)
         print(msg)
         log.info("节点2增加质押61 eth")
         msg = self.ppos_noconsensus_2.addStaking(self.nodeid_list2[1],0,amount=61)
@@ -257,7 +266,7 @@ class TestLockup():
         self.ppos_noconsensus_4.createStaking(0, self.account_list[3], self.nodeid_list2[3],
                                               self.externalId, self.nodeName, self.website, self.details,
                                               self.amount+200, self.programVersion)
-        log.info("质押节点5金额20eth")
+        log.info("质押节点5金额200eth")
         self.ppos_noconsensus_5.createStaking(0, self.account_list[4], self.nodeid_list2[4],
                                               self.externalId, self.nodeName, self.website, self.details,
                                               self.amount+200, self.programVersion)
@@ -273,22 +282,91 @@ class TestLockup():
 
 
     @allure.title("验证人申请退回所有质押金（包含初始质押金和当前结算期内质押金）")
-    def test_(self):
+    def test_unstaking_all(self):
+        log.info("转账每个钱包")
+        for to_account in self.account_list:
+            self.transaction(self.w3_list[0],self.address,to_address=to_account)
+        value_before = self.eth.getBalance(self.account_list[5])
+        log.info(value_before)
         self.ppos_noconsensus_6.createStaking(0, self.account_list[5], self.nodeid_list2[5],
                                               self.externalId, self.nodeName, self.website, self.details,
                                               self.amount, self.programVersion)
-        log.info("进入下一个结算周期")
+
+        log.info("进入第2个结算周期")
         get_block_number(self.w3_list[0])
         log.info("节点6增持金额")
-        self.ppos_noconsensus_6.addStaking(self.nodeid_list2[5],0,self.amount+100)
+        self.ppos_noconsensus_6.addStaking(self.nodeid_list2[5],0,self.amount+1000)
+        log.info("进入第3个结算周期")
         get_block_number(self.w3_list[0])
-        log.info("进入下一个结算周期")
+        log.info("节点6发起退回")
         self.ppos_noconsensus_6.unStaking(nodeId=self.nodeid_list2[5])
-        log.info("进入锁定期")
+        log.info("进入第4个结算周期")
         get_block_number(self.w3_list[0])
-        """查不到"""
+        value = self.eth.getBalance(self.account_list[5])
+        log.info(value)
+        assert value < value_before,"钱还在锁定期，预期未退回，实际异常"
+        log.info("进入第5个结算周期")
         get_block_number(self.w3_list[0])
-        """查到全部"""
+        value_after = self.eth.getBalance(self.account_list[5])
+        log.info(value_after)
+        log.info(value_after-value_before)
+        amount_sum = self.amount*2 + 1000
+        log.info(Web3.toWei(amount_sum,"ether"))
+        assert value_after>value_before,"出块奖励异常"
+        assert value_after>value+Web3.toWei(amount_sum,"ether"),"解锁期的余额大于锁定期的余额+质押+增持金额，但是发生异常"
+
+
+    @allure.title("根据金额排名,从高到低排名")
+    def test_ranking(self):
+        """
+        测试根据金额排名,从高到低排名
+        """
+        self.auto = AutoDeployPlaton()
+        self.auto.start_all_node(self.node_yml_path)
+        log.info("转账每个钱包")
+        for to_account in self.account_list:
+            self.transaction(self.w3_list[0],self.address,to_address=to_account)
+
+        self.ppos_noconsensus_1.createStaking(0, self.account_list[0], self.nodeid_list2[0],
+                                              self.externalId, self.nodeName, self.website, self.details,
+                                              self.amount+50, self.programVersion)
+        self.ppos_noconsensus_2.createStaking(0, self.account_list[1], self.nodeid_list2[1],
+                                              self.externalId, self.nodeName, self.website, self.details,
+                                              self.amount+40, self.programVersion)
+        self.ppos_noconsensus_3.createStaking(0, self.account_list[2], self.nodeid_list2[2],
+                                              self.externalId, self.nodeName, self.website, self.details,
+                                              self.amount+30, self.programVersion)
+        self.ppos_noconsensus_4.createStaking(0, self.account_list[3], self.nodeid_list2[3],
+                                              self.externalId, self.nodeName, self.website, self.details,
+                                              self.amount+20, self.programVersion)
+        self.ppos_noconsensus_5.createStaking(0, self.account_list[4], self.nodeid_list2[4],
+                                              self.externalId, self.nodeName, self.website, self.details,
+                                              self.amount+10, self.programVersion)
+        self.ppos_noconsensus_6.createStaking(0, self.account_list[5], self.nodeid_list2[5],
+                                              self.externalId, self.nodeName, self.website, self.details,
+                                              self.amount, self.programVersion)
+        log.info("进入下个周期")
+        get_block_number(self.w3_list[0])
+        node_list = getVerifierList()
+        log.info(node_list)
+        """根据config配置验证人数"""
+        # assert self.nodeid_list2[5] not in node_list
+        assert node_list[0] == self.nodeid_list2[0]
+        assert node_list[1] == self.nodeid_list2[1]
+        assert node_list[2] == self.nodeid_list2[2]
+        assert node_list[3] == self.nodeid_list2[3]
+        assert node_list[4] == self.nodeid_list2[4]
+        assert node_list[5] == self.nodeid_list2[-1]
+
+
+
+
+
+
+
+
+
+
 
 
 

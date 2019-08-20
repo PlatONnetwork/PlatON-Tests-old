@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
 
-from case.transaction.test_addstaking import TestAddstaking
+from case.ppos_miner.test_staking import TestStaking
 
 
 
 if __name__ == '__main__':
-    auto = TestAddstaking()
+    auto = TestStaking()
     auto.setup_class()
-    auto.test_alter_address()
+    auto.test_back_unStaking()
     # auto.test_()
     # auto.test_initial_add_pledge()
     # auto.test_getCandidateInfo()
