@@ -56,8 +56,8 @@ class TestLockup():
 
 
     def setup_class(self):
-        # self.auto = AutoDeployPlaton()
-        # self.auto.start_all_node(self.node_yml_path)
+        self.auto = AutoDeployPlaton()
+        self.auto.start_all_node(self.node_yml_path)
         self.genesis_dict = LoadFile(self.genesis_path).get_data()
         self.chainid = int(self.genesis_dict["config"]["chainId"])
         self.ppos_link = Ppos(
