@@ -108,6 +108,7 @@ class TestDelegate():
 
 
     @allure.title("委托金额分别为{amount}")
+    @pytest.mark.P1
     @pytest.mark.parametrize('amount', [amount_delegate-1, 0])
     def test_illege_delegate(self,amount):
         """
@@ -121,13 +122,14 @@ class TestDelegate():
         self.ppos_noconsensus_1.createStaking(0, self.account_list[0], self.nodeid_list2[0],
                                               self.externalId, self.nodeName, self.website, self.details,
                                               self.amount, self.programVersion)
-        log.info("钱包2委托金额".format(amount))
+        log.info("钱包2委托金额")
         msg = self.ppos_noconsensus_2.delegate(0, self.nodeid_list2[0], amount)
         log.info(msg)
         assert msg.get("Status") == False,"委托金额异常"
 
 
     @allure.title("质押过的钱包委托失败")
+    @pytest.mark.P1
     def test_delegate_verifier(self):
         """
         测试质押过的钱包不能去委托
@@ -159,6 +161,7 @@ class TestDelegate():
 
 
     @allure.title("发起委托成功")
+    @pytest.mark.P0
     def test_delegate(self):
         """
         用例id 95 委托成功，查询节点信息，金额
@@ -186,6 +189,7 @@ class TestDelegate():
 
 
     @allure.title("查询当前单个委托信息")
+    @pytest.mark.P0
     def test_getDelegateInfo(self):
         """
         用例id 94 查询当前单个委托信息
@@ -220,6 +224,7 @@ class TestDelegate():
 
 
     @allure.title("余额不足委托失败")
+    @pytest.mark.P2
     def test_insufficient_delegate(self):
         """
         用例96 余额不足委托失败
@@ -247,6 +252,7 @@ class TestDelegate():
 
 
     @allure.title("验证人不存在进行委托")
+    @pytest.mark.P2
     def test_not_nodeId_delegate(self):
         """
         用例72 验证人不存在进行委托
@@ -262,6 +268,7 @@ class TestDelegate():
 
 
     @allure.title("验证人退出后，委托人信息还存在")
+    @pytest.mark.P1
     def test_back_unStaking_commissioned(self):
         """
         用例id 82 验证人申请退回质押金，委托金额还生效
@@ -310,6 +317,7 @@ class TestDelegate():
 
 
     @allure.title("验证节点退出后，再成为验证节点,钱包委托信息有2个")
+    @pytest.mark.P2
     def test_identifier_quit_delegate(self):
         """
         委托验证节点，验证节点退出后，再成为验证节点，再去委托：预期有2个委托消息
@@ -345,28 +353,28 @@ class TestDelegate():
 
 
 
-    @allure.title("使用锁仓账户中的Token进行创建验证人申请退回质押金")
-    def test_restrictingPlan_unStaking(self):
-        """
-        用例id 83 使用锁仓账户中的Token进行创建验证人申请退回质押金
-        """
-        pass
-
-
-
-    def test_restrictingPlan_delegate(self):
-        """
-        用例id 101 委托人使用锁仓Token进行委托
-        """
-        pass
-
-
-
-    def test_restrictingPlan_insufficient_delegate(self):
-        """
-        用例id 103委托人使用锁仓Token（余额不足）进行委托
-        """
-        pass
+    # @allure.title("使用锁仓账户中的Token进行创建验证人申请退回质押金")
+    # def test_restrictingPlan_unStaking(self):
+    #     """
+    #     用例id 83 使用锁仓账户中的Token进行创建验证人申请退回质押金
+    #     """
+    #     pass
+    #
+    #
+    #
+    # def test_restrictingPlan_delegate(self):
+    #     """
+    #     用例id 101 委托人使用锁仓Token进行委托
+    #     """
+    #     pass
+    #
+    #
+    #
+    # def test_restrictingPlan_insufficient_delegate(self):
+    #     """
+    #     用例id 103委托人使用锁仓Token（余额不足）进行委托
+    #     """
+    #     pass
 
 
 

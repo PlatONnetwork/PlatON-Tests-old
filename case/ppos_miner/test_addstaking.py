@@ -115,6 +115,7 @@ class TestAddstaking():
 
 
     @allure.title("增加质押分别为{amount}")
+    @pytest.mark.P1
     @pytest.mark.parametrize('amount', [100, 10000000, 1000000])
     def test_add_staking(self, amount):
         """
@@ -146,6 +147,7 @@ class TestAddstaking():
 
 
     @allure.title("非验证人增持质押")
+    @pytest.mark.P2
     def test_not_illegal_addstaking(self):
         """
         用例id 78 非验证人增持质押
@@ -166,6 +168,7 @@ class TestAddstaking():
 
 
     @allure.title("编辑验证人信息-未成为验证人的nodeID")
+    @pytest.mark.P1
     def test_editCandidate_nodeid(self):
         """
         验证修改未成为验证人的nodeID
@@ -196,6 +199,7 @@ class TestAddstaking():
 
 
     @allure.title("编辑验证人信息-参数有效性验证")
+    @pytest.mark.P0
     def test_editCandidate(self):
         """
         用例id 70 编辑验证人信息-参数有效性验证
@@ -236,6 +240,7 @@ class TestAddstaking():
 
 
     @allure.title("修改钱包地址，更改后的地址收益正常")
+    @pytest.mark.P2
     def test_alter_address(self):
         """
         修改钱包地址，更改后的地址收益正常
@@ -275,6 +280,7 @@ class TestAddstaking():
 
 
     @allure.title("增加质押为{x}")
+    @pytest.mark.P2
     @pytest.mark.parametrize('x', [0, (amount_delegate-1)])
     def test_add_staking_zero(self,x):
         """测试增持金额为0,低于门槛"""
@@ -294,6 +300,7 @@ class TestAddstaking():
 
 
     @allure.title("账户余额不足增加质押")
+    @pytest.mark.P2
     def test_Insufficient_addStaking(self):
         """
         用例id 73 账户余额不足，增加质押失败
@@ -334,6 +341,7 @@ class TestAddstaking():
 
 
     @allure.title("验证人已申请退出中，申请增持质押")
+    @pytest.mark.P1
     def test_quit_and_addstaking(self):
         """
         用例id 77 验证人已申请退出中，申请增持质押

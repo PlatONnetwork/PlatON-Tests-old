@@ -110,6 +110,7 @@ class TestLockup():
 
 
     @allure.title("验证人退回质押金（未到达可解锁期）")
+    @pytest.mark.P0
     def test_back_unstaking(self):
         """
         验证人退回质押金（未到达可解锁期）
@@ -160,6 +161,7 @@ class TestLockup():
 
 
     @allure.title("锁定期增加质押与委托")
+    @pytest.mark.P0
     def test_lockup_addstaking(self):
         """
         用例id74 锁定期增加质押
@@ -202,6 +204,7 @@ class TestLockup():
 
 
     @allure.title("验证根据质押+委托金额金额排名")
+    @pytest.mark.P2
     def test_taking_cycle_ranking(self):
         """
         验证根据质押金额排名
@@ -258,10 +261,17 @@ class TestLockup():
 
 
     @allure.title("质押相等的金额，按照时间先早排序")
+    @pytest.mark.P1
     def test_same_amount_cycle(self):
         """
         质押相等的金额，按照时间先早排序
         """
+        self.auto = AutoDeployPlaton()
+        self.auto.start_all_node(self.node_yml_path)
+        log.info("转账每个钱包")
+        for to_account in self.account_list:
+            self.transaction(self.w3_list[0],self.address,to_address=to_account)
+
         log.info("质押节点4金额200eth")
         self.ppos_noconsensus_4.createStaking(0, self.account_list[3], self.nodeid_list2[3],
                                               self.externalId, self.nodeName, self.website, self.details,
@@ -282,6 +292,7 @@ class TestLockup():
 
 
     @allure.title("验证人申请退回所有质押金（包含初始质押金和当前结算期内质押金）")
+    @pytest.mark.P2
     def test_unstaking_all(self):
         log.info("转账每个钱包")
         for to_account in self.account_list:
@@ -317,6 +328,7 @@ class TestLockup():
 
 
     @allure.title("根据金额排名,从高到低排名")
+    @pytest.mark.P0
     def test_ranking(self):
         """
         测试根据金额排名,从高到低排名

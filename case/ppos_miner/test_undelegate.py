@@ -113,6 +113,7 @@ class TestUndelegate():
 ##############################赎回####################################################
 
     @allure.title("委托人未达到锁定期申请赎回")
+    @pytest.mark.P0
     def test_unDelegate_part(self):
         """
          用例id 106 申请赎回委托
@@ -154,6 +155,7 @@ class TestUndelegate():
 
 
     @allure.title("大于委托金额赎回")
+    @pytest.mark.P0
     def test_unDelegate_iff(self):
         """
         验证 大于委托金额赎回
@@ -184,6 +186,7 @@ class TestUndelegate():
 
 
     @allure.title("赎回全部委托的金额与赎回金额为0")
+    @pytest.mark.P1
     def test_unDelegate_all(self):
         """
         验证 赎回全部委托的金额
@@ -229,7 +232,8 @@ class TestUndelegate():
         assert msg["ErrMsg"] =="Delegate info is not found"
 
 
-
+    @allure.title("多次委托，多次赎回")
+    @pytest.mark.P1
     def test_multiple_delegate_undelegate(self):
         """
         验证多次委托，多次赎回
@@ -268,6 +272,7 @@ class TestUndelegate():
         msg = self.ppos_noconsensus_6.getDelegateInfo(stakingBlockNum, self.account_list[5], self.nodeid_list2[4])
         """如果全部金额赎回，再查getDelegateInfo返回数据为空"""
         log.info(msg)
+
         # assert msg["Status"] == False
         # assert msg["ErrMsg"] == "Delegate info is not found"
 

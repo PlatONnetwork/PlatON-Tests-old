@@ -210,6 +210,7 @@ class TestStaking():
 
 
     @allure.title("质押{x}小于最低门槛")
+    @pytest.mark.P0
     @pytest.mark.parametrize('x', [0, amount-1])
     def test_iff_staking(self,x):
         """
@@ -230,6 +231,7 @@ class TestStaking():
 
 
     @allure.title("非初始验证人做质押")
+    @pytest.mark.P2
     def test_staking(self):
         """
         用例 62 非初始验证人质押刚到门槛
@@ -253,6 +255,7 @@ class TestStaking():
 
 
     @allure.title("非链上的nodeID去质押")
+    @pytest.mark.P2
     def test_illegal_pledge(self):
         """
         用例id 63 非链上的nodeID去质押
@@ -271,6 +274,7 @@ class TestStaking():
 
 
     @allure.title("质押过的钱包二次质押")
+    @pytest.mark.P2
     def test_account_staking_twice(self):
         """
         质押过的钱包二次质押
@@ -298,6 +302,7 @@ class TestStaking():
 
 
     @allure.title("质押过的节点再次质押")
+    @pytest.mark.P2
     def test_nodeID_staking_twice(self):
         """
         质押过的节点再次质押
@@ -320,6 +325,7 @@ class TestStaking():
 
 
     @allure.title("验证人申请退回质押金")
+    @pytest.mark.P0
     def test_back_unStaking(self):
         """
         用例id 81 验证人申请退回质押金
