@@ -88,7 +88,7 @@ class Node:
     """
     以kill -9的方式停止节点，关闭后节点无法重启，只能重新部署
     """
-    def detroy(self):
+    def destroy(self):
         runCMDBySSH(self.ssh, "ps -ef|grep platon|grep %s|grep -v grep|awk {'print $2'}|xargs kill -9" % self.port)
         #self.transport.close()
 
@@ -141,7 +141,7 @@ class TestEnvironment:
 
     def stop_nodes(self, node_list):
         for node in node_list:
-            node.start()
+            node.stop()
 
     def reset_all(self):
         self.reset_nodes(self.collusionNodeList)
