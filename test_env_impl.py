@@ -2,7 +2,10 @@ import json
 import os
 import shutil
 import tarfile
+import threading
 import time
+from concurrent.futures import ALL_COMPLETED, wait
+from concurrent.futures.thread import ThreadPoolExecutor
 
 from common import log
 from common.load_file import LoadFile
@@ -13,6 +16,8 @@ from conftest import USE_HTTP_RPC, CMD_FOR_HTTP, CMD_FOR_WS, runCMDBySSH
 TMP_LOG = "./tmp_log"
 LOG_PATH = "./bug_log"
 
+
+threadPool = ThreadPoolExecutor(max_workers=30)
 
 def singleton(cls):
     _instance = {}
@@ -119,39 +124,61 @@ class Account:
 class TestEnvironment:
     __slots__ = ('binFile', 'nodeConfigFile', 'collusionNodeList', 'bootstrapNodeList', 'normalNodeList', 'cbftConfigFile', 'cbftConfig', 'accountConfigFile', 'accountConfig', 'genesisFile', 'genesisConfig', 'staticNodeFile', 'initChain', 'startAll')
 
-    def deploy(self):
+    def get_all_nodes(self):
+        allNodes = []
+        allNodes.append(self.collusionNodeList)
+        allNodes.append(self.bootstrapNodeList)
+        allNodes.append(self.normalNodeList)
+        return allNodes
+
+    def deploy_all(self):
         self.parseNodeConfig()
         self.parseGenesisFile()
         self.parseCbftConfigFile()
         self.parseAccountConfigFile()
 
+        self.deploy_nodes(self.get_all_nodes())
+
     def start_all(self):
-        self.start_nodes(self.collusionNodeList)
-        self.start_nodes(self.bootstrapNodeList)
-        self.start_nodes(self.normalNodeList)
+        self.start_nodes(self.get_all_nodes())
 
     def stop_all(self):
-        self.stop_nodes(self.collusionNodeList)
-        self.stop_nodes(self.bootstrapNodeList)
-        self.stop_nodes(self.normalNodeList)
-
-    def start_nodes(self, node_list):
-        for node in node_list:
-            node.start()
-
-    def stop_nodes(self, node_list):
-        for node in node_list:
-            node.stop()
+        self.stop_nodes(self.get_all_nodes())
 
     def reset_all(self):
-        self.reset_nodes(self.collusionNodeList)
-        self.reset_nodes(self.bootstrapNodeList)
-        self.reset_nodes(self.normalNodeList)
+        self.reset_nodes(self.get_all_nodes())
+
+    def start_nodes(self, node_list):
+        tasks = []
+        for node in node_list:
+            tasks.append(threadPool.submit(node.start))
+        wait(tasks, return_when=ALL_COMPLETED)
+
+    def deploy_nodes(self, node_list):
+        tasks = []
+        for node in node_list:
+            tasks.append(threadPool.submit(node.uploadBinFile, self.binFile))
+            tasks.append(threadPool.submit(node.uploadGenesisFile, self.genesisFile))
+            tasks.append(threadPool.submit(node.uploadCbftFile, self.cbftConfigFile))
+            tasks.append(threadPool.submit(node.uploadStaticNodeFile, self.staticNodeFile))
+        wait(tasks, return_when=ALL_COMPLETED)
+
+    def stop_nodes(self, node_list):
+        tasks = []
+        for node in node_list:
+            tasks.append(threadPool.submit(node.stop))
+        wait(tasks, return_when=ALL_COMPLETED)
 
     def reset_nodes(self, node_list):
+        tasks = []
         for node in node_list:
-            node.stop()
-            node.start()
+            tasks.append(threadPool.submit(node.stop))
+        wait(tasks, return_when=ALL_COMPLETED)
+
+        tasks2 = []
+        for node in node_list:
+            tasks2.append(threadPool.submit(node.start))
+        wait(tasks2, return_when=ALL_COMPLETED)
 
     def upload_files(self, node_list):
         for node in node_list:
