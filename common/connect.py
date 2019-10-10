@@ -8,7 +8,9 @@
 import paramiko
 from client_sdk_python import HTTPProvider, Web3, WebsocketProvider
 from client_sdk_python.middleware import geth_poa_middleware
+
 from common import log
+
 
 def connect_web3(url):
     '''

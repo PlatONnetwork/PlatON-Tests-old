@@ -7,15 +7,10 @@
 '''
 import logging
 import os
-import shutil
-import tarfile
 import time
 from logging import handlers
 
-from common.thread import run_thread
 from conftest import BASE_DIR
-
-
 
 
 class Logger(object):

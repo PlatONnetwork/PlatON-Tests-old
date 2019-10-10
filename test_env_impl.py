@@ -2,16 +2,14 @@ import json
 import os
 import shutil
 import tarfile
-import threading
 import time
 from concurrent.futures import ALL_COMPLETED, wait
 from concurrent.futures.thread import ThreadPoolExecutor
 
 from common import log
-from common.load_file import LoadFile
 from common.connect import connect_web3, connect_linux
+from common.load_file import LoadFile
 from conftest import CMD_FOR_HTTP, CMD_FOR_WS, runCMDBySSH
-
 
 TMP_LOG = "./tmp_log"
 LOG_PATH = "./bug_log"
@@ -220,7 +218,7 @@ class TestEnvironment:
 
     def parseGenesisFile(self):
         self.genesisConfig = LoadFile(self.genesisFile).get_data()
-        self.genesisConfig['config']['cbft']["initialNodes"] = self.getInitNodesForGenesis()
+        self.genesisConfig['deploy']['cbft']["initialNodes"] = self.getInitNodesForGenesis()
         self.rewriteGenesisFile()
 
     def parseCbftConfigFile(self):

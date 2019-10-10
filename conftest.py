@@ -1,5 +1,6 @@
-import pytest
 import os
+
+import pytest
 
 from common import log
 from test_env_impl import TestEnvironment
