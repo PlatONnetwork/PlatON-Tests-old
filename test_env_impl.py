@@ -30,12 +30,11 @@ def singleton(cls):
 
 
 class Node:
-    def __init__(self, id, host, port, username, password, blsprikey, blspubkey, nodekey, rpcport, wsport, deployDir, syncMode):
+    def __init__(self, id, host, port, username, password, blsprikey, blspubkey, nodekey, rpcport, deployDir, syncMode):
         self.id = id
         self.host = host
         self.port = port
         self.rpcport = rpcport
-        self.wsport = wsport
         self.username = username
         self.password = password
         self.blsprikey = blsprikey
@@ -58,7 +57,7 @@ class Node:
         self.cbftFile = '{}/cbft.json'.format(self.dataDir, self.port)
 
         # connect_ssh
-        self.ssh, self.sfpt, self.transport = connect_linux(self.host, self.username, self.password, 22)
+        self.ssh, self.sftp, self.transport = connect_linux(self.host, self.username, self.password, 22)
 
     def getEnodeUrl(self):
         return r"enode://" + self.id + "@" + self.host + ":" + str(self.port)
@@ -67,7 +66,7 @@ class Node:
         if isHttRpc:
             cmd = CMD_FOR_HTTP.format(self.deployDir, self.syncMode, self.dataDir, self.port, self.rpcport, self.deployDir)
         else:
-            cmd = CMD_FOR_WS.format(self.deployDir, self.syncMode, self.dataDir, self.port, self.wsport, self.deployDir)
+            cmd = CMD_FOR_WS.format(self.deployDir, self.syncMode, self.dataDir, self.port, self.rpcport, self.deployDir)
         runCMDBySSH(self.ssh, cmd)
 
         if isHttRpc:
@@ -96,13 +95,13 @@ class Node:
         #self.transport.close()
 
     def uploadBinFile(self, srcFile):
-        self.sfpt.put(srcFile, self.binFile)
+        self.sftp.put(srcFile, self.binFile)
     def uploadGenesisFile(self, srcFile):
-        self.sfpt.put(srcFile, self.genesisFile)
+        self.sftp.put(srcFile, self.genesisFile)
     def uploadStaticNodeFile(self, srcFile):
-        self.sfpt.put(srcFile, self.staticNodeFile)
+        self.sftp.put(srcFile, self.staticNodeFile)
     def uploadCbftFile(self, srcFile):
-        self.sfpt.put(srcFile, self.cbftFile)
+        self.sftp.put(srcFile, self.cbftFile)
 
     def backupLog(self):
         runCMDBySSH(self.ssh, "cd {};tar zcvf log.tar.gz ./log".format(self.deployDir))
@@ -118,22 +117,21 @@ class Account:
         self.prikey = prikey
         self.balance = balance
 
-@singleton
+
+# @singleton
 class TestEnvironment:
-    __slots__ = ('binFile', 'nodeConfigFile', 'collusionNodeList', 'bootstrapNodeList', 'normalNodeList', 'cbftConfigFile', 'cbftConfig', 'accountConfigFile', 'accountConfig', 'genesisFile', 'genesisConfig', 'staticNodeFile', 'initChain', 'startAll', 'isHttpRpc')
+    __slots__ = ('binFile', 'nodeFile',  'accountFile', 'genesisFile', 'staticNodeFile', 'collusionNodeList', 'normalNodeList', 'accountConfig', 'genesisConfig', 'initChain', 'startAll', 'isHttpRpc')
 
     def get_all_nodes(self):
         allNodes = []
         allNodes.append(self.collusionNodeList)
-        allNodes.append(self.bootstrapNodeList)
         allNodes.append(self.normalNodeList)
         return allNodes
 
     def deploy_all(self):
-        self.parseNodeConfig()
+        self.parseNodeFile()
         self.parseGenesisFile()
-        self.parseCbftConfigFile()
-        self.parseAccountConfigFile()
+        self.parseAccountFile()
 
         self.deploy_nodes(self.get_all_nodes())
 
@@ -157,7 +155,6 @@ class TestEnvironment:
         for node in node_list:
             tasks.append(threadPool.submit(node.uploadBinFile, self.binFile))
             tasks.append(threadPool.submit(node.uploadGenesisFile, self.genesisFile))
-            tasks.append(threadPool.submit(node.uploadCbftFile, self.cbftConfigFile))
             tasks.append(threadPool.submit(node.uploadStaticNodeFile, self.staticNodeFile))
         wait(tasks, return_when=ALL_COMPLETED)
 
@@ -183,11 +180,10 @@ class TestEnvironment:
             node.uploadBinFile(self.binFile)
             node.uploadGenesisFile(self.genesisFile)
             node.uploadStaticNodeFile(self.staticNodeFile)
-            node.uploadCbftFile(self.cbftConfigFile)
             node.start()
 
-    def parseNodeConfig(self):
-        nodeConfig = LoadFile(self.nodeConfigFile).get_data()
+    def parseNodeFile(self):
+        nodeConfig = LoadFile(self.nodeFile).get_data()
         for node in nodeConfig.get["collusion"]:
             colluNode = Node()
             colluNode.id = node.get["id"]
@@ -201,6 +197,7 @@ class TestEnvironment:
             colluNode.nodekey = node.get["nodekey"]
             colluNode.url = node.get["url"]
             self.collusionNodeList.append(colluNode)
+            # todo: generate static-nodes.json if staticFile is None
 
         for node in nodeConfig.get["nocollusion"]:
             normalNode = Node()
@@ -221,11 +218,8 @@ class TestEnvironment:
         self.genesisConfig['deploy']['cbft']["initialNodes"] = self.getInitNodesForGenesis()
         self.rewriteGenesisFile()
 
-    def parseCbftConfigFile(self):
-        self.cbftConfig = LoadFile(self.cbftConfigFile).get_data()
-
-    def parseAccountConfigFile(self):
-        self.accountConfig = LoadFile(self.accountConfigFile).get_data()
+    def parseAccountFile(self):
+        self.accountConfig = LoadFile(self.accountFile).get_data()
 
     def getInitNodesForGenesis(self):
         initNodeList = []
@@ -252,14 +246,13 @@ class TestEnvironment:
 
     def backupAllLogs(self):
         self.backupLogs(self.collusionNodeList)
-        self.backupLogs(self.bootstrapNodeList)
         self.backupLogs(self.normalNodeList)
 
     def backupLogs(self, node_list):
         self.checkLogPath()
         for node in node_list:
             node.backupLog()
-        self.zipAllLog(self)
+        self.zipAllLog()
 
     def checkLogPath(self):
         if not os.path.exists(TMP_LOG):
@@ -273,7 +266,7 @@ class TestEnvironment:
     def zipAllLog(self):
         print("开始压缩.....")
         t = time.strftime("%Y-%m-%d_%H%M%S", time.localtime())
-        tar = tarfile.open("{}/{}_{}_log.tar.gz".format(LOG_PATH, self.nodeConfigFile, t), "w:gz")
+        tar = tarfile.open("{}/{}_{}_log.tar.gz".format(LOG_PATH, self.nodeFile, t), "w:gz")
         tar.add(TMP_LOG)
         tar.close()
         print("压缩完成")
@@ -282,19 +275,18 @@ class TestEnvironment:
         print("删除缓存完成")
 
 
-def create_test_env(binFile, nodeConfigFile, cbftConfigFile, genesisFile, accountConfigFile, staticNodeFile, initChain=True, startAll=True, isHttpRPC=True):
+def create_test_env(binFile, nodeFile, genesisFile, accountFile, staticNodeFile, initChain=True, startAll=True, isHttpRPC=True):
     env = TestEnvironment()
     env.binFile = binFile
-    env.nodeConfigFile = nodeConfigFile
-    env.cbftConfigFile = cbftConfigFile
+    env.nodeFile = nodeFile
     env.genesisFile = genesisFile
-    env.accountConfigFile = accountConfigFile
+    env.accountFile = accountFile
     env.staticNodeFile = staticNodeFile
     env.initChain = initChain
     env.startAll = startAll
     env.isHttpRpc = isHttpRPC
 
-    if not nodeConfigFile:
+    if not nodeFile:
         raise Exception("缺少node配置文件")
 
     if not genesisFile:
