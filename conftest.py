@@ -32,12 +32,27 @@ def consensus_test_env(global_test_env):
         yield f.readlines()
 
 
+def pytest_addoption(parser):
+    parser.addoption("--binFile", action="store", default="platon", help="binFile: the platon binary file")
+    parser.addoption("--nodeConfig", action="store",  help="nodeConfig: the node config file")
 
 @pytest.fixture(scope="session", autouse=True)
-def global_test_env():
+def global_test_env(request):
+    '''
+    'binFile', 'nodeConfigFile', 'collusionNodeList', 'bootstrapNodeList', 'normalNodeList', 'cbftConfigFile', 'cbftConfig', 'accountConfigFile', 'accountConfig', 'genesisFile', 'genesisConfig', 'staticNodeFile', 'initChain', 'startAll', 'isHttpRpc')
+    :param request:
+    :return:
+    '''
+    binFile = request.config.getoption("--binFile")
+    nodeFile = request.config.getoption("--nodeConfig")
+    genesisFile = request.config.getoption("--genesisFile")
+    staticNodeFile = request.config.getoption("--staticNodeFile")
+    initChain = request.config.getoption("--initChain")
+    startAll = request.config.getoption("--startAll")
+    isHttpRpc = request.config.getoption("--isHttpRpc")
+
     with open("/etc/passwd") as f:
         yield f.readlines()
-
 
 def create_env_impl(node_yml, genesis_json, config_json, start_all):
     # TestEnvironment.bin_url = binurl
