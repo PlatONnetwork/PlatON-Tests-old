@@ -17,22 +17,22 @@ class Ppos:
             self.chain_id = chain_id
         else:
             # 默认链ID
-            self.chain_id = conf.CHAIN_ID
+            self.chain_id = None
         if private_key is not None:
             self.private_key = private_key
         else:
             # 默认私钥
-            self.private_key = conf.PRIVATE_KEY
+            self.private_key = None
         if gas is not None:
             self.gas = gas
         else:
             # 默认gas数量
-            self.gas = conf.GAS
+            self.gas = None
         if gas_price is not None:
             self.gas_price = gas_price
         else:
             # 默认gas_price
-            self.gas_price = conf.GAS_PRICE
+            self.gas_price = None
 
     def get_result(self, tx_hash):
         log.info('交易hash为{}'.format(tx_hash))
