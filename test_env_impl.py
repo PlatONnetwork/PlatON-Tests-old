@@ -10,7 +10,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from common import log
 from common.load_file import LoadFile
 from common.connect import connect_web3, connect_linux
-from conftest import USE_HTTP_RPC, CMD_FOR_HTTP, CMD_FOR_WS, runCMDBySSH
+from conftest import CMD_FOR_HTTP, CMD_FOR_WS, runCMDBySSH
 
 
 TMP_LOG = "./tmp_log"
@@ -65,14 +65,14 @@ class Node:
     def getEnodeUrl(self):
         return r"enode://" + self.id + "@" + self.host + ":" + str(self.port)
 
-    def start(self):
-        if USE_HTTP_RPC:
+    def start(self, isHttRpc):
+        if isHttRpc:
             cmd = CMD_FOR_HTTP.format(self.deployDir, self.syncMode, self.dataDir, self.port, self.rpcport, self.deployDir)
         else:
             cmd = CMD_FOR_WS.format(self.deployDir, self.syncMode, self.dataDir, self.port, self.wsport, self.deployDir)
         runCMDBySSH(self.ssh, cmd)
 
-        if USE_HTTP_RPC:
+        if isHttRpc:
             self.rpcurl = "http:" + self.host + "://" + self.rpcport
         else:
             self.rpcurl = "ws:" + self.host + "://" + self.rpcport
@@ -122,7 +122,7 @@ class Account:
 
 @singleton
 class TestEnvironment:
-    __slots__ = ('binFile', 'nodeConfigFile', 'collusionNodeList', 'bootstrapNodeList', 'normalNodeList', 'cbftConfigFile', 'cbftConfig', 'accountConfigFile', 'accountConfig', 'genesisFile', 'genesisConfig', 'staticNodeFile', 'initChain', 'startAll')
+    __slots__ = ('binFile', 'nodeConfigFile', 'collusionNodeList', 'bootstrapNodeList', 'normalNodeList', 'cbftConfigFile', 'cbftConfig', 'accountConfigFile', 'accountConfig', 'genesisFile', 'genesisConfig', 'staticNodeFile', 'initChain', 'startAll', 'isHttpRpc')
 
     def get_all_nodes(self):
         allNodes = []
@@ -284,7 +284,7 @@ class TestEnvironment:
         print("删除缓存完成")
 
 
-def create_test_env(binFile, nodeConfigFile, cbftConfigFile, genesisFile, accountConfigFile, staticNodeFile, initChain, startAll):
+def create_test_env(binFile, nodeConfigFile, cbftConfigFile, genesisFile, accountConfigFile, staticNodeFile, initChain=True, startAll=True, isHttpRPC=True):
     env = TestEnvironment()
     env.binFile = binFile
     env.nodeConfigFile = nodeConfigFile
@@ -294,6 +294,7 @@ def create_test_env(binFile, nodeConfigFile, cbftConfigFile, genesisFile, accoun
     env.staticNodeFile = staticNodeFile
     env.initChain = initChain
     env.startAll = startAll
+    env.isHttpRpc = isHttpRPC
 
     if not nodeConfigFile:
         raise Exception("缺少node配置文件")
@@ -303,5 +304,6 @@ def create_test_env(binFile, nodeConfigFile, cbftConfigFile, genesisFile, accoun
 
     if startAll:
         env.start_all()
+
 
 

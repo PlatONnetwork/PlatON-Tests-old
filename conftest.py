@@ -2,13 +2,10 @@ import pytest
 import os
 
 from common import log
-from common.backup_log import backup_log
 from test_env_impl import TestEnvironment
 
 # 项目基本路径
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-USE_HTTP_RPC = True
 CMD_FOR_HTTP = '''nohup {}/platon --identity "platon" --verbosity 5 --debug --rpc --txpool.nolocals --rpcapi "db,platon,net,web3,miner,admin,personal" --rpcaddr 0.0.0.0 --syncmode "{}" --datadir {} --port {} --rpcport {} > {}/nohup.out 2>&1 &'''
 CMD_FOR_WS = '''nohup {}/platon --identity "platon" --verbosity 5 --debug --ws --wsorigins "*" --txpool.nolocals --rpcapi "db,platon,net,web3,miner,admin,personal" --wsaddr 0.0.0.0 --syncmode "{}" --datadir {} --port {} --wsport {} > {}/nohup.out 2>&1 &'''
 
@@ -26,21 +23,6 @@ def runCMDBySSH(ssh, cmd, password=None):
         raise e
     return stdout_list
 
-
-
-@pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):
-    # execute all other hooks to obtain the report object
-    outcome = yield
-    rep = outcome.get_result()
-
-    # we only look at actual failing test calls, not setup/teardown
-    if rep.when == "call" and not rep.passed:
-        # downning log in here
-        try:
-            backup_log(item.name)
-        except:
-            raise Exception("这个失败没有生成日志。")
 
 
 @pytest.fixture(scope="module")
