@@ -1,28 +1,8 @@
 import os
 
 import pytest
-
-from common import log
 from test_env_impl import TestEnvironment
 
-# 项目基本路径
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CMD_FOR_HTTP = '''nohup {}/platon --identity "platon" --verbosity 5 --debug --rpc --txpool.nolocals --rpcapi "db,platon,net,web3,miner,admin,personal" --rpcaddr 0.0.0.0 --syncmode "{}" --datadir {} --port {} --rpcport {} > {}/nohup.out 2>&1 &'''
-CMD_FOR_WS = '''nohup {}/platon --identity "platon" --verbosity 5 --debug --ws --wsorigins "*" --txpool.nolocals --rpcapi "db,platon,net,web3,miner,admin,personal" --wsaddr 0.0.0.0 --syncmode "{}" --datadir {} --port {} --wsport {} > {}/nohup.out 2>&1 &'''
-
-
-
-def runCMDBySSH(ssh, cmd, password=None):
-    try:
-        stdin, stdout, _ = ssh.exec_command("source /etc/profile;%s" % cmd)
-        if password:
-            stdin.write(password+"\n")
-        stdout_list = stdout.readlines()
-        if len(stdout_list):
-            log.info(stdout_list)
-    except Exception as e:
-        raise e
-    return stdout_list
 
 
 
@@ -34,8 +14,15 @@ def consensus_test_env(global_test_env):
 
 def pytest_addoption(parser):
     parser.addoption("--binFile", action="store", default="platon", help="binFile: the platon binary file")
-    parser.addoption("--nodeConfig", action="store",  help="nodeConfig: the node config file")
+    parser.addoption("--nodeFile", action="store",  help="nodeFile: the node config file")
+    parser.addoption("--genesisFile", action="store", help="genesisFile: the node config file")
+    parser.addoption("--staticNodeFile", action="store", help="staticNodeFile: the node config file")
+    parser.addoption("--accountFile", action="store", help="accountFile: the node config file")
+    parser.addoption("--initChain", action="store", default=True, help="nodeConfig: the node config file")
+    parser.addoption("--startAll", action="store", default=True, help="startAll: the node config file")
+    parser.addoption("--isHttpRpc", action="store", default=True, help="isHttpRpc: the node config file")
 
+# py.test test_start.py -s --concmode=asyncnet --binFile "deploy/platon" --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --genesisFile "deploy/genesis.json" --initChain True --startAll True --isHttpRpc True
 @pytest.fixture(scope="session", autouse=True)
 def global_test_env(request):
     '''
@@ -44,21 +31,31 @@ def global_test_env(request):
     :return:
     '''
     binFile = request.config.getoption("--binFile")
-    nodeFile = request.config.getoption("--nodeConfig")
+    nodeFile = request.config.getoption("--nodeFile")
     genesisFile = request.config.getoption("--genesisFile")
     staticNodeFile = request.config.getoption("--staticNodeFile")
+    accountFile = request.config.getoption("--accountFile")
     initChain = request.config.getoption("--initChain")
     startAll = request.config.getoption("--startAll")
     isHttpRpc = request.config.getoption("--isHttpRpc")
 
-    with open("/etc/passwd") as f:
-        yield f.readlines()
+    create_env_impl(binFile, nodeFile,  genesisFile, staticNodeFile, accountFile, initChain, startAll, isHttpRpc)
 
-def create_env_impl(node_yml, genesis_json, config_json, start_all):
-    # TestEnvironment.bin_url = binurl
-    # TestEnvironment.node_cfg = opt.node
-    # TestEnvironment.account_cfg = opt.accountCfg
-    # TestEnvironment.genesis_Tmpl = opt.genesis
-    # TestEnvironment.cbft_cfg = opt.cbft
-    return TestEnvironment()
+    yield
 
+
+
+
+def create_env_impl(binFile, nodeFile,  genesisFile, staticNodeFile, accountFile, initChain, startAll, isHttpRpc):
+    env = TestEnvironment()
+    env.binFile = binFile
+    env.nodeFile = nodeFile
+    env.genesisFile = genesisFile
+    env.staticNodeFile = staticNodeFile
+    env.accountFile = accountFile
+    env.initChain = initChain
+    env.startAll = startAll
+    env.isHttpRpc = isHttpRpc
+
+    env.deploy_all()
+    env.startAll()

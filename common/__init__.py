@@ -1,1 +1,1 @@
-from common.log import log
+# -*- coding: utf-8 -*-
