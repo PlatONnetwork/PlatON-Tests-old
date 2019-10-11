@@ -9,7 +9,7 @@ import paramiko
 from client_sdk_python import HTTPProvider, Web3, WebsocketProvider
 from client_sdk_python.middleware import geth_poa_middleware
 
-from common import log
+from common.log import log
 
 
 def connect_web3(url):
@@ -37,13 +37,38 @@ def connect_linux(ip, username='root', password='Juzhen123!', prot=22):
         @sftp:文件传输实例，用于上传下载文件 sftp.get(a,b)将a下载到b,sftp.put(a,b)把a上传到b
         @t:连接实例，用于关闭连接 t.close()
     '''
-    t = paramiko.Transport((ip, prot))
+    t = paramiko.Transport(ip, prot)
     t.connect(username=username, password=password)
     ssh = paramiko.SSHClient()
     ssh._transport = t
     sftp = paramiko.SFTPClient.from_transport(t)
     return ssh, sftp, t
 
+def ssh_remote(ip, username='root', password='Juzhen123!', port=22):
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        ssh.connect(hostname=ip, port=port,username=username,password=password,timeout=5)
+    except Exception as e:
+        print(e)
+        try:
+            ssh.close()
+        except:
+            pass
+    return ssh
+
+def sftp_remote(ip, username='root', password='Juzhen123!', port=22):
+    t = paramiko.Transport(ip, port)
+    try:
+        t.connect(username=username, password=password)
+        sftp = paramiko.SFTPClient.from_transport(t)
+        return sftp, t
+    except Exception as e:
+        print(e)
+        try:
+            t.close()
+        except:
+            pass
 
 def connect_linux_pem(ip, username, pem_path):
     '''
@@ -67,6 +92,19 @@ def connect_linux_pem(ip, username, pem_path):
 
 
 def run_ssh(ssh, cmd, password=None):
+    try:
+        stdin, stdout, _ = ssh.exec_command("source /etc/profile;%s" % cmd)
+        if password:
+            stdin.write(password+"\n")
+        stdout_list = stdout.readlines()
+        if len(stdout_list):
+            log.info(stdout_list)
+    except Exception as e:
+        raise e
+    return stdout_list
+
+
+def runCMDBySSH(ssh, cmd, password=None):
     try:
         stdin, stdout, _ = ssh.exec_command("source /etc/profile;%s" % cmd)
         if password:

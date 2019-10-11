@@ -10,7 +10,7 @@ import os
 import time
 from logging import handlers
 
-from conftest import BASE_DIR
+from settings import BASE_DIR
 
 
 class Logger(object):

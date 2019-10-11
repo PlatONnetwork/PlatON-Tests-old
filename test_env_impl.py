@@ -6,16 +6,14 @@ import time
 from concurrent.futures import ALL_COMPLETED, wait
 from concurrent.futures.thread import ThreadPoolExecutor
 
-from common import log
-from common.connect import connect_web3, connect_linux
+from common.log import log
+from common.connect import connect_web3, connect_linux, runCMDBySSH, ssh_remote, sftp_remote
 from common.load_file import LoadFile
-from conftest import CMD_FOR_HTTP, CMD_FOR_WS, runCMDBySSH
+from global_var import getThreadPoolExecutor
+from settings import CMD_FOR_HTTP, CMD_FOR_WS, DEPLOY_PATH
 
 TMP_LOG = "./tmp_log"
 LOG_PATH = "./bug_log"
-
-
-threadPool = ThreadPoolExecutor(max_workers=30)
 
 def singleton(cls):
     _instance = {}
@@ -27,10 +25,8 @@ def singleton(cls):
     return inner
 
 
-
-
 class Node:
-    def __init__(self, id, host, port, username, password, blsprikey, blspubkey, nodekey, rpcport, deployDir, syncMode):
+    def __init__(self, id=None, host=None, port=None, username=None, password=None, blsprikey=None, blspubkey=None, nodekey=None, rpcport=None, deployDir=None, syncMode=True):
         self.id = id
         self.host = host
         self.port = port
@@ -41,15 +37,11 @@ class Node:
         self.blspubkey = blspubkey
         self.nodekey = nodekey
         self.syncMode = syncMode
+        self.deployDir = deployDir
 
-    def iniNode(self):
+    def initNode(self):
         self.deployDir = '{}/node-{}'.format(self.deployDir, self.port)
         self.dataDir = '{}/data'.format(self.deployDir, self.port)
-
-        if not os.path.exists(self.deployDir):
-            os.makedirs(self.deployDir)
-        if not os.path.exists(self.dataDir):
-            os.makedirs(self.dataDir)
 
         self.binFile = '{}/platon'.format(self.deployDir, self.port)
         self.genesisFile = '{}/genesis.json'.format(self.deployDir, self.port)
@@ -57,7 +49,9 @@ class Node:
         self.cbftFile = '{}/cbft.json'.format(self.dataDir, self.port)
 
         # connect_ssh
-        self.ssh, self.sftp, self.transport = connect_linux(self.host, self.username, self.password, 22)
+        #self.ssh, self.sftp, self.transport = connect_linux(self.host, self.username, self.password, 22)
+        self.ssh = ssh_remote(self.host, self.username, self.password, 22)
+        #self.sftp, self.transport = sftp_remote(self.host, self.username, self.password, 22)
 
     def getEnodeUrl(self):
         return r"enode://" + self.id + "@" + self.host + ":" + str(self.port)
@@ -75,6 +69,19 @@ class Node:
             self.rpcurl = "ws:" + self.host + "://" + self.rpcport
 
         self.web3_connector = connect_web3(self.rpcurl)
+
+    def clean(self):
+        #time.sleep(0.5)
+        log.info("clean node: rm {}".format(self.host))
+        runCMDBySSH(self.ssh, "rm -rf {}".format(self.deployDir))
+
+        log.info("clean node: mkdir1 {}".format(self.host))
+        runCMDBySSH(self.ssh, "mkdir -p {}".format(self.deployDir))
+
+        log.info("clean node: mkdir2 {}".format(self.deployDir))
+        runCMDBySSH(self.ssh, "mkdir -p {}".format(self.host))
+        log.info("clean node。。。。。。。: {}".format(self.host))
+
 
     """
     以kill的方式停止节点，关闭后节点可以重启
@@ -95,13 +102,20 @@ class Node:
         #self.transport.close()
 
     def uploadBinFile(self, srcFile):
-        self.sftp.put(srcFile, self.binFile)
+        if srcFile and os.path.exists(srcFile):
+            self.sftp.put(srcFile, self.binFile)
+            log.info("bin uploaded to node: {}".format(self.host))
+
     def uploadGenesisFile(self, srcFile):
-        self.sftp.put(srcFile, self.genesisFile)
+        if srcFile and os.path.exists(srcFile):
+            self.sftp.put(srcFile, self.genesisFile)
+            log.info("genesis uploaded to node: {}".format(self.host))
+
     def uploadStaticNodeFile(self, srcFile):
-        self.sftp.put(srcFile, self.staticNodeFile)
-    def uploadCbftFile(self, srcFile):
-        self.sftp.put(srcFile, self.cbftFile)
+        if srcFile and os.path.exists(srcFile):
+            self.sftp.put(srcFile, self.staticNodeFile)
+        else:
+            log.info("static-node source file not found.")
 
     def backupLog(self):
         runCMDBySSH(self.ssh, "cd {};tar zcvf log.tar.gz ./log".format(self.deployDir))
@@ -111,11 +125,13 @@ class Node:
 
 
 class Account:
-    def __init__(self, address, prikey, balance):
+    def __init__(self, address, prikey, nonce=0, balance=0):
         self.id = id
         self.address = address
         self.prikey = prikey
+        self.nonce = nonce
         self.balance = balance
+
 
 
 # @singleton
@@ -123,10 +139,7 @@ class TestEnvironment:
     __slots__ = ('binFile', 'nodeFile',  'accountFile', 'genesisFile', 'staticNodeFile', 'collusionNodeList', 'normalNodeList', 'accountConfig', 'genesisConfig', 'initChain', 'startAll', 'isHttpRpc')
 
     def get_all_nodes(self):
-        allNodes = []
-        allNodes.append(self.collusionNodeList)
-        allNodes.append(self.normalNodeList)
-        return allNodes
+        return self.collusionNodeList+self.normalNodeList
 
     def deploy_all(self):
         self.parseNodeFile()
@@ -147,32 +160,49 @@ class TestEnvironment:
     def start_nodes(self, node_list):
         tasks = []
         for node in node_list:
-            tasks.append(threadPool.submit(node.start))
+            tasks.append(getThreadPoolExecutor().submit(node.start))
         wait(tasks, return_when=ALL_COMPLETED)
 
     def deploy_nodes(self, node_list):
+        tasks0 = []
+        log.info("nodes inited")
+
+        for node in node_list:
+            node.initNode()
+        log.info("nodes inited...")
+
+        tasks1 = []
+        if self.initChain:
+            for node in node_list:
+                tasks1.append(getThreadPoolExecutor().submit(lambda:node.clean()))
+            if len(tasks1) > 0:
+                wait(tasks1, return_when=ALL_COMPLETED)
+        log.info("nodes cleaned")
+
         tasks = []
         for node in node_list:
-            tasks.append(threadPool.submit(node.uploadBinFile, self.binFile))
-            tasks.append(threadPool.submit(node.uploadGenesisFile, self.genesisFile))
-            tasks.append(threadPool.submit(node.uploadStaticNodeFile, self.staticNodeFile))
+            log.info("start to uploading files to node: {}".format(node.host))
+            tasks.append(getThreadPoolExecutor().submit(lambda :node.uploadBinFile(self.binFile)))
+            tasks.append(getThreadPoolExecutor().submit(lambda :node.uploadGenesisFile(self.genesisFile)))
+            tasks.append(getThreadPoolExecutor().submit(lambda :node.uploadStaticNodeFile(self.staticNodeFile)))
         wait(tasks, return_when=ALL_COMPLETED)
+        log.info("nodes uploaded")
 
     def stop_nodes(self, node_list):
         tasks = []
         for node in node_list:
-            tasks.append(threadPool.submit(node.stop))
+            tasks.append(getThreadPoolExecutor().submit(node.stop))
         wait(tasks, return_when=ALL_COMPLETED)
 
     def reset_nodes(self, node_list):
         tasks = []
         for node in node_list:
-            tasks.append(threadPool.submit(node.stop))
+            tasks.append(getThreadPoolExecutor().submit(node.stop))
         wait(tasks, return_when=ALL_COMPLETED)
 
         tasks2 = []
         for node in node_list:
-            tasks2.append(threadPool.submit(node.start))
+            tasks2.append(getThreadPoolExecutor().submit(node.start))
         wait(tasks2, return_when=ALL_COMPLETED)
 
     def upload_files(self, node_list):
@@ -184,38 +214,49 @@ class TestEnvironment:
 
     def parseNodeFile(self):
         nodeConfig = LoadFile(self.nodeFile).get_data()
-        for node in nodeConfig.get["collusion"]:
+        self.collusionNodeList = []
+        self.normalNodeList = []
+
+        for node in nodeConfig.get("collusion", []):
+            #colluNode = Node(node.get("id"), node.get("host"), node.get("port"), node.get("username"), node.get("password"), node.get("blsprikey"), node.get("blspubkey"), node.get("nodekey"), node.get("rpcport"))
             colluNode = Node()
-            colluNode.id = node.get["id"]
-            colluNode.host = node.get["host"]
-            colluNode.port = node.get["port"]
-            colluNode.rpcport = node.get["rpcport"]
-            colluNode.username = node.get["username"]
-            colluNode.password = node.get["password"]
-            colluNode.blsprikey = node.get["blsprikey"]
-            colluNode.blspubkey = node.get["blspubkey"]
-            colluNode.nodekey = node.get["nodekey"]
-            colluNode.url = node.get["url"]
+            colluNode.id = node.get("id")
+            colluNode.host = node.get("host")
+            colluNode.port = node.get("port")
+            colluNode.rpcport = node.get("rpcport")
+            colluNode.username = node.get("username")
+            colluNode.password = node.get("password")
+            colluNode.blsprikey = node.get("blsprikey")
+            colluNode.blspubkey = node.get("blspubkey")
+            colluNode.nodekey = node.get("nodekey")
+            colluNode.deployDir = node.get("deplayDir")
+            if not colluNode.deployDir:
+                colluNode.deployDir = DEPLOY_PATH
+
+
             self.collusionNodeList.append(colluNode)
             # todo: generate static-nodes.json if staticFile is None
 
-        for node in nodeConfig.get["nocollusion"]:
+        for node in nodeConfig.get("nocollusion", []):
             normalNode = Node()
-            normalNode.id = node.get["id"]
-            normalNode.host = node.get["host"]
-            normalNode.port = node.get["port"]
-            normalNode.rpcport = node.get["rpcport"]
-            normalNode.username = node.get["username"]
-            normalNode.password = node.get["password"]
-            normalNode.blsprikey = node.get["blsprikey"]
-            normalNode.blspubkey = node.get["blspubkey"]
-            normalNode.nodekey = node.get["nodekey"]
-            normalNode.url = node.get["url"]
+            normalNode.id = node.get("id")
+            normalNode.host = node.get("host")
+            normalNode.port = node.get("port")
+            normalNode.rpcport = node.get("rpcport")
+            normalNode.username = node.get("username")
+            normalNode.password = node.get("password")
+            normalNode.blsprikey = node.get("blsprikey")
+            normalNode.blspubkey = node.get("blspubkey")
+            normalNode.nodekey = node.get("nodekey")
+            normalNode.deployDir = node.get("deplayDir")
+            if not normalNode.deployDir:
+                normalNode.deployDir = DEPLOY_PATH
+
             self.normalNodeList.append(normalNode)
 
     def parseGenesisFile(self):
         self.genesisConfig = LoadFile(self.genesisFile).get_data()
-        self.genesisConfig['deploy']['cbft']["initialNodes"] = self.getInitNodesForGenesis()
+        self.genesisConfig['config']['cbft']["initialNodes"] = self.getInitNodesForGenesis()
         self.rewriteGenesisFile()
 
     def parseAccountFile(self):
