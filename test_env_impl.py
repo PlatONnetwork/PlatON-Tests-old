@@ -9,13 +9,11 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from common.log import log
 from common.connect import connect_web3, connect_linux, runCMDBySSH, ssh_remote, sftp_remote
 from common.load_file import LoadFile
+from global_var import getThreadPoolExecutor
 from settings import CMD_FOR_HTTP, CMD_FOR_WS, DEPLOY_PATH
 
 TMP_LOG = "./tmp_log"
 LOG_PATH = "./bug_log"
-
-
-threadPool = ThreadPoolExecutor(max_workers=30)
 
 def singleton(cls):
     _instance = {}
@@ -25,8 +23,6 @@ def singleton(cls):
             _instance[cls] = cls()
         return _instance[cls]
     return inner
-
-
 
 
 class Node:
@@ -55,7 +51,7 @@ class Node:
         # connect_ssh
         #self.ssh, self.sftp, self.transport = connect_linux(self.host, self.username, self.password, 22)
         self.ssh = ssh_remote(self.host, self.username, self.password, 22)
-        self.sftp, self.transport = sftp_remote(self.host, self.username, self.password, 22)
+        #self.sftp, self.transport = sftp_remote(self.host, self.username, self.password, 22)
 
     def getEnodeUrl(self):
         return r"enode://" + self.id + "@" + self.host + ":" + str(self.port)
@@ -75,9 +71,16 @@ class Node:
         self.web3_connector = connect_web3(self.rpcurl)
 
     def clean(self):
+        #time.sleep(0.5)
+        log.info("clean node: rm {}".format(self.host))
         runCMDBySSH(self.ssh, "rm -rf {}".format(self.deployDir))
+
+        log.info("clean node: mkdir1 {}".format(self.host))
         runCMDBySSH(self.ssh, "mkdir -p {}".format(self.deployDir))
-        runCMDBySSH(self.ssh, "mkdir -p {}".format(self.dataDir))
+
+        log.info("clean node: mkdir2 {}".format(self.deployDir))
+        runCMDBySSH(self.ssh, "mkdir -p {}".format(self.host))
+        log.info("clean node。。。。。。。: {}".format(self.host))
 
 
     """
@@ -157,7 +160,7 @@ class TestEnvironment:
     def start_nodes(self, node_list):
         tasks = []
         for node in node_list:
-            tasks.append(threadPool.submit(node.start))
+            tasks.append(getThreadPoolExecutor().submit(node.start))
         wait(tasks, return_when=ALL_COMPLETED)
 
     def deploy_nodes(self, node_list):
@@ -171,36 +174,35 @@ class TestEnvironment:
         tasks1 = []
         if self.initChain:
             for node in node_list:
-                log.info("clean node: {}".format(node.host))
-                tasks1.append(threadPool.submit(lambda:node.clean))
-                log.info("cleaned node: {}".format(node.host))
-            wait(tasks1, return_when=ALL_COMPLETED)
+                tasks1.append(getThreadPoolExecutor().submit(lambda:node.clean()))
+            if len(tasks1) > 0:
+                wait(tasks1, return_when=ALL_COMPLETED)
         log.info("nodes cleaned")
 
         tasks = []
         for node in node_list:
             log.info("start to uploading files to node: {}".format(node.host))
-            tasks.append(threadPool.submit(lambda :node.uploadBinFile(self.binFile)))
-            tasks.append(threadPool.submit(lambda :node.uploadGenesisFile(self.genesisFile)))
-            tasks.append(threadPool.submit(lambda :node.uploadStaticNodeFile(self.staticNodeFile)))
+            tasks.append(getThreadPoolExecutor().submit(lambda :node.uploadBinFile(self.binFile)))
+            tasks.append(getThreadPoolExecutor().submit(lambda :node.uploadGenesisFile(self.genesisFile)))
+            tasks.append(getThreadPoolExecutor().submit(lambda :node.uploadStaticNodeFile(self.staticNodeFile)))
         wait(tasks, return_when=ALL_COMPLETED)
         log.info("nodes uploaded")
 
     def stop_nodes(self, node_list):
         tasks = []
         for node in node_list:
-            tasks.append(threadPool.submit(node.stop))
+            tasks.append(getThreadPoolExecutor().submit(node.stop))
         wait(tasks, return_when=ALL_COMPLETED)
 
     def reset_nodes(self, node_list):
         tasks = []
         for node in node_list:
-            tasks.append(threadPool.submit(node.stop))
+            tasks.append(getThreadPoolExecutor().submit(node.stop))
         wait(tasks, return_when=ALL_COMPLETED)
 
         tasks2 = []
         for node in node_list:
-            tasks2.append(threadPool.submit(node.start))
+            tasks2.append(getThreadPoolExecutor().submit(node.start))
         wait(tasks2, return_when=ALL_COMPLETED)
 
     def upload_files(self, node_list):

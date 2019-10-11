@@ -1,9 +1,7 @@
-import os
-
 import pytest
+
+from global_var import initGlobal
 from test_env_impl import TestEnvironment
-
-
 
 
 @pytest.fixture(scope="module")
@@ -30,6 +28,8 @@ def global_test_env(request):
     :param request:
     :return:
     '''
+    initGlobal()
+
     binFile = request.config.getoption("--binFile")
     nodeFile = request.config.getoption("--nodeFile")
     genesisFile = request.config.getoption("--genesisFile")
@@ -39,9 +39,13 @@ def global_test_env(request):
     startAll = request.config.getoption("--startAll")
     isHttpRpc = request.config.getoption("--isHttpRpc")
 
-    create_env_impl(binFile, nodeFile,  genesisFile, staticNodeFile, accountFile, initChain, startAll, isHttpRpc)
+    env = create_env_impl(binFile, nodeFile,  genesisFile, staticNodeFile, accountFile, initChain, startAll, isHttpRpc)
 
-    yield
+    yield env
+
+    #todo
+    env.shutdown()
+
 
 
 
@@ -59,3 +63,5 @@ def create_env_impl(binFile, nodeFile,  genesisFile, staticNodeFile, accountFile
 
     env.deploy_all()
     env.startAll()
+
+    return env
