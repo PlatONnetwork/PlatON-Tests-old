@@ -1,25 +1,49 @@
 # PlatON-Tests
 This project is an automated test project of the PaltON-Go. see: https://github.com/PlatONnetwork/PlatON-Go
 
-### Run test:
-windows环境变量,需要先把./utils/ethkey和./utils/pubkey目录分别添加至环境变量中。
+# 安装运行依赖
+安装python3.6以上环境，并配置pip，然后执行以下命令安装依赖库：
 
-在项目目录中执行以下命令
-```js
-python run.py --node='./deploy/node/4_node.yml' --case='all'
+pip install -r requirements.txt 
 
-```
-查看使用方式
-```js
-python run.py -h
-```
+# Run test:
+## 以并发方式，执行所有用例
+py.test test_start.py -s --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc
+
+## 以同步方式，执行所有用例
+py.test test_start.py -s --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc
 
 
-### Dir introduce:
-- [case](docs/case_example.md)
-- common：主要包含一些公共使用的方法
-- conf：用于全局测试配置
-- data：一些必要的测试依赖文件，或者是数据驱动用例的数据
-- [deploy](docs/deploy.md)
-- docs：一些文档
-- utils：基础库
+## 以并发方式，执行所有并发的用例
+py.test test_start.py -s -m "not SYNC" --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc
+
+## 以同步方式，执行所有同步的用例
+py.test test_start.py -s -m "SYNC" --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc 
+
+# py.test 命令行参数
+--nodeFile "deploy/4_node.yml":  指定节点配置文件
+--accountFile "deploy/accounts.yml": 指定测试用的账号文件
+
+--initChain：出现此选项，表示要初始化链数据；如果没有此选项，表示不初始化链数据
+--startAll：表示要启动所有节点；如果没有此选项，表示只部署节点，不启动节点
+--httpRpc：表示用HTTP PRC接口；如果没有此选项，则使用WS RPC
+--installDependency：表示节点需要安装必需的依赖，一般第一次部署时使用；如果没有此选项，则不再安装
+--installSuperVisor：表示节点是否安装supervisor服务，一般第一次部署时使用；如果没有此选项，则不再安装
+
+
+
+# 注意事项
+目前仅支持Ubuntu环境部署
+文件存放要求：
+    platon二进制文件、node.yml配置文件、accounts.yml文件，放入deploy目录
+    其它文件，放入deploy/template模板目录
+
+用例书写：
+如果用例不支持并发方式运行，则用@pytest.mark.SYNC标注，如果不家标注，则默认是可以并发运行的，如：
+
+@pytest.mark.P1
+@pytest.mark.SYNC
+def test_case_3():
+    print("begin: test_case_3")
+    SomeTxAPI("test_case_3")
+    print("end: test_case_3")

@@ -173,13 +173,13 @@ class Node:
 
 
     def start(self, initChain):
+        log.info("to stop PlatON {}:{}".format(self.host,self.port))
+        self.stop()
+
         if initChain:
-            log.info("to init PlatON chain....")
+            log.info("to init PlatON chain")
             self.initPlatON()
 
-        log.info("::::copy supervisor_conf_file_name :{} to /etc/supervisor/conf.d".format(self.supervisor_conf_file_name))
-
-        runCMDBySSH(self.ssh, "cd ./tmp/" + "; sudo -S -p '' cp " + self.supervisor_conf_file_name + " /etc/supervisor/conf.d", self.password)
         runCMDBySSH(self.ssh, "sudo -S -p '' supervisorctl update " + self.supervisor_service_id, self.password)
         runCMDBySSH(self.ssh, "sudo -S -p '' supervisorctl start " + self.supervisor_service_id, self.password)
 
@@ -201,19 +201,8 @@ class Node:
     以kill的方式停止节点，关闭后节点可以重启
     """
     def stop(self):
-        runCMDBySSH(self.ssh, "ps -ef|grep platon|grep %s|grep -v grep|awk {'print $2'}|xargs kill" % self.port)
-        time.sleep(5)
-        result = runCMDBySSH(self.ssh, "ps -ef|grep platon|grep %s|grep -v grep|awk {'print $2'}" % self.port)
-        # self.transport.close()
-        if result:
-            raise Exception("进程关闭失败")
-
-    """
-    以kill -9的方式停止节点，关闭后节点无法重启，只能重新部署
-    """
-    def destroy(self):
-        runCMDBySSH(self.ssh, "ps -ef|grep platon|grep %s|grep -v grep|awk {'print $2'}|xargs kill -9" % self.port)
-        #self.transport.close()
+        log.info("关闭platon进程...")
+        runCMDBySSH(self.ssh, "sudo -S -p '' supervisorctl stop {}".format(self.supervisor_service_id), self.password)
 
     def uploadAllFiles(self):
         log.info("uploadAllFiles:::::::::: {}".format(self.host))
@@ -278,6 +267,8 @@ class Node:
         if os.path.exists(supervisorConfFile):
             runCMDBySSH(self.ssh, "rm -rf ./tmp/{}".format(self.supervisor_conf_file_name))
             self.sftp.put(supervisorConfFile, "./tmp/{}".format(self.supervisor_conf_file_name))
+            runCMDBySSH(self.ssh, "sudo -S -p '' cp ./tmp/" + self.supervisor_conf_file_name + " /etc/supervisor/conf.d", self.password)
+
             log.info("supervisor startup config uploaded to node: {}".format(self.host))
 
     def backupLog(self):
@@ -312,12 +303,12 @@ class Node:
 
     def judge_restart_supervisor(self, supervisor_pid_str):
         supervisor_pid = supervisor_pid_str[0].strip("\n")
-        log.info("judge_restart_supervisor......2222222222..........{}".format(supervisor_pid))
+
 
         result = runCMDBySSH(self.ssh, "sudo -S -p '' supervisorctl stop {}".format(self.supervisor_service_id), self.password)
-        log.info("judge_restart_supervisor......2222222222..........result={}, port={}".format(result, self.port))
+
         if "node-{}".format(self.port) not in result[0]:
-            log.info("judge_restart_supervisor......2222222222..........")
+
             runCMDBySSH(self.ssh, "sudo -S -p '' kill {}".format(supervisor_pid), self.password)
             runCMDBySSH(self.ssh, "sudo -S -p '' killall supervisord", self.password)
             runCMDBySSH(self.ssh, "sudo -S -p '' sudo apt remove supervisor -y", self.password)
@@ -391,7 +382,7 @@ class Account:
 
 # @singleton
 class TestEnvironment:
-    __slots__ = ('binFile', 'nodeFile',  'accountFile', 'collusionNodeList', 'normalNodeList', 'accountConfig', 'genesisConfig', 'initChain', 'startAll', 'isHttpRpc', 'installDependency', 'installSuperVisor')
+    __slots__ = ('nodeFile',  'accountFile', 'collusionNodeList', 'normalNodeList', 'accountConfig', 'genesisConfig', 'initChain', 'startAll', 'isHttpRpc', 'installDependency', 'installSuperVisor')
 
     def get_all_nodes(self):
         return self.collusionNodeList+self.normalNodeList
