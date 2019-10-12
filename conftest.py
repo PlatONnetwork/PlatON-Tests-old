@@ -17,8 +17,8 @@ def pytest_addoption(parser):
     parser.addoption("--initChain", action="store", default=True, help="nodeConfig: the node config file")
     parser.addoption("--startAll", action="store", default=True, help="startAll: the node config file")
     parser.addoption("--isHttpRpc", action="store", default=True, help="isHttpRpc: the node config file")
-    parser.addoption("--installDependency", action="store", default=False, help="installDependency: the node config file")
-    parser.addoption("--installSuperVisor", action="store", default=False, help="intallSuperVisor: the node config file")
+    parser.addoption("--installDependency", action="store_true", default=False, help="installDependency: the node config file")
+    parser.addoption("--installSuperVisor", action="store_true", default=False, help="intallSuperVisor: the node config file")
 
 
 # py.test test_start.py -s --concmode=asyncnet --binFile "deploy/platon" --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain True --startAll True --isHttpRpc True --installDependency True --installSuperVisor True
@@ -37,8 +37,8 @@ def global_test_env(request):
     initChain = request.config.getoption("--initChain")== "True"
     startAll = request.config.getoption("--startAll")== "True"
     isHttpRpc = request.config.getoption("--isHttpRpc") == "True"
-    installDependency = request.config.getoption("--installDependency")== "True"
-    installSuperVisor = request.config.getoption("--installSuperVisor")== "True"
+    installDependency = request.config.getoption("--installDependency")
+    installSuperVisor = request.config.getoption("--installSuperVisor")
 
 
     env = create_env_impl(binFile, nodeFile, accountFile, initChain, startAll, isHttpRpc, installDependency, installSuperVisor)
@@ -48,6 +48,20 @@ def global_test_env(request):
     #todo
     #env.shutdown()
 
+@pytest.fixture(scope="function")
+def custom_test_env():
+    def _custom_test_env(conf):
+        binFile = conf.get("binFile")
+        nodeFile = conf.get("nodeFile")
+        genesisFile = conf.get("genesisFile")
+        staticNodeFile = conf.get("staticNodeFile")
+        accountFile = conf.get("accountFile")
+        initChain = conf.get("initChain")
+        startAll = conf.get("startAll")
+        isHttpRpc = conf.get("isHttpRpc")
+        return create_env_impl(binFile, nodeFile,  genesisFile, staticNodeFile, accountFile, initChain, startAll, isHttpRpc)
+    yield _custom_test_env
+    _custom_test_env.shutdown()
 
 
 
