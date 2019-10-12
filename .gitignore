@@ -8,6 +8,8 @@
 *.egg-info
 .pytest_cache
 ./deploy/node/travis_node.yml
+./deploy/tmp
+./deploy/platon
 
 # VE
 venv
