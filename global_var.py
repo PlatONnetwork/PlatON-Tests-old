@@ -1,10 +1,11 @@
+from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures.thread import ThreadPoolExecutor
 
 
 def initGlobal():
     global _global_dict
     _global_dict = {}
-    _global_dict["threadPoolExecutor"] = ThreadPoolExecutor(max_workers=20)
+    _global_dict["threadPoolExecutor"] = ThreadPoolExecutor(max_workers=40)
 
 
 def set_value(name, value):

@@ -66,6 +66,6 @@ def create_env_impl(binFile, nodeFile, accountFile, initChain=True, startAll=Tru
     print(env.installDependency)
     print(env.installSuperVisor)
     env.deploy_all()
-    env.startAll()
+    env.start_all()
 
     return env
