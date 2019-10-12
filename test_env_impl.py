@@ -348,34 +348,34 @@ class Node:
         runCMDBySSH(self.ssh, cmd)
 
 
-def deploy_supervisor(self):
-    """
-    部署supervisor
-    :param node:
-    :return:
-    """
-    log.info("call deploy_supervisor() for node: {}".format(self.host))
-    tmpConf = self.genSupervisorConf()
-    runCMDBySSH(self.ssh, "mkdir -p ./tmp")
-    self.sftp.put(tmpConf, "./tmp/supervisord.conf")
+    def deploy_supervisor(self):
+        """
+        部署supervisor
+        :param node:
+        :return:
+        """
+        log.info("call deploy_supervisor() for node: {}".format(self.host))
+        tmpConf = self.genSupervisorConf()
+        runCMDBySSH(self.ssh, "mkdir -p ./tmp")
+        self.sftp.put(tmpConf, "./tmp/supervisord.conf")
 
-    supervisor_pid_str = runCMDBySSH(self.ssh, "ps -ef|grep supervisord|grep -v grep|awk {'print $2'}")
-
-    log.info("supervisor_pid_str: {}".format(supervisor_pid_str))
-
-    if len(supervisor_pid_str) > 0:
-        self.judge_restart_supervisor(supervisor_pid_str)
-    else:
-        log.info("judge_restart_supervisor......1111111111..........")
-        runCMDBySSH(self.ssh, "sudo -S -p '' apt update", self.password)
-        runCMDBySSH(self.ssh, "sudo -S -p '' apt install -y supervisor", self.password)
-        runCMDBySSH(self.ssh, "sudo -S -p '' cp ./tmp/supervisord.conf /etc/supervisor/", self.password)
         supervisor_pid_str = runCMDBySSH(self.ssh, "ps -ef|grep supervisord|grep -v grep|awk {'print $2'}")
+
+        log.info("supervisor_pid_str: {}".format(supervisor_pid_str))
+
         if len(supervisor_pid_str) > 0:
-            log.info("judge_restart_supervisor......3333333333..........")
             self.judge_restart_supervisor(supervisor_pid_str)
         else:
-            runCMDBySSH(self.ssh, "sudo -S -p '' /etc/init.d/supervisor start", self.password)
+            log.info("judge_restart_supervisor......1111111111..........")
+            runCMDBySSH(self.ssh, "sudo -S -p '' apt update", self.password)
+            runCMDBySSH(self.ssh, "sudo -S -p '' apt install -y supervisor", self.password)
+            runCMDBySSH(self.ssh, "sudo -S -p '' cp ./tmp/supervisord.conf /etc/supervisor/", self.password)
+            supervisor_pid_str = runCMDBySSH(self.ssh, "ps -ef|grep supervisord|grep -v grep|awk {'print $2'}")
+            if len(supervisor_pid_str) > 0:
+                log.info("judge_restart_supervisor......3333333333..........")
+                self.judge_restart_supervisor(supervisor_pid_str)
+            else:
+                runCMDBySSH(self.ssh, "sudo -S -p '' /etc/init.d/supervisor start", self.password)
 
 
 class Account:
@@ -471,8 +471,8 @@ class TestEnvironment:
             log.info("nodes deploy supervisor")
             futureList.clear()
             for node in node_list:
-                #futureList.append(getThreadPoolExecutor().submit(lambda :node.deploy_supervisor()))
-                futureList.append(getThreadPoolExecutor().submit(deploy_supervisor, node))
+                futureList.append(getThreadPoolExecutor().submit(lambda :node.deploy_supervisor()))
+                #futureList.append(getThreadPoolExecutor().submit(deploy_supervisor, node))
             if len(futureList) > 0:
                 wait(futureList, return_when=ALL_COMPLETED)
             log.info("SuperVisor installed")
