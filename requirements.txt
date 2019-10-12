@@ -14,4 +14,4 @@ allure-pytest==2.6.1
 ruamel.yaml==0.15.91
 pytest-repeat==0.8.0
 pytest-concurrent=0.2.2
-gev ent=1.4.0
+gevent=1.4.0
