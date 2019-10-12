@@ -409,8 +409,17 @@ class Account:
 class TestEnvironment:
     __slots__ = ('binFile', 'nodeFile', 'account', 'accountFile', 'collusionNodeList', 'normalNodeList', 'accountConfig', 'genesisConfig', 'initChain', 'startAll', 'isHttpRpc', 'installDependency', 'installSuperVisor')
 
-    def __init__(self):
-        self.account = Account(self.accountFile)
+    def __init__(self, binFile, nodeFile, accountFile, initChain, startAll, isHttpRpc, installDependency, installSuperVisor):
+        self.binFile = binFile
+        self.nodeFile = nodeFile
+        self.accountFile = accountFile
+        self.initChain = initChain
+        self.startAll = startAll
+        self.isHttpRpc = isHttpRpc
+        self.installDependency = installDependency
+        self.installSuperVisor = installSuperVisor
+        self.rewrite_genesisFile()
+        self.account = Account(self.accountFile, self.genesisConfig['config']['chainId'])
 
     def get_all_nodes(self):
         return self.collusionNodeList+self.normalNodeList
@@ -418,7 +427,6 @@ class TestEnvironment:
     def deploy_all(self):
         self.parseNodeFile()
 
-        self.rewrite_genesisFile()
         self.rewrite_configJsonFile()
         self.rewrite_staticNodesFile()
         self.generateKeyFiles(self.get_all_nodes())

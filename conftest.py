@@ -22,7 +22,7 @@ def pytest_addoption(parser):
 
 
 # py.test test_start.py -s --concmode=asyncnet --binFile "deploy/platon" --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain True --startAll True --isHttpRpc True --installDependency True --installSuperVisor True
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def global_test_env(request):
     '''
     'binFile', 'nodeConfigFile', 'collusionNodeList', 'bootstrapNodeList', 'normalNodeList', 'cbftConfigFile', 'cbftConfig', 'accountConfigFile', 'accountConfig', 'genesisFile', 'genesisConfig', 'staticNodeFile', 'initChain', 'startAll', 'isHttpRpc')
@@ -61,7 +61,7 @@ def custom_test_env():
         isHttpRpc = conf.get("isHttpRpc")
         return create_env_impl(binFile, nodeFile,  genesisFile, staticNodeFile, accountFile, initChain, startAll, isHttpRpc)
     yield _custom_test_env
-    _custom_test_env.shutdown()
+   # _custom_test_env.shutdown()
 
 
 
