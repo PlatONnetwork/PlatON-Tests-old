@@ -344,7 +344,8 @@ class Node:
 
 
     def initPlatON(self):
-        cmd = '{} --datadir {} --config {} init {}'.format(self.remoteBinFile, self.remoteDataDir, self.remoteConfigFile, self.remoteGenesisFile)
+        #cmd = '{} --datadir {} --config {} init {}'.format(self.remoteBinFile, self.remoteDataDir, self.remoteConfigFile, self.remoteGenesisFile)
+        cmd = '{} --datadir {} init {}'.format(self.remoteBinFile, self.remoteDataDir, self.remoteGenesisFile)
         runCMDBySSH(self.ssh, cmd)
 
 
