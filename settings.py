@@ -15,5 +15,5 @@ GENESIS_FILE = os.path.abspath(os.path.join(BASE_DIR, "deploy/template/genesis.j
 CONFIG_JSON_FILE = os.path.abspath(os.path.join(BASE_DIR, "deploy/template/config.json"))
 STATIC_NODE_FILE = os.path.abspath(os.path.join(BASE_DIR, 'deploy/template/static-nodes.json'))
 SUPERVISOR_FILE = os.path.abspath(os.path.join(BASE_DIR, "deploy/template/supervisor.conf"))
-SUPERVISOR_TMP = os.path.abspath(os.path.join(BASE_DIR, "deploy/tmp/supervisor/"))
-PLATON_DATA_TMP = os.path.abspath(os.path.join(BASE_DIR, 'deploy/tmp/data'))
+LOCAL_TMP_FILE_ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, "deploy/tmp"))
+
