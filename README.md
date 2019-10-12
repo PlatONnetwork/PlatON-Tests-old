@@ -8,16 +8,28 @@ pip install -r requirements.txt
 
 # Run test:
 ## 以并发方式，执行所有用例
-py.test test_start.py -s --concmode=asyncnet --binFile "deploy/platon" --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain True --startAll True --isHttpRpc True --installDependency True --installSuperVisor True
+py.test test_start.py -s --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc
 
 ## 以同步方式，执行所有用例
-py.test test_start.py -s --binFile "deploy/platon" --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain True --startAll True --isHttpRpc True --installDependency True --installSuperVisor True
+py.test test_start.py -s --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc
+
 
 ## 以并发方式，执行所有并发的用例
-py.test test_start.py -s -m "not SYNC" --concmode=asyncnet --binFile "deploy/platon" --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain True --startAll True --isHttpRpc True --installDependency True --installSuperVisor True
+py.test test_start.py -s -m "not SYNC" --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc
 
 ## 以同步方式，执行所有同步的用例
-py.test test_start.py -s -m "SYNC" --binFile "deploy/platon" --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain True --startAll True --isHttpRpc True --installDependency True --installSuperVisor True
+py.test test_start.py -s -m "SYNC" --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc 
+
+# py.test 命令行参数
+--nodeFile "deploy/4_node.yml":  指定节点配置文件
+--accountFile "deploy/accounts.yml": 指定测试用的账号文件
+
+--initChain：出现此选项，表示要初始化链数据；如果没有此选项，表示不初始化链数据
+--startAll：表示要启动所有节点；如果没有此选项，表示只部署节点，不启动节点
+--httpRpc：表示用HTTP PRC接口；如果没有此选项，则使用WS RPC
+--installDependency：表示节点需要安装必需的依赖，一般第一次部署时使用；如果没有此选项，则不再安装
+--installSuperVisor：表示节点是否安装supervisor服务，一般第一次部署时使用；如果没有此选项，则不再安装
+
 
 
 # 注意事项
