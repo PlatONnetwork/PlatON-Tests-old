@@ -44,32 +44,6 @@ def connect_linux(ip, username='root', password='Juzhen123!', prot=22):
     sftp = paramiko.SFTPClient.from_transport(t)
     return ssh, sftp, t
 
-def ssh_remote(ip, username='root', password='Juzhen123!', port=22):
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    try:
-        ssh.connect(hostname=ip, port=port,username=username,password=password,timeout=5)
-    except Exception as e:
-        print(e)
-        try:
-            ssh.close()
-        except:
-            pass
-    return ssh
-
-def sftp_remote(ip, username='root', password='Juzhen123!', port=22):
-    t = paramiko.Transport(ip, port)
-    try:
-        t.connect(username=username, password=password)
-        sftp = paramiko.SFTPClient.from_transport(t)
-        return sftp, t
-    except Exception as e:
-        print(e)
-        try:
-            t.close()
-        except:
-            pass
-
 def connect_linux_pem(ip, username, pem_path):
     '''
      使用秘钥连接linux服务器

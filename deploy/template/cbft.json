@@ -1,0 +1,22 @@
+{
+	"period": 0,
+	"epoch": 250000,
+	"maxLatency": 500,
+	"legalCoefficient": 1.0,
+	"duration": 0,
+	"ppos": {
+    "candidate": {
+      "threshold": "10000000000000000000",
+      "depositLimit": 10,
+      "allowed": 10,
+      "maxCount": 5,
+      "maxChair": 4,
+      "refundBlockNumber": 1
+    },
+    "ticket": {
+      "ticketPrice": "1000000000000000000",
+      "maxCount": 51200,
+      "expireBlockNumber": 1536000
+    }
+  }
+}

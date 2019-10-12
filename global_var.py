@@ -4,7 +4,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 def initGlobal():
     global _global_dict
     _global_dict = {}
-    _global_dict["threadPoolExecutor"] = ThreadPoolExecutor(max_workers=30)
+    _global_dict["threadPoolExecutor"] = ThreadPoolExecutor(max_workers=20)
 
 
 def set_value(name, value):
