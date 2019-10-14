@@ -21,7 +21,7 @@ def test_initial_account(global_env):
     查看存在genesis.json文件中配置的创世账户
     """
     log.info("查看存在genesis.json文件中配置的创世账户")
-    w3_list = [one_node.w3_connector for one_node in global_env.collusion_node_list]
+    w3_list = [one_node.w3_connector() for one_node in global_env.collusion_node_list]
     for w3 in w3_list:
         for one_address in global_env.genesis_config['alloc']:
             balance = w3.eth.getBalance(w3.toChecksumAddress(one_address))
@@ -36,7 +36,7 @@ def test_initial_economic(global_env):
     """
     log.info("查看经济模型参数，治理参数，惩罚参数，奖励参数是否为正确配置的参数")
     economic_info = global_env.genesis_config['EconomicModel']
-    w3_list = [one_node.w3_connector for one_node in global_env.collusion_node_list]
+    w3_list = [one_node.w3_connector() for one_node in global_env.collusion_node_list]
     for w3 in w3_list:
         info = json.loads(w3.debug.economicConfig())
         assert economic_info['Common']['ExpectedMinutes'] == info['Common']['ExpectedMinutes']
@@ -75,7 +75,7 @@ def test_initial_plan(global_env):
     查看基金会锁仓计划查询
     """
     log.info("查看基金会锁仓计划查询")
-    w3_list = [one_node.w3_connector for one_node in global_env.collusion_node_list]
+    w3_list = [one_node.w3_connector() for one_node in global_env.collusion_node_list]
     for w3 in w3_list:
         info = w3.eth.call({"to": "0x1000000000000000000000000000000000000001", "data":"0xda8382100495941000000000000000000000000000000000000003"}, 0)
         recive = json.loads(str(info, encoding="ISO-8859-1"))
@@ -108,7 +108,7 @@ def test_initial_consensus(global_env):
     """
     log.info("查看共识的每个共识节点的出块个数 和 总共的共识节点的个数")
     amount = global_env.genesis_config['config']['cbft']['amount']
-    w3_list = [one_node.w3_connector for one_node in global_env.collusion_node_list]
+    w3_list = [one_node.w3_connector() for one_node in global_env.collusion_node_list]
     for w3 in w3_list:
         info = w3.eth.getPrepareQC(amount)
         assert info['viewNumber'] == 0
