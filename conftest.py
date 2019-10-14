@@ -39,6 +39,20 @@ def global_test_env(request):
     #todo
     #env.shutdown()
 
+@pytest.fixture(scope="function")
+def custom_test_env():
+    def _custom_test_env(conf):
+        binFile = conf.get("binFile")
+        nodeFile = conf.get("nodeFile")
+        genesisFile = conf.get("genesisFile")
+        staticNodeFile = conf.get("staticNodeFile")
+        accountFile = conf.get("accountFile")
+        initChain = conf.get("initChain")
+        startAll = conf.get("startAll")
+        isHttpRpc = conf.get("isHttpRpc")
+        return create_env_impl(binFile, nodeFile,  genesisFile, staticNodeFile, accountFile, initChain, startAll, isHttpRpc)
+    yield _custom_test_env
+   # _custom_test_env.shutdown()
 
 
 

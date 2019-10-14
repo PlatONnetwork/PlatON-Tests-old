@@ -5,6 +5,9 @@ import shutil
 import tarfile
 import time
 from concurrent.futures import ALL_COMPLETED, wait
+
+from client_sdk_python.eth import Eth
+
 from concurrent.futures.thread import ThreadPoolExecutor
 
 from common.log import log
@@ -13,6 +16,9 @@ from common.load_file import LoadFile
 from global_var import getThreadPoolExecutor
 from settings import CMD_FOR_HTTP, CMD_FOR_WS, DEPLOY_PATH, LOCAL_TMP_FILE_ROOT_DIR, SUPERVISOR_FILE, CONFIG_JSON_FILE, \
     STATIC_NODE_FILE, GENESIS_FILE, PLATON_BIN_FILE
+
+from hexbytes import HexBytes
+
 
 TMP_LOG = "./tmp_log"
 LOG_PATH = "./bug_log"
@@ -371,18 +377,69 @@ class Node:
 
 
 class Account:
-    def __init__(self, address, prikey, nonce=0, balance=0):
-        self.id = id
-        self.address = address
-        self.prikey = prikey
-        self.nonce = nonce
-        self.balance = balance
+    def __init__(self, accountFile,chainId):
+        '''
+           accounts 包含的属性: address,prikey,nonce,balance
+        '''
+        self.accounts = {}
+        accounts = LoadFile(accountFile).get_data()
+        self.chain_id = chainId
+        for account in  accounts:
+            self.accounts[account['address']] = account
+
+    def get_all_accounts(self):
+        accounts = []
+        for account in self.accounts:
+            accounts.append(account)
+        return accounts
+
+    def get_rand_account(self):
+        #todo 实现随机
+        for account in self.accounts:
+            return account
+
+    def sendTransaction(self, connect, data, from_address, to_address, gasPrice, gas, value):
+        account = self.accounts[from_address]
+        transaction_dict = {
+            "to": to_address,
+            "gasPrice": gasPrice,
+            "gas": gas,
+            "nonce": account['nonce'],
+            "data": data,
+            "chainId": self.chain_id,
+            "value": value
+        }
+        platon = Eth(connect)
+        signedTransactionDict =  platon.account.signTransaction(
+            transaction_dict, account['prikey']
+        )
+
+        data = signedTransactionDict.rawTransaction
+        result = HexBytes(platon.sendRawTransaction(data)).hex()
+        res = platon.waitForTransactionReceipt(result)
+        return res
+
+
+
+
 
 
 
 # @singleton
 class TestEnvironment:
     __slots__ = ('nodeFile',  'accountFile', 'collusionNodeList', 'normalNodeList', 'accountConfig', 'genesisConfig', 'initChain', 'startAll', 'isHttpRpc', 'installDependency', 'installSuperVisor')
+
+    def __init__(self, binFile, nodeFile, accountFile, initChain, startAll, isHttpRpc, installDependency, installSuperVisor):
+        self.binFile = binFile
+        self.nodeFile = nodeFile
+        self.accountFile = accountFile
+        self.initChain = initChain
+        self.startAll = startAll
+        self.isHttpRpc = isHttpRpc
+        self.installDependency = installDependency
+        self.installSuperVisor = installSuperVisor
+        self.rewrite_genesisFile()
+        self.account = Account(self.accountFile, self.genesisConfig['config']['chainId'])
 
     def get_all_nodes(self):
         return self.collusionNodeList+self.normalNodeList
@@ -391,6 +448,7 @@ class TestEnvironment:
         self.parseNodeFile()
         self.parseAccountFile()
         self.rewrite_genesisFile()
+
         self.rewrite_configJsonFile()
         self.rewrite_staticNodesFile()
 
@@ -533,8 +591,6 @@ class TestEnvironment:
 
             self.normalNodeList.append(normalNode)
 
-    def parseAccountFile(self):
-        self.accountConfig = LoadFile(self.accountFile).get_data()
 
     def getInitNodesForGenesis(self):
         initNodeList = []
@@ -560,6 +616,10 @@ class TestEnvironment:
 
         self.genesisConfig = LoadFile(GENESIS_FILE).get_data()
         self.genesisConfig['config']['cbft']["initialNodes"] = self.getInitNodesForGenesis()
+
+        accounts = self.account.get_all_accounts()
+        for account in accounts:
+            self.genesisConfig['alloc'][account['address']] = account['balance']
 
         log.info("重写genesis.json内容")
         with open(GENESIS_FILE, 'w', encoding='utf-8') as f:
