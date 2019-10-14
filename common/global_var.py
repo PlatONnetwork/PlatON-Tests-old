@@ -1,6 +1,7 @@
 from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures.thread import ThreadPoolExecutor
 
+_global_dict={}
 
 def initGlobal():
     global _global_dict
@@ -23,3 +24,5 @@ def getThreadPoolExecutor(defValue=None):
         return _global_dict["threadPoolExecutor"]
     except KeyError:
         return defValue
+
+initGlobal()

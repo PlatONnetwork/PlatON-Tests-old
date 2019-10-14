@@ -1,6 +1,4 @@
 import pytest
-
-from common.global_var import initGlobal
 from environment.test_env_impl import TestEnvironment, create_env_impl
 
 
@@ -22,8 +20,6 @@ def pytest_addoption(parser):
 # py.test test_start.py -s --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc
 @pytest.fixture(scope="session", autouse=False)
 def global_test_env(request):
-    initGlobal()
-
     nodeFile = request.config.getoption("--nodeFile")
     accountFile = request.config.getoption("--accountFile")
     initChain = request.config.getoption("--initChain")

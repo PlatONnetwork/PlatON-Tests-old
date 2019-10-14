@@ -555,18 +555,18 @@ class TestEnvironment:
             self.normal_node_list.append(normalNode)
 
     def parseAccountFile(self):
-        if not self.account_file:
+        if self.account_file:
             self.account_file = LoadFile(self.account_file).get_data()    
 
     def getInitNodesForGenesis(self):
         initNodeList = []
-        for node in self.collusionNodeList:
+        for node in self.collusion_node_list:
             initNodeList.append({"node": node.getEnodeUrl(), "blsPubKey": node.blspubkey})
         return initNodeList
 
     def getStaticNodeList(self):
         staticNodeList = []
-        for node in self.collusionNodeList:
+        for node in self.collusion_node_list:
             staticNodeList.append(node.getEnodeUrl())
         return staticNodeList
 
