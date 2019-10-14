@@ -1,7 +1,7 @@
 import pytest
 
-from global_var import initGlobal
-from test_env_impl import TestEnvironment
+from common.global_var import initGlobal
+from environment.test_env_impl import TestEnvironment
 
 
 @pytest.fixture(scope="module")
@@ -38,7 +38,6 @@ def global_test_env(request):
 
     #todo
     #env.shutdown()
-
 
 
 
