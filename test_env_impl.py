@@ -15,7 +15,7 @@ from common.connect import connect_web3, connect_linux, runCMDBySSH
 from common.load_file import LoadFile
 from global_var import getThreadPoolExecutor
 from settings import CMD_FOR_HTTP, CMD_FOR_WS, DEPLOY_PATH, LOCAL_TMP_FILE_ROOT_DIR, SUPERVISOR_FILE, CONFIG_JSON_FILE, \
-    STATIC_NODE_FILE, GENESIS_FILE, PLATON_BIN_FILE
+    STATIC_NODE_FILE, GENESIS_FILE, PLATON_BIN_FILE,GENESIS_TEMPLATE_FILE
 
 from hexbytes import HexBytes
 
@@ -34,7 +34,7 @@ def singleton(cls):
 
 
 class Node:
-    def __init__(self, id=None, host=None, port=None, username=None, password=None, blsprikey=None, blspubkey=None, nodekey=None, rpcport=None, deployDir=None, syncMode="full"):
+    def __init__(self, id=None, host=None, port=None, username=None, password=None, blsprikey=None, blspubkey=None, nodekey=None, rpcport=None, deployDir=None, rpctype="http",syncMode="full"):
         self.data_tmp_dir = None
         self.remoteBlskeyFile = None
         self.remoteConfigFile = None
@@ -54,9 +54,15 @@ class Node:
         self.nodekey = nodekey
         self.remoteDeployDir = deployDir
         self.syncMode = syncMode
+        self.rpctype = rpctype
 
     def getEnodeUrl(self):
         return r"enode://" + self.id + "@" + self.host + ":" + str(self.port)
+
+    def connect_node(self):
+        url = "{}://{}:{}".format(self.rpctype, self.host, self.rpcport)
+        collusion_w3 = connect_web3(url)
+        return collusion_w3
 
 
     def generate_supervisor_node_conf_file(self, isHttRpc=True):
@@ -383,19 +389,20 @@ class Account:
         '''
         self.accounts = {}
         accounts = LoadFile(accountFile).get_data()
+        log.info(accounts)
         self.chain_id = chainId
-        for account in  accounts:
+        for account in accounts:
             self.accounts[account['address']] = account
 
     def get_all_accounts(self):
         accounts = []
-        for account in self.accounts:
+        for account in self.accounts.values():
             accounts.append(account)
         return accounts
 
     def get_rand_account(self):
         #todo 实现随机
-        for account in self.accounts:
+        for account in self.accounts.values():
             return account
 
     def sendTransaction(self, connect, data, from_address, to_address, gasPrice, gas, value):
@@ -427,7 +434,6 @@ class Account:
 
 # @singleton
 class TestEnvironment:
-    __slots__ = ('nodeFile',  'accountFile', 'collusionNodeList', 'normalNodeList', 'accountConfig', 'genesisConfig', 'initChain', 'startAll', 'isHttpRpc', 'installDependency', 'installSuperVisor')
 
     def __init__(self, binFile, nodeFile, accountFile, initChain, startAll, isHttpRpc, installDependency, installSuperVisor):
         self.binFile = binFile
@@ -438,17 +444,22 @@ class TestEnvironment:
         self.isHttpRpc = isHttpRpc
         self.installDependency = installDependency
         self.installSuperVisor = installSuperVisor
-        self.rewrite_genesisFile()
+        self.collusionNodeList = []
+        self.parseNodeFile()
+        if not os.path.exists(GENESIS_TEMPLATE_FILE):
+            raise Exception("模板文件没有找到：{}".format(GENESIS_TEMPLATE_FILE))
+        self.genesisConfig = LoadFile(GENESIS_TEMPLATE_FILE).get_data()
         self.account = Account(self.accountFile, self.genesisConfig['config']['chainId'])
+        self.rewrite_genesisFile()
 
     def get_all_nodes(self):
         return self.collusionNodeList+self.normalNodeList
 
-    def deploy_all(self):
-        self.parseNodeFile()
-        self.parseAccountFile()
-        self.rewrite_genesisFile()
+    def get_rand_node(self):
+        return self.collusionNodeList[0]
 
+
+    def deploy_all(self):
         self.rewrite_configJsonFile()
         self.rewrite_staticNodesFile()
 
@@ -611,15 +622,11 @@ class TestEnvironment:
         :param init_node: 初始出块节点enode
         :return:
         """
-        if not os.path.exists(GENESIS_FILE):
-            raise Exception("模板文件没有找到：{}".format(GENESIS_FILE))
-
-        self.genesisConfig = LoadFile(GENESIS_FILE).get_data()
         self.genesisConfig['config']['cbft']["initialNodes"] = self.getInitNodesForGenesis()
 
         accounts = self.account.get_all_accounts()
         for account in accounts:
-            self.genesisConfig['alloc'][account['address']] = account['balance']
+            self.genesisConfig['alloc'][account['address']] = { "balance":   str(account['balance']) }
 
         log.info("重写genesis.json内容")
         with open(GENESIS_FILE, 'w', encoding='utf-8') as f:
@@ -707,24 +714,6 @@ class TestEnvironment:
         print("开始删除缓存.....")
         shutil.rmtree(TMP_LOG)
         print("删除缓存完成")
-
-
-def create_test_env(binFile, nodeFile, genesisFile, accountFile, staticNodeFile, initChain=True, startAll=True, isHttpRPC=True):
-    env = TestEnvironment()
-    env.binFile = binFile
-    env.nodeFile = nodeFile
-    #env.genesisFile = genesisFile
-    env.accountFile = accountFile
-    #env.staticNodeFile = staticNodeFile
-    env.initChain = initChain
-    env.startAll = startAll
-    env.isHttpRpc = isHttpRPC
-
-    if not nodeFile:
-        raise Exception("缺少node配置文件")
-
-    if not genesisFile:
-        raise Exception("缺少genesis block配置文件")
 
 
 
