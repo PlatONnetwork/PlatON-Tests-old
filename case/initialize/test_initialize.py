@@ -9,16 +9,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 @pytest.fixture(scope="module")
 def global_env():
-    bin_file = os.path.abspath(os.path.join(BASE_DIR, "../../deploy/platon"))
     node_file = os.path.abspath(os.path.join(BASE_DIR, "../../deploy/4_node.yml"))
-    genesis_file = os.path.abspath(os.path.join(BASE_DIR, "../../deploy/template/genesis.json"))
-    account_file = os.path.abspath(os.path.join(BASE_DIR, "../../deploy/accounts.yml"))
-    static_file = os.path.abspath(os.path.join(BASE_DIR, "../../deploy/template/static-nodes.json"))
-    env = test_env_impl.create_test_env(bin_file, node_file, genesis_file, account_file, static_file)
-    env.deploy_all()
-    env.start_all()
+    env = test_env_impl.create_env_impl(node_file)
     return env
-
 
 
 @allure.title("查看创世账户")

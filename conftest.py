@@ -1,7 +1,7 @@
 import pytest
 
 from common.global_var import initGlobal
-from environment.test_env_impl import TestEnvironment
+from environment.test_env_impl import TestEnvironment, create_env_impl
 
 
 @pytest.fixture(scope="module")
@@ -20,19 +20,19 @@ def pytest_addoption(parser):
     parser.addoption("--installSuperVisor", action="store_true", default=False, dest="installSuperVisor", help="installSuperVisor: default do not install supervisor service")
 
 # py.test test_start.py -s --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session", autouse=False)
 def global_test_env(request):
     initGlobal()
 
     nodeFile = request.config.getoption("--nodeFile")
     accountFile = request.config.getoption("--accountFile")
     initChain = request.config.getoption("--initChain")
-    startAll = request.config.getoption("--startAll")
-    isHttpRpc = request.config.getoption("--httpRpc")
+    _ = request.config.getoption("--startAll")
+    _ = request.config.getoption("--httpRpc")
     installDependency = request.config.getoption("--installDependency")
     installSuperVisor = request.config.getoption("--installSuperVisor")
 
-    env = create_env_impl(nodeFile, accountFile, initChain, startAll, isHttpRpc, installDependency, installSuperVisor)
+    env = create_env_impl(nodeFile, accountFile, init_chain=initChain, install_supervisor=installDependency, install_dependency=installSuperVisor)
 
     yield env
 
@@ -40,23 +40,3 @@ def global_test_env(request):
     #env.shutdown()
 
 
-
-
-def create_env_impl(nodeFile, accountFile, initChain=True, startAll=True, isHttpRpc=True, installDependency=False, installSuperVisor=False):
-    env = TestEnvironment()
-    env.nodeFile = nodeFile
-    env.accountFile = accountFile
-    env.initChain = initChain
-    env.startAll = startAll
-    env.isHttpRpc = isHttpRpc
-    env.installDependency = installDependency
-    env.installSuperVisor = installSuperVisor
-
-    print(env.installDependency)
-    print(env.installSuperVisor)
-
-    env.deploy_all()
-
-    env.start_all()
-
-    return env
