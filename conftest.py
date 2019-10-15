@@ -49,7 +49,6 @@ def custom_test_env():
         _ = conf.get("binFile")
         nodeFile = conf.get("nodeFile")
         genesisFile = conf.get("genesisFile")
-        _ = conf.get("staticNodeFile")
         accountFile = conf.get("accountFile")
         initChain = conf.get("initChain")
         _ = conf.get("startAll")
