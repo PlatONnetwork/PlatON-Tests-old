@@ -66,6 +66,7 @@ def download_platon(download_url: 'str', path=PLATON_BIN_FILE):
 
     packge_name = download_url.split('/')[-1][:-7]
     platon_path = os.path.abspath(path)
+    platon_path = os.path.join(platon_path, "../")
     platon_tar_file = os.path.join(platon_path, 'platon.tar.gz')
     extractall_path = os.path.join(platon_path, packge_name)
 

@@ -439,11 +439,10 @@ class Account:
 
 # @singleton
 class TestEnvironment:
-    __slots__ = ('node_file', 'bin_file', 'account_file', 'account', 'collusion_node_list', 'normal_node_list', 'account_file', 'genesis_file', 'genesis_config', 'conf_json_file', 'init_chain', 'install_dependency', 'install_supervisor')
+    __slots__ = ('node_file', 'account_file', 'account', 'collusion_node_list', 'normal_node_list', 'account_file', 'genesis_file', 'genesis_config', 'conf_json_file', 'init_chain', 'install_dependency', 'install_supervisor')
 
-    def __init__(self, node_file, bin_file=None, account_file=None, genesis_file=GENESIS_FILE, conf_json_file=CONFIG_JSON_FILE, install_supervisor=True, install_dependency=True, init_chain=True):
+    def __init__(self, node_file, account_file=None, genesis_file=GENESIS_FILE, conf_json_file=CONFIG_JSON_FILE, install_supervisor=True, install_dependency=True, init_chain=True):
         self.node_file = node_file
-        self.bin_file = bin_file
         self.account_file = account_file
         self.genesis_file = genesis_file
         self.genesis_config = LoadFile(self.genesis_file).get_data()
@@ -608,6 +607,7 @@ class TestEnvironment:
             self.normal_node_list.append(normalNode)
 
     def parseAccountFile(self):
+        self.account = None
         if self.account_file:
             self.account = Account(self.account_file, self.genesis_config['config']['chainId'])   
 
@@ -635,9 +635,10 @@ class TestEnvironment:
 
         self.genesis_config['config']['cbft']["initialNodes"] = self.getInitNodesForGenesis()
 
-        accounts = self.account.get_all_accounts()
-        for account in accounts:
-            self.genesis_config['alloc'][account['address']] = { "balance":   str(account['balance']) }
+        if self.account:
+            accounts = self.account.get_all_accounts()
+            for account in accounts:
+                self.genesis_config['alloc'][account['address']] = { "balance":   str(account['balance']) }
 
         log.info("重写genesis.json内容")
         with open(self.genesis_file, 'w', encoding='utf-8') as f:
