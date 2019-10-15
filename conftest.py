@@ -60,7 +60,7 @@ def global_test_env(request):
 def download_platon(download_url: 'str', path=PLATON_BIN_FILE):
     """
     :param download_url: 新包下载地址
-    :param path: platon放置目录
+    :param path: platon相对路径
     :return:
     """
 
