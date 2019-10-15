@@ -10,7 +10,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 @pytest.fixture(scope="module")
 def global_env():
-    env = test_env_impl.create_env_impl(NODE_FILE)
+    env = test_env_impl.create_env_impl(node_file=NODE_FILE)
     return env
 
 

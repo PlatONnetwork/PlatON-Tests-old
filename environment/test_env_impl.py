@@ -637,7 +637,7 @@ class TestEnvironment:
 
         accounts = self.account.get_all_accounts()
         for account in accounts:
-            self.genesisConfig['alloc'][account['address']] = { "balance":   str(account['balance']) }
+            self.genesis_config['alloc'][account['address']] = { "balance":   str(account['balance']) }
 
         log.info("重写genesis.json内容")
         with open(self.genesis_file, 'w', encoding='utf-8') as f:
