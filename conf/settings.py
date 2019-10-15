@@ -17,4 +17,5 @@ STATIC_NODE_FILE = os.path.abspath(os.path.join(BASE_DIR, '../deploy/template/st
 SUPERVISOR_FILE = os.path.abspath(os.path.join(BASE_DIR, "../deploy/template/supervisor.conf"))
 LOCAL_TMP_FILE_ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, "../deploy/tmp"))
 
+
 NODE_FILE=os.path.abspath(os.path.join(BASE_DIR, "../deploy/4_node.yml"))

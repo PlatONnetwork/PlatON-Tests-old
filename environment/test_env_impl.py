@@ -5,6 +5,9 @@ import shutil
 import tarfile
 import time
 from concurrent.futures import ALL_COMPLETED, wait
+
+from client_sdk_python.eth import Eth
+
 from concurrent.futures.thread import ThreadPoolExecutor
 
 from common.log import log
@@ -12,8 +15,12 @@ from common.connect import connect_web3, connect_linux, runCMDBySSH
 from client_sdk_python import HTTPProvider, Web3, WebsocketProvider
 from common.load_file import LoadFile
 from common.global_var import getThreadPoolExecutor
-from conf.settings import CMD_FOR_HTTP, CMD_FOR_WS, DEPLOY_PATH, LOCAL_TMP_FILE_ROOT_DIR, SUPERVISOR_FILE, CONFIG_JSON_FILE, \
-    STATIC_NODE_FILE, GENESIS_FILE, PLATON_BIN_FILE
+from conf.settings import CMD_FOR_HTTP, CMD_FOR_WS, DEPLOY_PATH, LOCAL_TMP_FILE_ROOT_DIR, SUPERVISOR_FILE, CONFIG_JSON_FILE, STATIC_NODE_FILE, GENESIS_FILE, PLATON_BIN_FILE
+from global_var import getThreadPoolExecutor
+from settings import CMD_FOR_HTTP, CMD_FOR_WS, DEPLOY_PATH, LOCAL_TMP_FILE_ROOT_DIR, SUPERVISOR_FILE, CONFIG_JSON_FILE, \
+    STATIC_NODE_FILE, GENESIS_FILE, PLATON_BIN_FILE,GENESIS_TEMPLATE_FILE
+
+from hexbytes import HexBytes
 
 TMP_LOG = "./tmp_log"
 LOG_PATH = "./bug_log"
@@ -29,7 +36,7 @@ def singleton(cls):
 
 
 class Node:
-    def __init__(self, id=None, host=None, port=None, username=None, password=None, blsprikey=None, blspubkey=None, nodekey=None, rpcport=None, deployDir=None, syncMode="full"):
+    def __init__(self, id=None, host=None, port=None, username=None, password=None, blsprikey=None, blspubkey=None, nodekey=None, rpcport=None, deployDir=None, rpctype="http",syncMode="full"):
         self.data_tmp_dir = None
         self.remoteBlskeyFile = None
         self.remoteConfigFile = None
@@ -49,9 +56,15 @@ class Node:
         self.nodekey = nodekey
         self.remoteDeployDir = deployDir
         self.syncMode = syncMode
+        self.rpctype = rpctype
 
     def getEnodeUrl(self):
         return r"enode://" + self.id + "@" + self.host + ":" + str(self.port)
+
+    def connect_node(self):
+        url = "{}://{}:{}".format(self.rpctype, self.host, self.rpcport)
+        collusion_w3 = connect_web3(url)
+        return collusion_w3
 
 
     def generate_supervisor_node_conf_file(self, isHttRpc=True):
@@ -382,12 +395,49 @@ class Node:
 
 
 class Account:
-    def __init__(self, address, prikey, nonce=0, balance=0):
-        self.id = id
-        self.address = address
-        self.prikey = prikey
-        self.nonce = nonce
-        self.balance = balance
+    def __init__(self, accountFile,chainId):
+        '''
+           accounts 包含的属性: address,prikey,nonce,balance
+        '''
+        self.accounts = {}
+        accounts = LoadFile(accountFile).get_data()
+        log.info(accounts)
+        self.chain_id = chainId
+        for account in accounts:
+            self.accounts[account['address']] = account
+
+    def get_all_accounts(self):
+        accounts = []
+        for account in self.accounts.values():
+            accounts.append(account)
+        return accounts
+
+    def get_rand_account(self):
+        #todo 实现随机
+        for account in self.accounts.values():
+            return account
+
+    def sendTransaction(self, connect, data, from_address, to_address, gasPrice, gas, value):
+        account = self.accounts[from_address]
+        transaction_dict = {
+            "to": to_address,
+            "gasPrice": gasPrice,
+            "gas": gas,
+            "nonce": account['nonce'],
+            "data": data,
+            "chainId": self.chain_id,
+            "value": value
+        }
+        platon = Eth(connect)
+        signedTransactionDict =  platon.account.signTransaction(
+            transaction_dict, account['prikey']
+        )
+
+        data = signedTransactionDict.rawTransaction
+        result = HexBytes(platon.sendRawTransaction(data)).hex()
+        res = platon.waitForTransactionReceipt(result)
+        return res
+
 
 
 
@@ -408,14 +458,17 @@ class TestEnvironment:
     def get_all_nodes(self):
         return self.collusion_node_list + self.normal_node_list
 
+    def get_rand_node(self):
+        return self.collusionNodeList[0]
+
+
     def deploy_all(self):
-        self.parseNodeFile()
-        self.parseAccountFile()
-        self.rewrite_genesisFile()
         self.rewrite_configJsonFile()
         self.rewrite_staticNodesFile()
 
         self.initNodes(self.get_all_nodes())
+
+        self.account = Account(self.accountFile, self.genesis_config['config']['chainId'])
 
         self.generateKeyFiles(self.get_all_nodes())
 
@@ -583,6 +636,10 @@ class TestEnvironment:
         self.genesis_config = LoadFile(self.genesis_file).get_data()
         self.genesis_config['config']['cbft']["initialNodes"] = self.getInitNodesForGenesis()
 
+        accounts = self.account.get_all_accounts()
+        for account in accounts:
+            self.genesisConfig['alloc'][account['address']] = { "balance":   str(account['balance']) }
+
         log.info("重写genesis.json内容")
         with open(self.genesis_file, 'w', encoding='utf-8') as f:
             f.write(json.dumps(self.genesis_config))
@@ -666,7 +723,6 @@ class TestEnvironment:
         print("开始删除缓存.....")
         shutil.rmtree(TMP_LOG)
         print("删除缓存完成")
-
 
 
 def create_env_impl(node_file, account_file=None, genesis_file=GENESIS_FILE, conf_json_file=CONFIG_JSON_FILE, install_supervisor=True, install_dependency=True, init_chain=True):
