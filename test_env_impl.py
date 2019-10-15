@@ -33,28 +33,40 @@ def singleton(cls):
 
 
 class Node:
-    def __init__(self,conf, id=None, host=None, port=None, username=None, password=None, blsprikey=None, blspubkey=None, nodekey=None, rpcport=None, deployDir=None, rpctype="http",syncMode="full"):
+    def __init__(self,conf,node_conf):
         self.data_tmp_dir = None
-        self.remoteBlskeyFile = None
-        self.remoteConfigFile = None
-        self.remoteNodekeyFile = None
-        self.remoteDataDir = None
         self.supervisor_service_id = None
         self.supervisor_conf_file_name = None
-        self.supervisor_tmp_dir = None
-        self.id = id
-        self.host = host
-        self.port = port
-        self.rpcport = rpcport
-        self.username = username
-        self.password = password
-        self.blsprikey = blsprikey
-        self.blspubkey = blspubkey
-        self.nodekey = nodekey
-        self.remoteDeployDir = deployDir
-        self.syncMode = syncMode
-        self.rpctype = rpctype
+        self.id = node_conf.get("id")
+        self.host = node_conf.get("host")
+        self.port = node_conf.get("port")
+        self.rpcport = node_conf.get("rpcport")
+        self.username = node_conf.get("username")
+        self.password = node_conf.get("password")
+        self.blsprikey = node_conf.get("blsprikey")
+        self.blspubkey = node_conf.get("blspubkey")
+        self.nodekey = node_conf.get("nodekey")
+        self.remoteDeployDir = node_conf.get("deplayDir")
+        if not self.remoteDeployDir:
+            self.remoteDeployDir = DEPLOY_PATH
+        self.syncMode = node_conf.get("syncmode")
+        self.rpctype = node_conf.get("rpctype")
         self.conf = conf
+        self.remoteDeployDir = '{}/node-{}'.format(self.remoteDeployDir, self.port)
+        self.remoteDataDir = '{}/data'.format(self.remoteDeployDir)
+        self.remoteBinFile = '{}/platon'.format(self.remoteDeployDir)
+        self.remoteGenesisFile = '{}/genesis.json'.format(self.remoteDeployDir)
+        self.remoteConfigFile = '{}/config.json'.format(self.remoteDeployDir)
+        self.remoteBlskeyFile = '{}/blskey'.format(self.remoteDataDir)
+        self.remoteNodekeyFile = '{}/nodekey'.format(self.remoteDataDir)
+        self.remoteStaticNodesFile = '{}/static-nodes.json'.format(self.remoteDeployDir)
+
+
+        self.tmp_root_dir = os.path.join(self.conf.LOCAL_TMP_FILE_ROOT_DIR,"{}_{}".format(self.host, self.port))  # 生成的各个节点的data/supervesor数据，存放子目录
+        self.supervisor_tmp_dir = os.path.join(self.tmp_root_dir, "supervisor")
+        self.data_tmp_dir = os.path.join(self.tmp_root_dir, "data")
+        self.supervisor_service_id = "node-" + str(self.port)  # supervisor服务启停节点的 ID
+        self.supervisor_conf_file_name = "node-" + str(self.port) + ".conf"  # 生成的各个节点的supervesor配置文件名称
 
     def getEnodeUrl(self):
         return r"enode://" + self.id + "@" + self.host + ":" + str(self.port)
@@ -65,7 +77,7 @@ class Node:
         return collusion_w3
 
 
-    def generate_supervisor_node_conf_file(self, isHttRpc=True):
+    def generate_supervisor_node_conf_file(self):
         """
         生成supervisor部署platon的配置
         :param node:
@@ -93,7 +105,7 @@ class Node:
             #               node.get("vcactor"))
 
             cmd = cmd + " --debug --verbosity 5"
-            if isHttRpc:
+            if self.rpctype == "http":
                 cmd = cmd + " --rpc --rpcaddr 0.0.0.0 --rpcport " + str(self.rpcport)
                 cmd = cmd + " --rpcapi platon,debug,personal,admin,net,web3"
             else:
@@ -154,22 +166,6 @@ class Node:
 
 
     def initNode(self):
-        self.remoteDeployDir = '{}/node-{}'.format(self.remoteDeployDir, self.port)
-        self.remoteDataDir = '{}/data'.format(self.remoteDeployDir)
-        self.remoteBinFile = '{}/platon'.format(self.remoteDeployDir)
-        self.remoteGenesisFile = '{}/genesis.json'.format(self.remoteDeployDir)
-        self.remoteConfigFile = '{}/config.json'.format(self.remoteDeployDir)
-        self.remoteBlskeyFile = '{}/blskey'.format(self.remoteDataDir)
-        self.remoteNodekeyFile = '{}/nodekey'.format(self.remoteDataDir)
-        self.remoteStaticNodesFile = '{}/static-nodes.json'.format(self.remoteDeployDir)
-
-        self.tmp_root_dir = os.path.join(self.conf.LOCAL_TMP_FILE_ROOT_DIR, "{}_{}".format(self.host, self.port))    # 生成的各个节点的data/supervesor数据，存放子目录
-        self.supervisor_tmp_dir = os.path.join(self.tmp_root_dir, "supervisor")
-        self.data_tmp_dir = os.path.join(self.tmp_root_dir, "data")
-
-        self.supervisor_service_id = "node-" + str(self.port)    # supervisor服务启停节点的 ID
-        self.supervisor_conf_file_name = "node-" + str(self.port) + ".conf"  # 生成的各个节点的supervesor配置文件名称
-
         # connect_ssh
         self.ssh, self.sftp, self.transport = connect_linux(self.host, self.username, self.password, 22)
 
@@ -277,10 +273,10 @@ class Node:
     def upload_supervisor_node_conf_file(self):
         supervisorConfFile = self.supervisor_tmp_dir + "/" + self.supervisor_conf_file_name
         if os.path.exists(supervisorConfFile):
-            runCMDBySSH(self.ssh, "rm -rf ./tmp/{}".format(self.supervisor_conf_file_name))
-            self.sftp.put(supervisorConfFile, "./tmp/{}".format(self.supervisor_conf_file_name))
-            runCMDBySSH(self.ssh, "sudo -S -p '' cp ./tmp/" + self.supervisor_conf_file_name + " /etc/supervisor/conf.d", self.password)
-
+            runCMDBySSH(self.ssh, "rm -rf /tmp/{}".format(self.supervisor_conf_file_name))
+            runCMDBySSH(self.ssh, "mkdir  /tmp")
+            self.sftp.put(supervisorConfFile, "/tmp/{}".format(self.supervisor_conf_file_name))
+            runCMDBySSH(self.ssh, "sudo -S -p '' cp /tmp/" + self.supervisor_conf_file_name + " /etc/supervisor/conf.d", self.password)
             log.info("supervisor startup config uploaded to node: {}".format(self.host))
 
     def backupLog(self):
@@ -432,13 +428,12 @@ class Account:
 # @singleton
 class TestEnvironment:
 
-    def __init__(self, binFile, nodeFile,confdir, accountFile, initChain, startAll, isHttpRpc, installDependency, installSuperVisor):
+    def __init__(self, binFile, nodeFile,confdir, accountFile, initChain, startAll, installDependency, installSuperVisor):
         self.binFile = binFile
         self.nodeFile = nodeFile
         self.accountFile = accountFile
         self.initChain = initChain
         self.startAll = startAll
-        self.isHttpRpc = isHttpRpc
         self.installDependency = installDependency
         self.installSuperVisor = installSuperVisor
         self.collusionNodeList = []
@@ -516,9 +511,13 @@ class TestEnvironment:
 
         log.info("nodes upload files")
         futureList.clear()
+        tmp = ThreadPoolExecutor(max_workers=40)
         for node in node_list:
             log.info("node:::::::::: {}".format(node.host))
-            futureList.append(getThreadPoolExecutor().submit(lambda :node.uploadAllFiles()))
+            thread_pool_exc = tmp.submit(lambda :node.uploadAllFiles())
+           # thread_pool_exc = getThreadPoolExecutor().submit(lambda :node.uploadAllFiles())
+            thread_pool_exc.add_done_callback(self.thread_pool_callback)
+            futureList.append(thread_pool_exc)
             #futureList.append(getThreadPoolExecutor().submit(uploadAllFiles,node))
 
         if len(futureList) > 0:
@@ -530,11 +529,19 @@ class TestEnvironment:
             log.info("nodes deploy supervisor")
             futureList.clear()
             for node in node_list:
-                futureList.append(getThreadPoolExecutor().submit(lambda :node.deploy_supervisor()))
+                thread_pool_exc = getThreadPoolExecutor().submit(lambda :node.deploy_supervisor())
+                thread_pool_exc.add_done_callback(self.thread_pool_callback)
+                futureList.append(thread_pool_exc)
                 #futureList.append(getThreadPoolExecutor().submit(deploy_supervisor, node))
             if len(futureList) > 0:
                 wait(futureList, return_when=ALL_COMPLETED)
             log.info("SuperVisor installed")
+
+    def thread_pool_callback(self, worker):
+        log.info("called thread pool executor callback function")
+        worker_exception = worker.exception()
+        if worker_exception:
+            log.exception("Worker return exception: {}".format(worker_exception))
 
     def stop_nodes(self, node_list):
         tasks = []
@@ -562,42 +569,11 @@ class TestEnvironment:
         self.normalNodeList = []
 
         for node in nodeConfig.get("collusion", []):
-            colluNode = Node(self.conf)
-            colluNode.id = node.get("id")
-            colluNode.host = node.get("host")
-            colluNode.port = node.get("port")
-            colluNode.rpcport = node.get("rpcport")
-            colluNode.username = node.get("username")
-            colluNode.password = node.get("password")
-            colluNode.blsprikey = node.get("blsprikey")
-            colluNode.blspubkey = node.get("blspubkey")
-            colluNode.nodekey = node.get("nodekey")
-            colluNode.syncMode = node.get("syncmode")
-
-            colluNode.remoteDeployDir = node.get("deplayDir")
-            if not colluNode.remoteDeployDir:
-                colluNode.remoteDeployDir = DEPLOY_PATH
-
+            colluNode = Node(self.conf, node)
             self.collusionNodeList.append(colluNode)
 
-
         for node in nodeConfig.get("nocollusion", []):
-            normalNode = Node(self.conf)
-            normalNode.id = node.get("id")
-            normalNode.host = node.get("host")
-            normalNode.port = node.get("port")
-            normalNode.rpcport = node.get("rpcport")
-            normalNode.username = node.get("username")
-            normalNode.password = node.get("password")
-            normalNode.blsprikey = node.get("blsprikey")
-            normalNode.blspubkey = node.get("blspubkey")
-            normalNode.nodekey = node.get("nodekey")
-            normalNode.syncMode = node.get("syncmode")
-
-            normalNode.remoteDeployDir = node.get("deplayDir")
-            if not normalNode.remoteDeployDir:
-                normalNode.remoteDeployDir = DEPLOY_PATH
-
+            normalNode = Node(self.conf, node)
             self.normalNodeList.append(normalNode)
 
 
@@ -669,7 +645,7 @@ class TestEnvironment:
 
     def generate_all_supervisor_node_conf_files(self, node_list):
         for node in node_list:
-            node.generate_supervisor_node_conf_file(self.isHttpRpc)
+            node.generate_supervisor_node_conf_file()
 
 
     def backupAllLogs(self):
