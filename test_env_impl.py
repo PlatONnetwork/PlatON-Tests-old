@@ -14,8 +14,7 @@ from common.log import log
 from common.connect import connect_web3, connect_linux, runCMDBySSH
 from common.load_file import LoadFile
 from global_var import getThreadPoolExecutor
-from settings import CMD_FOR_HTTP, CMD_FOR_WS, DEPLOY_PATH, LOCAL_TMP_FILE_ROOT_DIR, SUPERVISOR_FILE, CONFIG_JSON_FILE, \
-    STATIC_NODE_FILE, GENESIS_FILE, PLATON_BIN_FILE,GENESIS_TEMPLATE_FILE
+from settings import  DEPLOY_PATH, PLATON_BIN_FILE,GENESIS_TEMPLATE_FILE,Conf,CONFIG_JSON_TEMPLATE_FILE,SUPERVISOR_TEMPLATE_FILE
 
 from hexbytes import HexBytes
 
@@ -34,7 +33,7 @@ def singleton(cls):
 
 
 class Node:
-    def __init__(self, id=None, host=None, port=None, username=None, password=None, blsprikey=None, blspubkey=None, nodekey=None, rpcport=None, deployDir=None, rpctype="http",syncMode="full"):
+    def __init__(self,conf, id=None, host=None, port=None, username=None, password=None, blsprikey=None, blspubkey=None, nodekey=None, rpcport=None, deployDir=None, rpctype="http",syncMode="full"):
         self.data_tmp_dir = None
         self.remoteBlskeyFile = None
         self.remoteConfigFile = None
@@ -55,6 +54,7 @@ class Node:
         self.remoteDeployDir = deployDir
         self.syncMode = syncMode
         self.rpctype = rpctype
+        self.conf = conf
 
     def getEnodeUrl(self):
         return r"enode://" + self.id + "@" + self.host + ":" + str(self.port)
@@ -163,7 +163,7 @@ class Node:
         self.remoteNodekeyFile = '{}/nodekey'.format(self.remoteDataDir)
         self.remoteStaticNodesFile = '{}/static-nodes.json'.format(self.remoteDeployDir)
 
-        self.tmp_root_dir = os.path.join(LOCAL_TMP_FILE_ROOT_DIR, "{}_{}".format(self.host, self.port))    # 生成的各个节点的data/supervesor数据，存放子目录
+        self.tmp_root_dir = os.path.join(self.conf.LOCAL_TMP_FILE_ROOT_DIR, "{}_{}".format(self.host, self.port))    # 生成的各个节点的data/supervesor数据，存放子目录
         self.supervisor_tmp_dir = os.path.join(self.tmp_root_dir, "supervisor")
         self.data_tmp_dir = os.path.join(self.tmp_root_dir, "data")
 
@@ -235,29 +235,29 @@ class Node:
             log.error("platon bin file not found: {}".format(PLATON_BIN_FILE))
 
     def uploadGenesisFile(self):
-        if GENESIS_FILE and os.path.exists(GENESIS_FILE):
+        if self.conf.GENESIS_FILE and os.path.exists(self.conf.GENESIS_FILE):
             remoteFile = os.path.join(self.remoteDeployDir, "genesis.json").replace("\\", "/")
-            self.sftp.put(GENESIS_FILE, remoteFile)
+            self.sftp.put(self.conf.GENESIS_FILE, remoteFile)
             log.info("genesis.json uploaded to node: {}".format(self.host))
         else:
-            log.warn("genesis.json not found: {}".format(GENESIS_FILE))
+            log.warn("genesis.json not found: {}".format(self.conf.GENESIS_FILE))
 
 
     def uploadStaticNodeFile(self):
-        if STATIC_NODE_FILE and os.path.exists(STATIC_NODE_FILE):
+        if self.conf.STATIC_NODE_FILE and os.path.exists(self.conf.STATIC_NODE_FILE):
             remoteFile = os.path.join(self.remoteDeployDir, "static-nodes.json").replace("\\", "/")
-            self.sftp.put(STATIC_NODE_FILE, remoteFile)
+            self.sftp.put(self.conf.STATIC_NODE_FILE, remoteFile)
             log.info("static-nodes.json uploaded to node: {}".format(self.host))
         else:
-            log.warn("static-nodes.json not found: {}".format(STATIC_NODE_FILE))
+            log.warn("static-nodes.json not found: {}".format(self.conf.STATIC_NODE_FILE))
 
     def uploadConfigFile(self):
-        if CONFIG_JSON_FILE and os.path.exists(CONFIG_JSON_FILE):
+        if self.conf.CONFIG_JSON_FILE and os.path.exists(self.conf.CONFIG_JSON_FILE):
             remoteFile = os.path.join(self.remoteDeployDir, "config.json").replace("\\", "/")
-            self.sftp.put(CONFIG_JSON_FILE, remoteFile)
+            self.sftp.put(self.conf.CONFIG_JSON_FILE, remoteFile)
             log.info("config.json uploaded to node: {}".format(self.host))
         else:
-            log.warn("config.json not found: {}".format(STATIC_NODE_FILE))
+            log.warn("config.json not found: {}".format(self.conf.CONFIG_JSON_FILE))
 
 
 
@@ -299,19 +299,16 @@ class Node:
         :return:
         """
         template = configparser.ConfigParser()
-        template.read(SUPERVISOR_FILE)
+        template.read(SUPERVISOR_TEMPLATE_FILE)
         template.set("inet_http_server", "username", self.username)
         template.set("inet_http_server", "password", self.password)
         template.set("supervisorctl", "username", self.username)
         template.set("supervisorctl", "password", self.password)
 
-        if not os.path.exists(self.supervisor_tmp_dir):
-            os.makedirs(self.supervisor_tmp_dir)
-        tmpConf = os.path.join(self.supervisor_tmp_dir, "supervisord.conf")
-        with open(tmpConf, "w") as file:
+        with open(self.conf.SUPERVISOR_FILE, "w") as file:
             template.write(file)
             file.close()
-        return tmpConf
+        return self.conf.SUPERVISOR_FILE
 
     def judge_restart_supervisor(self, supervisor_pid_str):
         supervisor_pid = supervisor_pid_str[0].strip("\n")
@@ -435,7 +432,7 @@ class Account:
 # @singleton
 class TestEnvironment:
 
-    def __init__(self, binFile, nodeFile, accountFile, initChain, startAll, isHttpRpc, installDependency, installSuperVisor):
+    def __init__(self, binFile, nodeFile,confdir, accountFile, initChain, startAll, isHttpRpc, installDependency, installSuperVisor):
         self.binFile = binFile
         self.nodeFile = nodeFile
         self.accountFile = accountFile
@@ -445,6 +442,7 @@ class TestEnvironment:
         self.installDependency = installDependency
         self.installSuperVisor = installSuperVisor
         self.collusionNodeList = []
+        self.conf = Conf(confdir)
         self.parseNodeFile()
         if not os.path.exists(GENESIS_TEMPLATE_FILE):
             raise Exception("模板文件没有找到：{}".format(GENESIS_TEMPLATE_FILE))
@@ -564,7 +562,7 @@ class TestEnvironment:
         self.normalNodeList = []
 
         for node in nodeConfig.get("collusion", []):
-            colluNode = Node()
+            colluNode = Node(self.conf)
             colluNode.id = node.get("id")
             colluNode.host = node.get("host")
             colluNode.port = node.get("port")
@@ -584,7 +582,7 @@ class TestEnvironment:
 
 
         for node in nodeConfig.get("nocollusion", []):
-            normalNode = Node()
+            normalNode = Node(self.conf)
             normalNode.id = node.get("id")
             normalNode.host = node.get("host")
             normalNode.port = node.get("port")
@@ -629,7 +627,7 @@ class TestEnvironment:
             self.genesisConfig['alloc'][account['address']] = { "balance":   str(account['balance']) }
 
         log.info("重写genesis.json内容")
-        with open(GENESIS_FILE, 'w', encoding='utf-8') as f:
+        with open(self.conf.GENESIS_FILE, 'w', encoding='utf-8') as f:
             f.write(json.dumps(self.genesisConfig))
             f.close()
 
@@ -641,7 +639,7 @@ class TestEnvironment:
         :return:
         """
         log.info("增加种子节点到config.json配置文件")
-        configJsonFile = CONFIG_JSON_FILE
+        configJsonFile = CONFIG_JSON_TEMPLATE_FILE
         if not os.path.exists(configJsonFile):
             log.info("模板文件没有找到：{}".format(configJsonFile))
             return
@@ -649,7 +647,7 @@ class TestEnvironment:
         config_data = LoadFile(configJsonFile).get_data()
         config_data['node']['P2P']["BootstrapNodes"] = self.getStaticNodeList()
 
-        with open(configJsonFile, 'w', encoding='utf-8') as f:
+        with open(self.conf.CONFIG_JSON_FILE, 'w', encoding='utf-8') as f:
             f.write(json.dumps(config_data))
             f.close()
 
@@ -660,20 +658,9 @@ class TestEnvironment:
         :return:
         """
         log.info("生成static-nodes.json")
-        if not os.path.exists(os.path.dirname(STATIC_NODE_FILE)):
-            os.makedirs(os.path.dirname(STATIC_NODE_FILE))
-
-        num = 0
         static_nodes = self.getStaticNodeList()
-        with open(STATIC_NODE_FILE, 'w', encoding='utf-8') as f:
-            f.write('[\n')
-            for i in static_nodes:
-                num += 1
-                if num < len(static_nodes):
-                    f.write('\"' + i + '\",\n')
-                else:
-                    f.write('\"' + i + '\"\n')
-            f.write(']')
+        with open(self.conf.STATIC_NODE_FILE, 'w', encoding='utf-8') as f:
+            f.write( json.dumps(static_nodes))
             f.close()
 
     def generateKeyFiles(self, node_list):

@@ -40,7 +40,7 @@ def global_test_env(request):
     plant_url = request.config.getoption("--platon_url")
     if plant_url:
         download_platon(plant_url)
-    env = create_env_impl(settings.PLATON_BIN_FILE,nodeFile, accountFile, initChain, startAll, isHttpRpc, installDependency, installSuperVisor)
+    env = create_env_impl(settings.PLATON_BIN_FILE,nodeFile,'global', accountFile, initChain, startAll, isHttpRpc, installDependency, installSuperVisor)
 
     yield env
 
@@ -65,8 +65,8 @@ def custom_test_env():
 
 
 
-def create_env_impl(binfile,nodeFile, accountFile, initChain=True, startAll=True, isHttpRpc=True, installDependency=False, installSuperVisor=False):
-    env = TestEnvironment(binfile,nodeFile,accountFile,initChain,startAll,isHttpRpc,installDependency,installSuperVisor)
+def create_env_impl(binfile,nodeFile,confdir, accountFile,initChain=True, startAll=True, isHttpRpc=True, installDependency=False, installSuperVisor=False):
+    env = TestEnvironment(binfile,nodeFile,confdir,accountFile,initChain,startAll,isHttpRpc,installDependency,installSuperVisor)
     print(env.installDependency)
     print(env.installSuperVisor)
     env.deploy_all()
