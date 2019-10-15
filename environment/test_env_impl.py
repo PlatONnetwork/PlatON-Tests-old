@@ -16,10 +16,6 @@ from client_sdk_python import HTTPProvider, Web3, WebsocketProvider
 from common.load_file import LoadFile
 from common.global_var import getThreadPoolExecutor
 from conf.settings import CMD_FOR_HTTP, CMD_FOR_WS, DEPLOY_PATH, LOCAL_TMP_FILE_ROOT_DIR, SUPERVISOR_FILE, CONFIG_JSON_FILE, STATIC_NODE_FILE, GENESIS_FILE, PLATON_BIN_FILE
-from global_var import getThreadPoolExecutor
-from settings import CMD_FOR_HTTP, CMD_FOR_WS, DEPLOY_PATH, LOCAL_TMP_FILE_ROOT_DIR, SUPERVISOR_FILE, CONFIG_JSON_FILE, \
-    STATIC_NODE_FILE, GENESIS_FILE, PLATON_BIN_FILE,GENESIS_TEMPLATE_FILE
-
 from hexbytes import HexBytes
 
 TMP_LOG = "./tmp_log"
@@ -443,10 +439,11 @@ class Account:
 
 # @singleton
 class TestEnvironment:
-    __slots__ = ('node_file',  'account_file', 'collusion_node_list', 'normal_node_list', 'account_file', 'genesis_file', 'genesis_config', 'conf_json_file', 'init_chain', 'install_dependency', 'install_supervisor')
+    __slots__ = ('node_file', 'bin_file', 'account_file', 'account', 'collusion_node_list', 'normal_node_list', 'account_file', 'genesis_file', 'genesis_config', 'conf_json_file', 'init_chain', 'install_dependency', 'install_supervisor')
 
-    def __init__(self, node_file, account_file=None, genesis_file=GENESIS_FILE, conf_json_file=CONFIG_JSON_FILE, install_supervisor=True, install_dependency=True, init_chain=True):
+    def __init__(self, node_file, bin_file=None, account_file=None, genesis_file=GENESIS_FILE, conf_json_file=CONFIG_JSON_FILE, install_supervisor=True, install_dependency=True, init_chain=True):
         self.node_file = node_file
+        self.bin_file = bin_file
         self.account_file = account_file
         self.genesis_file = genesis_file
         self.conf_json_file = conf_json_file
@@ -459,16 +456,18 @@ class TestEnvironment:
         return self.collusion_node_list + self.normal_node_list
 
     def get_rand_node(self):
-        return self.collusionNodeList[0]
+        return self.collusion_node_list[0]
 
 
     def deploy_all(self):
+        self.parseNodeFile()
+        self.parseAccountFile()
+
+        self.rewrite_genesisFile()
         self.rewrite_configJsonFile()
         self.rewrite_staticNodesFile()
 
         self.initNodes(self.get_all_nodes())
-
-        self.account = Account(self.accountFile, self.genesis_config['config']['chainId'])
 
         self.generateKeyFiles(self.get_all_nodes())
 
@@ -609,7 +608,7 @@ class TestEnvironment:
 
     def parseAccountFile(self):
         if self.account_file:
-            self.account_file = LoadFile(self.account_file).get_data()    
+            self.account = Account(self.account_file, self.genesis_config['config']['chainId'])   
 
     def getInitNodesForGenesis(self):
         initNodeList = []
@@ -695,8 +694,8 @@ class TestEnvironment:
             node.generate_supervisor_node_conf_file()
 
     def backupAllLogs(self):
-        self.backupLogs(self.collusionNodeList)
-        self.backupLogs(self.normalNodeList)
+        self.backupLogs(self.collusion_node_list)
+        self.backupLogs(self.normal_node_list)
 
     def backupLogs(self, node_list):
         self.checkLogPath()
