@@ -10,7 +10,7 @@ import os
 import time
 from logging import handlers
 
-from settings import BASE_DIR
+from conf.settings import BASE_DIR
 
 
 class Logger(object):

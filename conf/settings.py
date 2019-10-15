@@ -29,3 +29,6 @@ class Conf:
         self.STATIC_NODE_FILE = os.path.abspath(os.path.join(BASE_DIR, 'deploy/{}/static-nodes.json'.format(dir)))
         self.SUPERVISOR_FILE = os.path.abspath(os.path.join(BASE_DIR, "deploy/{}/supervisor.conf".format(dir)))
         self.LOCAL_TMP_FILE_ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, "deploy/{}/tmp".format(dir)))
+
+
+NODE_FILE=os.path.abspath(os.path.join(BASE_DIR, "../deploy/4_node.yml"))

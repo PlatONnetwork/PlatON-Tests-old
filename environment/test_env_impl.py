@@ -12,12 +12,12 @@ from concurrent.futures.thread import ThreadPoolExecutor
 
 from common.log import log
 from common.connect import connect_web3, connect_linux, runCMDBySSH
+from client_sdk_python import HTTPProvider, Web3, WebsocketProvider
 from common.load_file import LoadFile
 from global_var import getThreadPoolExecutor
 from settings import  DEPLOY_PATH, PLATON_BIN_FILE,GENESIS_TEMPLATE_FILE,Conf,CONFIG_JSON_TEMPLATE_FILE,SUPERVISOR_TEMPLATE_FILE
 
 from hexbytes import HexBytes
-
 
 TMP_LOG = "./tmp_log"
 LOG_PATH = "./bug_log"
@@ -375,6 +375,16 @@ class Node:
                 runCMDBySSH(self.ssh, "sudo -S -p '' /etc/init.d/supervisor start", self.password)
 
 
+    def w3_connector(self, is_http = True):
+        if is_http:
+            url = "http://" + self.host + ':' + str(self.rpcport)
+            w3 = Web3(HTTPProvider(url))
+        else:
+            url = "ws://" + self.host + ':' + str(self.rpcport)
+            w3 = Web3(WebsocketProvider(url))
+        return w3
+
+
 class Account:
     def __init__(self, accountFile,chainId):
         '''
@@ -576,6 +586,9 @@ class TestEnvironment:
             normalNode = Node(self.conf, node)
             self.normalNodeList.append(normalNode)
 
+    def parseAccountFile(self):
+        if self.account_file:
+            self.account = Account(self.account_file, self.genesis_config['config']['chainId'])
 
     def getInitNodesForGenesis(self):
         initNodeList = []

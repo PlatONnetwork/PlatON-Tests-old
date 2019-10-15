@@ -23,7 +23,7 @@ def pytest_addoption(parser):
     parser.addoption("--installSuperVisor", action="store_true", default=False, dest="installSuperVisor", help="installSuperVisor: default do not install supervisor service")
 
 # py.test test_start.py -s --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session", autouse=False)
 def global_test_env(request):
     initGlobal()
 
@@ -46,15 +46,14 @@ def global_test_env(request):
 @pytest.fixture(scope="function")
 def custom_test_env():
     def _custom_test_env(conf):
-        binFile = conf.get("binFile")
+        _ = conf.get("binFile")
         nodeFile = conf.get("nodeFile")
         genesisFile = conf.get("genesisFile")
-        staticNodeFile = conf.get("staticNodeFile")
         accountFile = conf.get("accountFile")
         initChain = conf.get("initChain")
-        startAll = conf.get("startAll")
-        isHttpRpc = conf.get("isHttpRpc")
-        return create_env_impl(binFile, nodeFile,  genesisFile, staticNodeFile, accountFile, initChain, startAll, isHttpRpc)
+        _ = conf.get("startAll")
+        _ = conf.get("isHttpRpc")
+        return create_env_impl(node_file=nodeFile,  genesis_file=genesisFile, account_file=accountFile, init_chain=initChain)
     yield _custom_test_env
    # _custom_test_env.shutdown()
 
