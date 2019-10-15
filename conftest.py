@@ -43,8 +43,7 @@ def global_test_env(request):
     #todo
     #env.shutdown()
 
-@pytest.fixture(scope="function")
-def custom_test_env():
+ def custom_test_env():
     def _custom_test_env(conf):
         _ = conf.get("binFile")
         nodeFile = conf.get("nodeFile")
@@ -58,52 +57,45 @@ def custom_test_env():
    # _custom_test_env.shutdown()
 
 
-
 def download_platon(download_url: 'str', path=PLATON_BIN_FILE):
     """
-
     :param download_url: 新包下载地址
-    :param path: platon相对路径
+    :param path: platon放置目录
     :return:
-
     """
+
     packge_name = download_url.split('/')[-1][:-7]
     platon_path = os.path.abspath(path)
-    platon_tar_path = os.path.join(platon_path, 'platon.tar.gz')
-    extractall_path = os.path.join(platon_path,packge_name)
-    # 下载tar.gz压缩包
-    resp = requests.get(url=download_url, headers={
-                        'Authorization': 'Basic cGxhdG9uOlBsYXRvbjEyMyE='})
-    data = resp.content
-    with open(platon_tar_path, 'wb') as f:
-        f.write(data)
+    platon_tar_file = os.path.join(platon_path, 'platon.tar.gz')
+    extractall_path = os.path.join(platon_path, packge_name)
+
+    if not os.path.exists(platon_path):
+        os.makedirs(platon_path)
+
+    # download 
+    resp = requests.get(url=download_url)
+    with open(platon_tar_file, 'wb') as f:
+        f.write(resp.content)
     f.close()
 
-    # 解压
-    tar = tarfile.open(platon_tar_path)
+    # Extract files
+    tar = tarfile.open(platon_tar_file)
     tar.extractall(path=platon_path)
     tar.close()
-    for filename in os.listdir(extractall_path):
-        print(filename)
-        if filename == "linux":
-            shutil.copyfile(os.path.join(extractall_path, 'linux', 'platon'),path)
-    else:
-        shutil.copyfile(os.path.join(extractall_path, 'platon'),path)
-    # 删除下载、解压文件
-    os.remove(platon_tar_path)
-    print(extractall_path)
-    try:
-        shutil.rmtree(extractall_path)
-    except:
-        rmtree(extractall_path)
 
-def rmtree(top):
-    import stat
-    for root, dirs, files in os.walk(top, topdown=False):
+    # copy file
+    shutil.copy(os.path.join(extractall_path, 'platon'), platon_path)
+        
+    # remove directory and file
+    for root, dirs, files in os.walk(extractall_path, topdown=False):
         for name in files:
-            filename = os.path.join(root, name)
-            os.chmod(filename, stat.S_IWUSR)
-            os.remove(filename)
+            os.remove(os.path.join(root, name))
         for name in dirs:
             os.rmdir(os.path.join(root, name))
-    os.rmdir(top)
+    os.rmdir(extractall_path) 
+    os.remove(platon_tar_file)
+
+
+
+if __name__ == "__main__":
+    download_platon("http://192.168.18.31:8085/ci/packages/PlatON/495/platon-ubuntu-amd64-0.7.2.2.tar.gz")

@@ -9,7 +9,7 @@
 .pytest_cache
 ./deploy/node/travis_node.yml
 ./deploy/tmp
-./deploy/platon
+deploy/platon
 
 # VE
 venv

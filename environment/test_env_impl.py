@@ -15,7 +15,7 @@ from common.connect import connect_web3, connect_linux, runCMDBySSH
 from client_sdk_python import HTTPProvider, Web3, WebsocketProvider
 from common.load_file import LoadFile
 from common.global_var import getThreadPoolExecutor
-from conf.settings import CMD_FOR_HTTP, CMD_FOR_WS, DEPLOY_PATH, LOCAL_TMP_FILE_ROOT_DIR, SUPERVISOR_FILE, CONFIG_JSON_FILE, STATIC_NODE_FILE, GENESIS_FILE, PLATON_BIN_FILE
+from conf.settings import CMD_FOR_HTTP, CMD_FOR_WS, DEPLOY_PATH, LOCAL_TMP_FILE_ROOT_DIR, SUPERVISOR_FILE, CONFIG_JSON_FILE, STATIC_NODE_FILE, GENESIS_FILE, PLATON_BIN_FILE, LOCAL_TMP_FILE_ROOT_DIR
 from hexbytes import HexBytes
 
 TMP_LOG = "./tmp_log"
@@ -446,6 +446,7 @@ class TestEnvironment:
         self.bin_file = bin_file
         self.account_file = account_file
         self.genesis_file = genesis_file
+        self.genesis_config = LoadFile(self.genesis_file).get_data()
         self.conf_json_file = conf_json_file
         self.install_dependency = install_dependency
         self.init_chain = init_chain
@@ -632,7 +633,6 @@ class TestEnvironment:
         if not os.path.exists(self.genesis_file):
             raise Exception("模板文件没有找到：{}".format(self.genesis_file))
 
-        self.genesis_config = LoadFile(self.genesis_file).get_data()
         self.genesis_config['config']['cbft']["initialNodes"] = self.getInitNodesForGenesis()
 
         accounts = self.account.get_all_accounts()
