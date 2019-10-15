@@ -12,13 +12,11 @@ from concurrent.futures.thread import ThreadPoolExecutor
 
 from common.log import log
 from common.connect import connect_web3, connect_linux, runCMDBySSH
+from client_sdk_python import HTTPProvider, Web3, WebsocketProvider
 from common.load_file import LoadFile
-from global_var import getThreadPoolExecutor
-from settings import CMD_FOR_HTTP, CMD_FOR_WS, DEPLOY_PATH, LOCAL_TMP_FILE_ROOT_DIR, SUPERVISOR_FILE, CONFIG_JSON_FILE, \
-    STATIC_NODE_FILE, GENESIS_FILE, PLATON_BIN_FILE,GENESIS_TEMPLATE_FILE
-
+from common.global_var import getThreadPoolExecutor
+from conf.settings import CMD_FOR_HTTP, CMD_FOR_WS, DEPLOY_PATH, LOCAL_TMP_FILE_ROOT_DIR, SUPERVISOR_FILE, CONFIG_JSON_FILE, STATIC_NODE_FILE, GENESIS_FILE, PLATON_BIN_FILE
 from hexbytes import HexBytes
-
 
 TMP_LOG = "./tmp_log"
 LOG_PATH = "./bug_log"
@@ -382,6 +380,16 @@ class Node:
                 runCMDBySSH(self.ssh, "sudo -S -p '' /etc/init.d/supervisor start", self.password)
 
 
+    def w3_connector(self, is_http = True):
+        if is_http:
+            url = "http://" + self.host + ':' + str(self.rpcport)
+            w3 = Web3(HTTPProvider(url))
+        else:
+            url = "ws://" + self.host + ':' + str(self.rpcport)
+            w3 = Web3(WebsocketProvider(url))
+        return w3
+
+
 class Account:
     def __init__(self, accountFile,chainId):
         '''
@@ -429,37 +437,33 @@ class Account:
 
 
 
-
-
-
 # @singleton
 class TestEnvironment:
+    __slots__ = ('node_file', 'bin_file', 'account_file', 'account', 'collusion_node_list', 'normal_node_list', 'account_file', 'genesis_file', 'genesis_config', 'conf_json_file', 'init_chain', 'install_dependency', 'install_supervisor')
 
-    def __init__(self, binFile, nodeFile, accountFile, initChain, startAll, isHttpRpc, installDependency, installSuperVisor):
-        self.binFile = binFile
-        self.nodeFile = nodeFile
-        self.accountFile = accountFile
-        self.initChain = initChain
-        self.startAll = startAll
-        self.isHttpRpc = isHttpRpc
-        self.installDependency = installDependency
-        self.installSuperVisor = installSuperVisor
-        self.collusionNodeList = []
-        self.parseNodeFile()
-        if not os.path.exists(GENESIS_TEMPLATE_FILE):
-            raise Exception("模板文件没有找到：{}".format(GENESIS_TEMPLATE_FILE))
-        self.genesisConfig = LoadFile(GENESIS_TEMPLATE_FILE).get_data()
-        self.account = Account(self.accountFile, self.genesisConfig['config']['chainId'])
-        self.rewrite_genesisFile()
+    def __init__(self, node_file, bin_file=None, account_file=None, genesis_file=GENESIS_FILE, conf_json_file=CONFIG_JSON_FILE, install_supervisor=True, install_dependency=True, init_chain=True):
+        self.node_file = node_file
+        self.bin_file = bin_file
+        self.account_file = account_file
+        self.genesis_file = genesis_file
+        self.conf_json_file = conf_json_file
+        self.install_dependency = install_dependency
+        self.init_chain = init_chain
+        self.install_supervisor = install_supervisor
+
 
     def get_all_nodes(self):
-        return self.collusionNodeList+self.normalNodeList
+        return self.collusion_node_list + self.normal_node_list
 
     def get_rand_node(self):
-        return self.collusionNodeList[0]
+        return self.collusion_node_list[0]
 
 
     def deploy_all(self):
+        self.parseNodeFile()
+        self.parseAccountFile()
+
+        self.rewrite_genesisFile()
         self.rewrite_configJsonFile()
         self.rewrite_staticNodesFile()
 
@@ -483,7 +487,7 @@ class TestEnvironment:
     def start_nodes(self, node_list):
         futureList = []
         for node in node_list:
-            futureList.append(getThreadPoolExecutor().submit(lambda :node.start(self.initChain)))
+            futureList.append(getThreadPoolExecutor().submit(lambda :node.start(self.init_chain)))
             #futureList.append(getThreadPoolExecutor().submit(start, node, self.initChain))
         wait(futureList, return_when=ALL_COMPLETED)
 
@@ -498,8 +502,8 @@ class TestEnvironment:
 
     def deploy_nodes(self, node_list):
         futureList = []
-        if self.installDependency:
-            log.info("nodes install dependencies: {}".format(self.installDependency))
+        if self.install_dependency:
+            log.info("nodes install dependencies: {}".format(self.install_dependency))
             futureList.clear()
             for node in node_list:
                 futureList.append(getThreadPoolExecutor().submit(lambda: node.install_dependency()))
@@ -509,7 +513,7 @@ class TestEnvironment:
 
         log.info("nodes clean env")
         futureList.clear()
-        if self.initChain:
+        if self.init_chain:
             for node in node_list:
                 futureList.append(getThreadPoolExecutor().submit(lambda:node.clean()))
                 #futureList.append(getThreadPoolExecutor().submit(clean, node))
@@ -528,7 +532,7 @@ class TestEnvironment:
         log.info("all files uploaded")
 
 
-        if self.installSuperVisor:
+        if self.install_supervisor:
             log.info("nodes deploy supervisor")
             futureList.clear()
             for node in node_list:
@@ -559,9 +563,9 @@ class TestEnvironment:
         wait(tasks2, return_when=ALL_COMPLETED)
 
     def parseNodeFile(self):
-        nodeConfig = LoadFile(self.nodeFile).get_data()
-        self.collusionNodeList = []
-        self.normalNodeList = []
+        nodeConfig = LoadFile(self.node_file).get_data()
+        self.collusion_node_list = []
+        self.normal_node_list = []
 
         for node in nodeConfig.get("collusion", []):
             colluNode = Node()
@@ -580,7 +584,7 @@ class TestEnvironment:
             if not colluNode.remoteDeployDir:
                 colluNode.remoteDeployDir = DEPLOY_PATH
 
-            self.collusionNodeList.append(colluNode)
+            self.collusion_node_list.append(colluNode)
 
 
         for node in nodeConfig.get("nocollusion", []):
@@ -600,18 +604,21 @@ class TestEnvironment:
             if not normalNode.remoteDeployDir:
                 normalNode.remoteDeployDir = DEPLOY_PATH
 
-            self.normalNodeList.append(normalNode)
+            self.normal_node_list.append(normalNode)
 
+    def parseAccountFile(self):
+        if self.account_file:
+            self.account = Account(self.account_file, self.genesis_config['config']['chainId'])   
 
     def getInitNodesForGenesis(self):
         initNodeList = []
-        for node in self.collusionNodeList:
+        for node in self.collusion_node_list:
             initNodeList.append({"node": node.getEnodeUrl(), "blsPubKey": node.blspubkey})
         return initNodeList
 
     def getStaticNodeList(self):
         staticNodeList = []
-        for node in self.collusionNodeList:
+        for node in self.collusion_node_list:
             staticNodeList.append(node.getEnodeUrl())
         return staticNodeList
 
@@ -622,15 +629,19 @@ class TestEnvironment:
         :param init_node: 初始出块节点enode
         :return:
         """
-        self.genesisConfig['config']['cbft']["initialNodes"] = self.getInitNodesForGenesis()
+        if not os.path.exists(self.genesis_file):
+            raise Exception("模板文件没有找到：{}".format(self.genesis_file))
+
+        self.genesis_config = LoadFile(self.genesis_file).get_data()
+        self.genesis_config['config']['cbft']["initialNodes"] = self.getInitNodesForGenesis()
 
         accounts = self.account.get_all_accounts()
         for account in accounts:
-            self.genesisConfig['alloc'][account['address']] = { "balance":   str(account['balance']) }
+            self.genesis_config['alloc'][account['address']] = { "balance":   str(account['balance']) }
 
         log.info("重写genesis.json内容")
-        with open(GENESIS_FILE, 'w', encoding='utf-8') as f:
-            f.write(json.dumps(self.genesisConfig))
+        with open(self.genesis_file, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(self.genesis_config))
             f.close()
 
     def rewrite_configJsonFile(self):
@@ -641,15 +652,13 @@ class TestEnvironment:
         :return:
         """
         log.info("增加种子节点到config.json配置文件")
-        configJsonFile = CONFIG_JSON_FILE
-        if not os.path.exists(configJsonFile):
-            log.info("模板文件没有找到：{}".format(configJsonFile))
-            return
+        if not os.path.exists(self.conf_json_file):
+            raise Exception("模板文件没有找到：{}".format(self.conf_json_file))
 
-        config_data = LoadFile(configJsonFile).get_data()
+        config_data = LoadFile(self.conf_json_file).get_data()
         config_data['node']['P2P']["BootstrapNodes"] = self.getStaticNodeList()
 
-        with open(configJsonFile, 'w', encoding='utf-8') as f:
+        with open(self.conf_json_file, 'w', encoding='utf-8') as f:
             f.write(json.dumps(config_data))
             f.close()
 
@@ -682,12 +691,11 @@ class TestEnvironment:
 
     def generate_all_supervisor_node_conf_files(self, node_list):
         for node in node_list:
-            node.generate_supervisor_node_conf_file(self.isHttpRpc)
-
+            node.generate_supervisor_node_conf_file()
 
     def backupAllLogs(self):
-        self.backupLogs(self.collusionNodeList)
-        self.backupLogs(self.normalNodeList)
+        self.backupLogs(self.collusion_node_list)
+        self.backupLogs(self.normal_node_list)
 
     def backupLogs(self, node_list):
         self.checkLogPath()
@@ -716,5 +724,12 @@ class TestEnvironment:
         print("删除缓存完成")
 
 
+def create_env_impl(node_file, account_file=None, genesis_file=GENESIS_FILE, conf_json_file=CONFIG_JSON_FILE, install_supervisor=True, install_dependency=True, init_chain=True):
+    env = TestEnvironment(node_file, account_file, genesis_file, conf_json_file, install_supervisor, install_dependency, init_chain)
 
+    env.deploy_all()
+
+    env.start_all()
+
+    return env
 

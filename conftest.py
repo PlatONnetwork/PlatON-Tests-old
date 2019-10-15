@@ -1,9 +1,7 @@
 import pytest
-
-from global_var import initGlobal
-from test_env_impl import TestEnvironment
+from environment.test_env_impl import TestEnvironment, create_env_impl
 import requests
-import settings
+from conf.settings import PLATON_BIN_FILE
 import os
 import shutil
 import tarfile
@@ -26,21 +24,19 @@ def pytest_addoption(parser):
     parser.addoption("--installSuperVisor", action="store_true", default=False, dest="installSuperVisor", help="installSuperVisor: default do not install supervisor service")
 
 # py.test test_start.py -s --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session", autouse=False)
 def global_test_env(request):
-    initGlobal()
-
     nodeFile = request.config.getoption("--nodeFile")
     accountFile = request.config.getoption("--accountFile")
     initChain = request.config.getoption("--initChain")
-    startAll = request.config.getoption("--startAll")
-    isHttpRpc = request.config.getoption("--httpRpc")
+    _ = request.config.getoption("--startAll")
+    _ = request.config.getoption("--httpRpc")
     installDependency = request.config.getoption("--installDependency")
     installSuperVisor = request.config.getoption("--installSuperVisor")
     plant_url = request.config.getoption("--platon_url")
     if plant_url:
         download_platon(plant_url)
-    env = create_env_impl(settings.PLATON_BIN_FILE,nodeFile, accountFile, initChain, startAll, isHttpRpc, installDependency, installSuperVisor)
+    env = create_env_impl(nodeFile, accountFile, init_chain=initChain, install_supervisor=installDependency, install_dependency=installSuperVisor)
 
     yield env
 
@@ -50,31 +46,20 @@ def global_test_env(request):
 @pytest.fixture(scope="function")
 def custom_test_env():
     def _custom_test_env(conf):
-        binFile = conf.get("binFile")
+        _ = conf.get("binFile")
         nodeFile = conf.get("nodeFile")
         genesisFile = conf.get("genesisFile")
-        staticNodeFile = conf.get("staticNodeFile")
         accountFile = conf.get("accountFile")
         initChain = conf.get("initChain")
-        startAll = conf.get("startAll")
-        isHttpRpc = conf.get("isHttpRpc")
-        return create_env_impl(binFile, nodeFile,  genesisFile, staticNodeFile, accountFile, initChain, startAll, isHttpRpc)
+        _ = conf.get("startAll")
+        _ = conf.get("isHttpRpc")
+        return create_env_impl(node_file=nodeFile,  genesis_file=genesisFile, account_file=accountFile, init_chain=initChain)
     yield _custom_test_env
    # _custom_test_env.shutdown()
 
 
 
-
-def create_env_impl(binfile,nodeFile, accountFile, initChain=True, startAll=True, isHttpRpc=True, installDependency=False, installSuperVisor=False):
-    env = TestEnvironment(binfile,nodeFile,accountFile,initChain,startAll,isHttpRpc,installDependency,installSuperVisor)
-    print(env.installDependency)
-    print(env.installSuperVisor)
-    env.deploy_all()
-    env.start_all()
-    return env
-
-
-def download_platon(download_url: 'str', path=settings.PLATON_BIN_FILE):
+def download_platon(download_url: 'str', path=PLATON_BIN_FILE):
     """
 
     :param download_url: 新包下载地址
