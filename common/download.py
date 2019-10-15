@@ -3,12 +3,11 @@ import os
 import shutil
 import tarfile
 import requests
-import settings
+from conf.settings import PLATON_BIN_FILE
 
 
 
-
-def download_platon(download_url: 'str', path=settings.PLATON_BIN_FILE):
+def download_platon(download_url: 'str', path=PLATON_BIN_FILE):
     """
 
     :param download_url: 新包下载地址

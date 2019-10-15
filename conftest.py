@@ -1,9 +1,10 @@
 import pytest
 
-from global_var import initGlobal
-from test_env_impl import TestEnvironment
-import settings
+from common.global_var import initGlobal
+from environment.test_env_impl import TestEnvironment
 from common import download
+
+from conf.settings import PLATON_BIN_FILE
 
 
 
@@ -36,7 +37,7 @@ def global_test_env(request):
     plant_url = request.config.getoption("--platon_url")
     if plant_url:
         download.download_platon(plant_url)
-    env = create_env_impl(settings.PLATON_BIN_FILE,nodeFile,'global', accountFile, initChain, startAll, installDependency, installSuperVisor)
+    env = create_env_impl(PLATON_BIN_FILE,nodeFile,'global', accountFile, initChain, startAll, installDependency, installSuperVisor)
 
     yield env
 
