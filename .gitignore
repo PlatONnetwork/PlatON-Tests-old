@@ -10,7 +10,10 @@
 ./deploy/node/travis_node.yml
 ./deploy/tmp
 ./deploy/platon
-
+./deploy/bin/platon
+deploy/tmp
+deploy/bin
+deploy/rely/bin/platon
 # VE
 venv
 
@@ -19,9 +22,6 @@ venv
 */log
 log
 __debug__.py
-
-# BIN
-deploy/rely/bin/platon
 
 # OTHER
 report/*
@@ -33,7 +33,6 @@ cache*
 allure-report
 debug_run.py
 */debug_run.py
-deploy/rely/tmp/*
 test.py
 handle_log.py
 bug_log
