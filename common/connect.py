@@ -85,7 +85,7 @@ def runCMDBySSH(ssh, cmd, password=None):
             stdin.write(password+"\n")
         stdout_list = stdout.readlines()
         if len(stdout_list):
-            log.info(stdout_list)
+            log.info('{}:{}'.format(cmd,stdout_list) )
     except Exception as e:
         raise e
     return stdout_list

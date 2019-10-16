@@ -3,10 +3,11 @@ from common.log import log
 from client_sdk_python.eth import Eth
 from hexbytes import HexBytes
 
+
 class Account:
     def __init__(self, accountFile,chainId):
         '''
-        accounts 包含的属性: address,prikey,nonce,balance
+           accounts 包含的属性: address,prikey,nonce,balance
         '''
         self.accounts = {}
         accounts = LoadFile(accountFile).get_data()
@@ -38,9 +39,11 @@ class Account:
             "value": value
         }
         platon = Eth(connect)
-        signedTransactionDict = platon.account.signTransaction(
+        signedTransactionDict =  platon.account.signTransaction(
             transaction_dict, account['prikey']
         )
+
         data = signedTransactionDict.rawTransaction
         result = HexBytes(platon.sendRawTransaction(data)).hex()
-        return platon.waitForTransactionReceipt(result)
+        res = platon.waitForTransactionReceipt(result)
+        return res
