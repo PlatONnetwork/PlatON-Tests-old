@@ -92,7 +92,7 @@ class Node:
                 cmd = cmd + " --rpcapi platon,debug,personal,admin,net,web3"
             else:
                 cmd = cmd + " --ws --wsorigins '*' --wsaddr 0.0.0.0 --wsport " + str(self.rpcport)
-                cmd = cmd + " --wsapi eth,debug,personal,admin,net,web3"
+                cmd = cmd + " --wsapi platon,debug,personal,admin,net,web3"
 
             cmd = cmd + " --txpool.nolocals"
 
@@ -104,7 +104,11 @@ class Node:
             #     cmd = cmd + " --metrics.influxdb.host.tag {}:{}".format(self.host, str(self.port))
 
             cmd = cmd + " --gcmode archive --nodekey {}".format(self.remoteNodekeyFile)
-            #cmd = cmd + " --config {}".format(self.remoteConfigFile)
+
+            log.info(">>>>>>>>>>>>>>--config {}".format(self.remoteConfigFile))
+
+            cmd = cmd + " --config {}".format(self.remoteConfigFile)
+
             cmd = cmd + " --cbft.blskey {}".format(self.remoteBlskeyFile)
 
             fp.write("command=" + cmd + "\n")
@@ -157,6 +161,7 @@ class Node:
         if not os.path.isabs(self.remoteDeployDir):
             self.remoteDeployDir = pwd + "/" + self.remoteDeployDir
             self.remoteDataDir = pwd + "/" + self.remoteDataDir
+            self.remoteConfigFile = pwd + "/" + self.remoteConfigFile
             self.remoteKeystoreDir = pwd + "/" + self.remoteKeystoreDir
             self.remoteBinFile = pwd + "/" + self.remoteBinFile
             self.remoteNodekeyFile = pwd + "/" + self.remoteNodekeyFile

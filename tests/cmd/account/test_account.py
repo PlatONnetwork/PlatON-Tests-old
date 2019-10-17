@@ -1,8 +1,13 @@
+import time
+
 import allure
 import pytest
+from client_sdk_python.eth import Eth
+from eth_utils import is_integer
 
 from common.log import log
 from common.connect import runCMDBySSH
+from client_sdk_python.admin import Admin
 
 #作用域设置为module，自动运行
 from conf.settings import NODE_FILE
@@ -83,8 +88,6 @@ def test_account_import(account_env):
     node, env = account_env
 
     returnList = runCMDBySSH(node.ssh, "{} account list --datadir {}".format(node.remoteBinFile, node.remoteDataDir))
-    for i in range(len(returnList)):
-        print("序号：%s   值：%s" % (i + 1, returnList[i]))
     oldCounts = len(returnList) - 1
 
     remoteKeyFile = node.remoteKeystoreDir + "/key.pri"
@@ -94,8 +97,6 @@ def test_account_import(account_env):
     runCMDBySSH(node.ssh, "{} account import {} --datadir {}".format(node.remoteBinFile, remoteKeyFile, node.remoteDataDir), "88888888", "88888888")
 
     returnList2 = runCMDBySSH(node.ssh, "{} account list --datadir {}".format(node.remoteBinFile, node.remoteDataDir))
-    for i in range(len(returnList)):
-        print("序号：%s   值：%s" % (i + 1, returnList[i]))
 
     newCounts = len(returnList2) - 1
 
@@ -112,11 +113,165 @@ def test_account_list(account_env):
 
     node, env = account_env
 
-    returnList1 = runCMDBySSH(node.ssh, "platon account list --datadir {}".format(node.remoteDataDir))
+    returnList1 = runCMDBySSH(node.ssh, "{} account list --datadir {}".format(node.remoteBinFile, node.remoteDataDir))
 
     counts1 = len(returnList1) - 1
 
-    returnList2 = runCMDBySSH(node.ssh, "platon account list --keystore {}".format(node.remoteKeystoreDir))
+    returnList2 = runCMDBySSH(node.ssh, "{} account list --keystore {}".format(node.remoteBinFile, node.remoteKeystoreDir))
     counts2 = len(returnList2) - 1
 
     assert  counts1 == counts2
+
+
+'''
+platon attach http / ws
+'''
+def test_attach_http(account_env):
+    node, env = account_env
+
+    if node.rpctype == "http":
+        blockNumber = runCMDBySSH(node.ssh, "{} attach http://localhost:{} --exec platon.blockNumber".format(node.remoteBinFile, node.rpcport))
+    else:
+        blockNumber = runCMDBySSH(node.ssh, "{} attach ws://localhost:{} --exec platon.blockNumber".format(node.remoteBinFile, node.rpcport))
+
+    bn = int(blockNumber[0])
+
+    assert is_integer(bn)
+    assert bn > 0
+
+
+'''
+platon attach http / ws
+'''
+def test_copydb(global_test_env):
+    globalEnv = global_test_env
+
+    node = globalEnv.collusion_node_list[0]
+    node.stop()
+
+    # copy deploy data to bak
+    bakRemoteDataDir = node.remoteDeployDir + "/data_bak"
+    runCMDBySSH(node.ssh, "sudo cp -r {} {}".format(node.remoteDataDir, bakRemoteDataDir))
+
+    # remove original data
+    runCMDBySSH(node.ssh, "sudo rm -rf {}/platon".format(node.remoteDataDir))
+    runCMDBySSH(node.ssh, "sudo rm -rf {}/chaindata".format(node.remoteDataDir))
+
+    # re-init
+    runCMDBySSH(node.ssh,"{} init {} --datadir {}".format(node.remoteBinFile, node.remoteGenesisFile, node.remoteDataDir))
+
+    # copyDb from bak
+    runCMDBySSH(node.ssh, "{} copydb {}/platon/chaindata/ {}/platon/snapshotdb/ --datadir {}".format(node.remoteBinFile, bakRemoteDataDir, bakRemoteDataDir, node.remoteDataDir))
+
+    node.start(False)
+
+    if node.rpctype == "http":
+        blockNumber = runCMDBySSH(node.ssh, "{} attach http://localhost:{} --exec platon.blockNumber".format(node.remoteBinFile, node.rpcport))
+    else:
+        blockNumber = runCMDBySSH(node.ssh, "{} attach ws://localhost:{} --exec platon.blockNumber".format(node.remoteBinFile, node.rpcport))
+
+    bn = int(blockNumber[0])
+
+    assert is_integer(bn)
+    assert bn > 0
+
+
+def test_dump_block(global_test_env):
+    globalEnv = global_test_env
+
+    node = globalEnv.collusion_node_list[0]
+    node.stop()
+
+    # dump
+    returnList = runCMDBySSH(node.ssh,"sudo {} --datadir {} dump 0".format(node.remoteBinFile, node.remoteDataDir))
+
+    node.start(False)
+
+    assert len(returnList) == 0
+
+
+def test_dump_config(global_test_env):
+    globalEnv = global_test_env
+
+    node = globalEnv.collusion_node_list[0]
+    # dump
+    returnList = runCMDBySSH(node.ssh,"{} --nodekey {} --cbft.blskey {} dumpconfig".format(node.remoteBinFile, node.remoteNodekeyFile, node.remoteBlskeyFile))
+    assert returnList[0].strip()=='[Eth]'
+
+
+def test_export_import_preimages(global_test_env):
+    globalEnv = global_test_env
+
+    node = globalEnv.collusion_node_list[0]
+    node.stop()
+
+    # dump
+    exportList = runCMDBySSH(node.ssh,"sudo {} export-preimages exportPreImage --datadir {}".format(node.remoteBinFile, node.remoteDataDir))
+    for i in range(len(exportList)):
+        log.info("序号：{}   结果：{}".format(i, exportList[i]))
+
+    time.sleep(1)
+
+    importList = runCMDBySSH(node.ssh, "sudo {} import-preimages exportPreImage --datadir {}".format(node.remoteBinFile,node.remoteDataDir))
+    node.start(False)
+
+    for i in range(len(importList)):
+        log.info("序号：{}   结果：{}".format(i, importList[i]))
+
+    assert len(exportList) == 0
+    assert len(importList) == 0
+
+
+def test_license(global_test_env):
+    globalEnv = global_test_env
+
+    node = globalEnv.collusion_node_list[0]
+
+    returnList = runCMDBySSH(node.ssh,"{} license".format(node.remoteBinFile))
+    # for i in range(len(returnList)):
+    #     log.info("序号：{}   结果：{}".format(i, returnList[i]))
+
+    assert returnList[0].strip()=="platon is free software: you can redistribute it and/or modify"
+
+def test_version(global_test_env):
+    globalEnv = global_test_env
+
+    node = globalEnv.collusion_node_list[0]
+
+    returnList = runCMDBySSH(node.ssh,"{} version".format(node.remoteBinFile))
+    # for i in range(len(returnList)):
+    #     log.info("序号：{}   结果：{}".format(i, returnList[i]))
+
+    assert returnList[0].strip()=="Platon"
+    assert "Version:" in returnList[1]
+
+
+def test_config(global_test_env):
+    globalEnv = global_test_env
+
+    node = globalEnv.collusion_node_list[0]
+    node.stop()
+
+    returnList = runCMDBySSH(node.ssh,"sed -i 's/\"NetworkId\": 1/\"NetworkId\": 111/g' {}".format(node.remoteConfigFile))
+
+    node.start(False)
+
+    admin = Admin(node.connect_node())
+    ret = admin.nodeInfo
+    #print(ret)
+    assert  ret["protocols"]["platon"]["network"] == 111
+
+
+
+def no_test_removedb(global_test_env):
+    globalEnv = global_test_env
+
+    node = globalEnv.collusion_node_list[0]
+    node.stop()
+
+    returnList = runCMDBySSH(node.ssh,"{} removedb --datadir {}".format(node.remoteBinFile, node.remoteDataDir, "y", "y"))
+    for i in range(len(returnList)):
+        log.info("序号：{}   结果：{}".format(i, returnList[i]))
+
+    node.start(False)
+    #assert returnList[0].strip()=="platon is free software: you can redistribute it and/or modify"
