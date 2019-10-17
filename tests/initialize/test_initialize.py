@@ -2,7 +2,7 @@ import os
 import pytest
 import json
 import allure
-from environment import test_env_impl
+from environment.test_env_impl import TestEnvironment
 from conf.settings import NODE_FILE
 from common.log import log
 
@@ -10,7 +10,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 @pytest.fixture(scope="module")
 def global_env():
-    env = test_env_impl.create_env_impl(node_file=NODE_FILE)
+    env = TestEnvironment(node_file=NODE_FILE)
+    env.deploy_all()
+    env.start_all()
     return env
 
 

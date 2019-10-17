@@ -1,3 +1,4 @@
+import time
 
 from common.connect import connect_web3, connect_linux, runCMDBySSH
 
@@ -26,7 +27,7 @@ class Node:
         self.blsprikey = node_conf.get("blsprikey")
         self.blspubkey = node_conf.get("blspubkey")
         self.nodekey = node_conf.get("nodekey")
-        self.remoteDeployDir = node_conf.get("deplayDir")
+        self.remoteDeployDir = node_conf.get("deployDir")
         if not self.remoteDeployDir:
             self.remoteDeployDir = DEPLOY_PATH
         self.syncMode = node_conf.get("syncmode")
@@ -34,6 +35,7 @@ class Node:
         self.conf = conf
         self.remoteDeployDir = '{}/node-{}'.format(self.remoteDeployDir, self.port)
         self.remoteDataDir = '{}/data'.format(self.remoteDeployDir)
+        self.remoteKeystoreDir = '{}/data/keystore'.format(self.remoteDeployDir)
         self.remoteBinFile = '{}/platon'.format(self.remoteDeployDir)
         self.remoteGenesisFile = '{}/genesis.json'.format(self.remoteDeployDir)
         self.remoteConfigFile = '{}/config.json'.format(self.remoteDeployDir)
@@ -155,6 +157,7 @@ class Node:
         if not os.path.isabs(self.remoteDeployDir):
             self.remoteDeployDir = pwd + "/" + self.remoteDeployDir
             self.remoteDataDir = pwd + "/" + self.remoteDataDir
+            self.remoteKeystoreDir = pwd + "/" + self.remoteKeystoreDir
             self.remoteBinFile = pwd + "/" + self.remoteBinFile
             self.remoteNodekeyFile = pwd + "/" + self.remoteNodekeyFile
             self.remoteBlskeyFile = pwd + "/" + self.remoteBlskeyFile
@@ -173,7 +176,7 @@ class Node:
 
 
     def clean(self):
-        #time.sleep(0.5)
+        time.sleep(0.5)
         runCMDBySSH(self.ssh, "sudo -S -p '' rm -rf {}".format(self.remoteDeployDir), self.password)
         runCMDBySSH(self.ssh, "mkdir -p {}".format(self.remoteDeployDir))
         runCMDBySSH(self.ssh, "mkdir -p {}".format(self.remoteDataDir))
@@ -203,10 +206,11 @@ class Node:
 
     def uploadBinFile(self):
         if PLATON_BIN_FILE and os.path.exists(PLATON_BIN_FILE):
-            remoteFile = os.path.join(self.remoteDeployDir, "platon").replace("\\", "/")
-            self.sftp.put(PLATON_BIN_FILE, remoteFile)
-            runCMDBySSH(self.ssh, 'chmod +x {}'.format(remoteFile))
-            log.info("platon bin file uploaded to node: {}".format(self.host))
+            #remoteFile = os.path.join(self.remoteDeployDir, "platon").replace("\\", "/")
+            #remoteFile = os.path.join(self.remoteDeployDir, "platon").replace("\\", "/")
+            self.sftp.put(PLATON_BIN_FILE, self.remoteBinFile)
+            runCMDBySSH(self.ssh, 'chmod +x {}'.format(self.remoteBinFile))
+            #log.info("platon bin file uploaded to node: {}".format(self.host))
         else:
             log.error("platon bin file not found: {}".format(PLATON_BIN_FILE))
 
@@ -223,7 +227,7 @@ class Node:
         if self.conf.STATIC_NODE_FILE and os.path.exists(self.conf.STATIC_NODE_FILE):
             remoteFile = os.path.join(self.remoteDeployDir, "static-nodes.json").replace("\\", "/")
             self.sftp.put(self.conf.STATIC_NODE_FILE, remoteFile)
-            log.info("static-nodes.json uploaded to node: {}".format(self.host))
+            #log.info("static-nodes.json uploaded to node: {}".format(self.host))
         else:
             log.warn("static-nodes.json not found: {}".format(self.conf.STATIC_NODE_FILE))
 
@@ -231,7 +235,7 @@ class Node:
         if self.conf.CONFIG_JSON_FILE and os.path.exists(self.conf.CONFIG_JSON_FILE):
             remoteFile = os.path.join(self.remoteDeployDir, "config.json").replace("\\", "/")
             self.sftp.put(self.conf.CONFIG_JSON_FILE, remoteFile)
-            log.info("config.json uploaded to node: {}".format(self.host))
+            #log.info("config.json uploaded to node: {}".format(self.host))
         else:
             log.warn("config.json not found: {}".format(self.conf.CONFIG_JSON_FILE))
 
@@ -242,22 +246,31 @@ class Node:
         if os.path.exists(blskey_file):
             remoteFile = os.path.join(self.remoteDataDir, "blskey").replace("\\", "/")
             self.sftp.put(blskey_file, remoteFile)
-            log.info("blskey uploaded to node: {}".format(self.host))
+            #log.info("blskey uploaded to node: {}".format(self.host))
 
         nodekey_file = os.path.join(self.data_tmp_dir, "nodekey")
         if os.path.exists(nodekey_file):
             remoteFile = os.path.join(self.remoteDataDir, "nodekey").replace("\\", "/")
             self.sftp.put(nodekey_file, remoteFile)
-            log.info("nodekey_file uploaded to node: {}".format(self.host))
+            #log.info("nodekey_file uploaded to node: {}".format(self.host))
 
     def upload_supervisor_node_conf_file(self):
         supervisorConfFile = self.supervisor_tmp_dir + "/" + self.supervisor_conf_file_name
         if os.path.exists(supervisorConfFile):
-            runCMDBySSH(self.ssh, "rm -rf /tmp/{}".format(self.supervisor_conf_file_name))
-            runCMDBySSH(self.ssh, "mkdir  /tmp")
-            self.sftp.put(supervisorConfFile, "/tmp/{}".format(self.supervisor_conf_file_name))
-            runCMDBySSH(self.ssh, "sudo -S -p '' cp /tmp/" + self.supervisor_conf_file_name + " /etc/supervisor/conf.d", self.password)
-            log.info("supervisor startup config uploaded to node: {}".format(self.host))
+            runCMDBySSH(self.ssh, "rm -rf ./tmp/{}".format(self.supervisor_conf_file_name))
+            runCMDBySSH(self.ssh, "mkdir  ./tmp")
+            self.sftp.put(supervisorConfFile, "./tmp/{}".format(self.supervisor_conf_file_name))
+            runCMDBySSH(self.ssh, "sudo -S -p '' cp ./tmp/" + self.supervisor_conf_file_name + " /etc/supervisor/conf.d", self.password)
+            #log.info("supervisor startup config uploaded to node: {}".format(self.host))
+
+    def uploadFile(self, localFile, remoteFile):
+        if localFile and os.path.exists(localFile):
+            self.sftp.put(localFile, remoteFile)
+        else:
+            log.info("file: {} not found".format(localFile))
+
+    def deleteRemoteFile(self, remoteFile):
+        runCMDBySSH(self.ssh, "rm {}".format(remoteFile))
 
     def backupLog(self):
         runCMDBySSH(self.ssh, "cd {};tar zcvf log.tar.gz ./log".format(self.remoteDeployDir))
@@ -331,25 +344,23 @@ class Node:
         :param node:
         :return:
         """
-        log.info("call deploy_supervisor() for node: {}".format(self.host))
+        #log.info("call deploy_supervisor() for node: {}".format(self.host))
         tmpConf = self.genSupervisorConf()
         runCMDBySSH(self.ssh, "mkdir -p ./tmp")
         self.sftp.put(tmpConf, "./tmp/supervisord.conf")
 
         supervisor_pid_str = runCMDBySSH(self.ssh, "ps -ef|grep supervisord|grep -v grep|awk {'print $2'}")
 
-        log.info("supervisor_pid_str: {}".format(supervisor_pid_str))
+        #log.info("supervisor_pid_str: {}".format(supervisor_pid_str))
 
         if len(supervisor_pid_str) > 0:
             self.judge_restart_supervisor(supervisor_pid_str)
         else:
-            log.info("judge_restart_supervisor......1111111111..........")
             runCMDBySSH(self.ssh, "sudo -S -p '' apt update", self.password)
             runCMDBySSH(self.ssh, "sudo -S -p '' apt install -y supervisor", self.password)
             runCMDBySSH(self.ssh, "sudo -S -p '' cp ./tmp/supervisord.conf /etc/supervisor/", self.password)
             supervisor_pid_str = runCMDBySSH(self.ssh, "ps -ef|grep supervisord|grep -v grep|awk {'print $2'}")
             if len(supervisor_pid_str) > 0:
-                log.info("judge_restart_supervisor......3333333333..........")
                 self.judge_restart_supervisor(supervisor_pid_str)
             else:
                 runCMDBySSH(self.ssh, "sudo -S -p '' /etc/init.d/supervisor start", self.password)

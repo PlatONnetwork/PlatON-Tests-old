@@ -14,6 +14,8 @@
 deploy/tmp
 deploy/bin
 deploy/rely/bin/platon
+deploy/temp/
+
 # VE
 venv
 
@@ -37,5 +39,3 @@ test.py
 handle_log.py
 bug_log
 tmp_log
-
-deploy/platon

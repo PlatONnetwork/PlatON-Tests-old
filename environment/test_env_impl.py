@@ -11,7 +11,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 
 from common.log import log
 from common.load_file import LoadFile
-from common.global_var import getThreadPoolExecutor
+from common.global_var import getThreadPoolExecutor, default_thread_pool_callback
 
 from conf.settings import DEPLOY_PATH, PLATON_BIN_FILE,GENESIS_TEMPLATE_FILE,Conf,CONFIG_JSON_TEMPLATE_FILE,SUPERVISOR_TEMPLATE_FILE
 
@@ -36,37 +36,39 @@ def singleton(cls):
 # @singleton
 class TestEnvironment:
 
-    def __init__(self, binFile, nodeFile,confdir, accountFile, initChain, startAll, installDependency, installSuperVisor):
-        self.binFile = binFile
-        self.nodeFile = nodeFile
-        self.accountFile = accountFile
-        self.initChain = initChain
+    def __init__(self, node_file, bin_file=None, confdir='temp', account_file=None, init_chain=True, startAll=True, install_dependency=True, install_supervisor=True):
+        self.bin_file = bin_file
+        self.node_file = node_file
+        self.account_file = account_file
+        self.init_chain = init_chain
         self.startAll = startAll
-        self.installDependency = installDependency
-        self.installSuperVisor = installSuperVisor
-        self.collusionNodeList = []
+        self.install_dependency = install_dependency
+        self.install_supervisor = install_supervisor
+        self.collusion_node_list = []
+        self.normal_node_list = []
         self.conf = Conf(confdir)
-        self.parseNodeFile()
+        self.parse_node_file()
+        self.init_nodes(self.get_all_nodes())
         if not os.path.exists(GENESIS_TEMPLATE_FILE):
             raise Exception("模板文件没有找到：{}".format(GENESIS_TEMPLATE_FILE))
-        self.genesisConfig = LoadFile(GENESIS_TEMPLATE_FILE).get_data()
-        self.account = Account(self.accountFile, self.genesisConfig['config']['chainId'])
+        self.genesis_config = LoadFile(GENESIS_TEMPLATE_FILE).get_data()
+        self.account = None
+        if self.account_file:
+            self.account = Account(self.account_file, self.genesis_config['config']['chainId'])
         self.rewrite_genesisFile()
 
     def get_all_nodes(self):
-        return self.collusionNodeList+self.normalNodeList
+        return self.collusion_node_list + self.normal_node_list
 
-    def get_rand_node(self):
-        return self.collusionNodeList[0]
+    def get_rand_node(self)->Node:
+        return self.collusion_node_list[0]
 
 
     def deploy_all(self):
         self.rewrite_configJsonFile()
         self.rewrite_staticNodesFile()
 
-        self.initNodes(self.get_all_nodes())
-
-        self.generateKeyFiles(self.get_all_nodes())
+        self.generate_key_files(self.get_all_nodes())
 
         self.generate_all_supervisor_node_conf_files(self.get_all_nodes())
 
@@ -84,119 +86,104 @@ class TestEnvironment:
     def start_nodes(self, node_list):
         futureList = []
         for node in node_list:
-            futureList.append(getThreadPoolExecutor().submit(lambda :node.start(self.initChain)))
-            #futureList.append(getThreadPoolExecutor().submit(start, node, self.initChain))
+            future = getThreadPoolExecutor().submit(lambda: node.start(self.init_chain))
+            future.add_done_callback(default_thread_pool_callback)
+            futureList.append(future)
         wait(futureList, return_when=ALL_COMPLETED)
 
-    def initNodes(self, node_list):
+    def init_nodes(self, node_list):
         log.info("init nodes...")
         futureList = []
         for node in node_list:
-            futureList.append(getThreadPoolExecutor().submit(lambda: node.initNode()))
-            #futureList.append(getThreadPoolExecutor().submit(initNode, node))
+            future = getThreadPoolExecutor().submit(lambda: node.initNode())
+            future.add_done_callback(default_thread_pool_callback)
+            futureList.append(future)
+
         if len(futureList) > 0:
             wait(futureList, return_when=ALL_COMPLETED)
 
     def deploy_nodes(self, node_list):
         futureList = []
-        if self.installDependency:
-            log.info("nodes install dependencies: {}".format(self.installDependency))
+        if self.install_dependency:
+            log.info("nodes install dependencies: {}".format(self.install_dependency))
             futureList.clear()
             for node in node_list:
-                futureList.append(getThreadPoolExecutor().submit(lambda: node.install_dependency()))
-                #futureList.append(getThreadPoolExecutor().submit(install_dependency, node))
+                future = getThreadPoolExecutor().submit(lambda: node.install_dependency())
+                future.add_done_callback(default_thread_pool_callback)
+                futureList.append(future)
             if len(futureList) > 0:
                 wait(futureList, return_when=ALL_COMPLETED)
 
         log.info("nodes clean env")
         futureList.clear()
-        if self.initChain:
+        if self.init_chain:
             for node in node_list:
-                futureList.append(getThreadPoolExecutor().submit(lambda:node.clean()))
-                #futureList.append(getThreadPoolExecutor().submit(clean, node))
+                future = getThreadPoolExecutor().submit(lambda: node.clean())
+                future.add_done_callback(default_thread_pool_callback)
+                futureList.append(future)
             if len(futureList) > 0:
                 wait(futureList, return_when=ALL_COMPLETED)
 
         log.info("nodes upload files")
         futureList.clear()
-        tmp = ThreadPoolExecutor(max_workers=40)
         for node in node_list:
-            log.info("node:::::::::: {}".format(node.host))
-            thread_pool_exc = tmp.submit(lambda :node.uploadAllFiles())
-           # thread_pool_exc = getThreadPoolExecutor().submit(lambda :node.uploadAllFiles())
-            thread_pool_exc.add_done_callback(self.thread_pool_callback)
-            futureList.append(thread_pool_exc)
-            #futureList.append(getThreadPoolExecutor().submit(uploadAllFiles,node))
-
+            future = getThreadPoolExecutor().submit(lambda :node.uploadAllFiles())
+            future.add_done_callback(default_thread_pool_callback)
+            futureList.append(future)
         if len(futureList) > 0:
             wait(futureList, return_when=ALL_COMPLETED)
         log.info("all files uploaded")
 
 
-        if self.installSuperVisor:
+        if self.install_supervisor:
             log.info("nodes deploy supervisor")
             futureList.clear()
             for node in node_list:
-                thread_pool_exc = getThreadPoolExecutor().submit(lambda :node.deploy_supervisor())
-                thread_pool_exc.add_done_callback(self.thread_pool_callback)
-                futureList.append(thread_pool_exc)
-                #futureList.append(getThreadPoolExecutor().submit(deploy_supervisor, node))
+                future = getThreadPoolExecutor().submit(lambda :node.deploy_supervisor())
+                future.add_done_callback(default_thread_pool_callback)
+                futureList.append(future)
             if len(futureList) > 0:
                 wait(futureList, return_when=ALL_COMPLETED)
             log.info("SuperVisor installed")
 
-    def thread_pool_callback(self, worker):
-        log.info("called thread pool executor callback function")
-        worker_exception = worker.exception()
-        if worker_exception:
-            log.exception("Worker return exception: {}".format(worker_exception))
+    # def thread_pool_callback(self, worker):
+    #     log.info("called thread pool executor callback function")
+    #     worker_exception = worker.exception()
+    #     if worker_exception:
+    #         log.exception("Worker return exception: {}".format(worker_exception))
 
     def stop_nodes(self, node_list):
-        tasks = []
+        futureList = []
         for node in node_list:
-            tasks.append(getThreadPoolExecutor().submit(lambda :node.stop()))
-            #tasks.append(getThreadPoolExecutor().submit(stop, node))
-        wait(tasks, return_when=ALL_COMPLETED)
+            future =getThreadPoolExecutor().submit(lambda: node.stop())
+            future.add_done_callback(default_thread_pool_callback)
+            futureList.append(future)
+        wait(futureList, return_when=ALL_COMPLETED)
 
     def reset_nodes(self, node_list):
-        tasks = []
-        for node in node_list:
-            tasks.append(getThreadPoolExecutor().submit(lambda :node.stop()))
-            #tasks.append(getThreadPoolExecutor().submit(stop, node))
-        wait(tasks, return_when=ALL_COMPLETED)
+        self.stop_nodes(node_list)
+        self.stop_nodes(node_list)
 
-        tasks2 = []
-        for node in node_list:
-            tasks2.append(getThreadPoolExecutor().submit(lambda :node.start()))
-            #tasks2.append(getThreadPoolExecutor().submit(start, node))
-        wait(tasks2, return_when=ALL_COMPLETED)
-
-    def parseNodeFile(self):
-        nodeConfig = LoadFile(self.nodeFile).get_data()
-        self.collusionNodeList = []
-        self.normalNodeList = []
+    def parse_node_file(self):
+        nodeConfig = LoadFile(self.node_file).get_data()
 
         for node in nodeConfig.get("collusion", []):
             colluNode = Node(self.conf, node)
-            self.collusionNodeList.append(colluNode)
+            self.collusion_node_list.append(colluNode)
 
         for node in nodeConfig.get("nocollusion", []):
             normalNode = Node(self.conf, node)
-            self.normalNodeList.append(normalNode)
+            self.normal_node_list.append(normalNode)
 
-    def parseAccountFile(self):
-        if self.account_file:
-            self.account = Account(self.account_file, self.genesis_config['config']['chainId'])
-
-    def getInitNodesForGenesis(self):
+    def get_init_nodes_for_genesis(self):
         initNodeList = []
-        for node in self.collusionNodeList:
+        for node in self.collusion_node_list:
             initNodeList.append({"node": node.getEnodeUrl(), "blsPubKey": node.blspubkey})
         return initNodeList
 
-    def getStaticNodeList(self):
+    def get_static_node_list(self):
         staticNodeList = []
-        for node in self.collusionNodeList:
+        for node in self.collusion_node_list:
             staticNodeList.append(node.getEnodeUrl())
         return staticNodeList
 
@@ -207,15 +194,16 @@ class TestEnvironment:
         :param init_node: 初始出块节点enode
         :return:
         """
-        self.genesisConfig['config']['cbft']["initialNodes"] = self.getInitNodesForGenesis()
+        self.genesis_config['config']['cbft']["initialNodes"] = self.get_init_nodes_for_genesis()
 
-        accounts = self.account.get_all_accounts()
-        for account in accounts:
-            self.genesisConfig['alloc'][account['address']] = { "balance":   str(account['balance']) }
+        if self.account:
+            accounts = self.account.get_all_accounts()
+            for account in accounts:
+                self.genesis_config['alloc'][account['address']] = { "balance":   str(account['balance']) }
 
         log.info("重写genesis.json内容")
         with open(self.conf.GENESIS_FILE, 'w', encoding='utf-8') as f:
-            f.write(json.dumps(self.genesisConfig))
+            f.write(json.dumps(self.genesis_config, indent=4))
             f.close()
 
     def rewrite_configJsonFile(self):
@@ -232,10 +220,10 @@ class TestEnvironment:
             return
 
         config_data = LoadFile(configJsonFile).get_data()
-        config_data['node']['P2P']["BootstrapNodes"] = self.getStaticNodeList()
+        config_data['node']['P2P']["BootstrapNodes"] = self.get_static_node_list()
 
         with open(self.conf.CONFIG_JSON_FILE, 'w', encoding='utf-8') as f:
-            f.write(json.dumps(config_data))
+            f.write(json.dumps(config_data, indent=4))
             f.close()
 
     def  rewrite_staticNodesFile(self):
@@ -245,12 +233,12 @@ class TestEnvironment:
         :return:
         """
         log.info("生成static-nodes.json")
-        static_nodes = self.getStaticNodeList()
+        static_nodes = self.get_static_node_list()
         with open(self.conf.STATIC_NODE_FILE, 'w', encoding='utf-8') as f:
-            f.write( json.dumps(static_nodes))
+            f.write( json.dumps(static_nodes, indent=4))
             f.close()
 
-    def generateKeyFiles(self, node_list):
+    def generate_key_files(self, node_list):
         for node in node_list:
             node.generateKeyFiles()
 

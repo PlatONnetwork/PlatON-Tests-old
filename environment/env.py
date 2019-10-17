@@ -25,7 +25,7 @@ from common.connect import run_ssh, connect_linux, connect_web3
 from common.key import generate_key
 from common.load_file import LoadFile
 from common.log import log
-from conf import setting_old as conf
+from conf import setting_merge as conf
 from environment.account import Account
 
 

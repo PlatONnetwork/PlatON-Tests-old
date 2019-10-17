@@ -78,11 +78,17 @@ def run_ssh(ssh, cmd, password=None):
     return stdout_list
 
 
-def runCMDBySSH(ssh, cmd, password=None):
+def runCMDBySSH(ssh, cmd, password=None, password2=None, password3=None):
     try:
+        log.info('execute shell cmd::: {} '.format(cmd))
         stdin, stdout, _ = ssh.exec_command("source /etc/profile;%s" % cmd)
         if password:
             stdin.write(password+"\n")
+        if password2:
+            stdin.write(password2+"\n")
+        if password3:
+            stdin.write(password3+"\n")
+
         stdout_list = stdout.readlines()
         if len(stdout_list):
             log.info('{}:{}'.format(cmd,stdout_list) )
