@@ -27,7 +27,6 @@ def pytest_addoption(parser):
 # py.test test_start.py -s --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll
 @pytest.fixture(scope="session", autouse=True)
 def global_test_env(request):
-    initGlobal()
 
     log.info("global_test_env>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
@@ -40,7 +39,7 @@ def global_test_env(request):
     plant_url = request.config.getoption("--platon_url")
     if plant_url:
         download.download_platon(plant_url)
-    env = create_env_impl(PLATON_BIN_FILE,nodeFile,'global', accountFile, initChain, startAll, installDependency, installSuperVisor)
+    env = create_env_impl(PLATON_BIN_FILE, nodeFile,'global', accountFile, initChain, startAll, installDependency, installSuperVisor)
 
 
     yield env
@@ -48,6 +47,7 @@ def global_test_env(request):
     #todo
     #env.shutdown()
 
+'''
 @pytest.fixture(scope="function")
 def custom_test_env():
     def _custom_test_env(conf):
@@ -58,17 +58,18 @@ def custom_test_env():
         initChain = conf.get("initChain")
         _ = conf.get("startAll")
         _ = conf.get("isHttpRpc")
-        return create_env_impl(node_file=nodeFile,  genesis_file=genesisFile, account_file=accountFile, init_chain=initChain)
+        return create_env_impl(node_file=nodeFile, account_file=accountFile, init_chain=initChain)
     yield _custom_test_env
    # _custom_test_env.shutdown()
+'''
 
 
 
-
-def create_env_impl(binfile,nodeFile,confdir, accountFile,initChain=True, startAll=True, installDependency=False, installSuperVisor=False)->TestEnvironment:
-    env = TestEnvironment(binfile,nodeFile,confdir,accountFile,initChain,startAll,installDependency,installSuperVisor)
-    print(env.installDependency)
-    print(env.installSuperVisor)
+def create_env_impl(binfile, nodeFile, confdir, accountFile,initChain=True, startAll=True, installDependency=False, installSuperVisor=False)->TestEnvironment:
+    env = TestEnvironment(node_file=nodeFile, bin_file=binfile, confdir=confdir, account_file=accountFile, init_chain=initChain, startAll=startAll, 
+    install_dependency=installDependency, install_supervisor=installSuperVisor)
+    print(env.install_dependency)
+    print(env.install_supervisor)
     env.deploy_all()
     env.start_all()
     return env
