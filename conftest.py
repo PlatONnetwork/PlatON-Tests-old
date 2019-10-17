@@ -3,6 +3,7 @@ import pytest
 from common.global_var import initGlobal
 from environment.test_env_impl import TestEnvironment
 from common import download
+from common.log import log
 
 from conf.settings import PLATON_BIN_FILE
 
@@ -23,10 +24,12 @@ def pytest_addoption(parser):
     parser.addoption("--installDependency", action="store_true", default=False, dest="installDependency", help="installDependency: default do not install dependencies")
     parser.addoption("--installSuperVisor", action="store_true", default=False, dest="installSuperVisor", help="installSuperVisor: default do not install supervisor service")
 
-# py.test test_start.py -s --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc
-@pytest.fixture(scope="session", autouse=False)
+# py.test test_start.py -s --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll
+@pytest.fixture(scope="session", autouse=True)
 def global_test_env(request):
     initGlobal()
+
+    log.info("global_test_env>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
     nodeFile = request.config.getoption("--nodeFile")
     accountFile = request.config.getoption("--accountFile")
@@ -38,6 +41,7 @@ def global_test_env(request):
     if plant_url:
         download.download_platon(plant_url)
     env = create_env_impl(PLATON_BIN_FILE,nodeFile,'global', accountFile, initChain, startAll, installDependency, installSuperVisor)
+
 
     yield env
 
@@ -61,7 +65,7 @@ def custom_test_env():
 
 
 
-def create_env_impl(binfile,nodeFile,confdir, accountFile,initChain=True, startAll=True, installDependency=False, installSuperVisor=False):
+def create_env_impl(binfile,nodeFile,confdir, accountFile,initChain=True, startAll=True, installDependency=False, installSuperVisor=False)->TestEnvironment:
     env = TestEnvironment(binfile,nodeFile,confdir,accountFile,initChain,startAll,installDependency,installSuperVisor)
     print(env.installDependency)
     print(env.installSuperVisor)

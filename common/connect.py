@@ -37,7 +37,7 @@ def connect_linux(ip, username='root', password='Juzhen123!', prot=22):
         @sftp:文件传输实例，用于上传下载文件 sftp.get(a,b)将a下载到b,sftp.put(a,b)把a上传到b
         @t:连接实例，用于关闭连接 t.close()
     '''
-    t = paramiko.Transport(ip, prot)
+    t = paramiko.Transport((ip, prot))
     t.connect(username=username, password=password)
     ssh = paramiko.SSHClient()
     ssh._transport = t
@@ -78,11 +78,17 @@ def run_ssh(ssh, cmd, password=None):
     return stdout_list
 
 
-def runCMDBySSH(ssh, cmd, password=None):
+def runCMDBySSH(ssh, cmd, password=None, password2=None, password3=None):
     try:
+        log.info('execute shell cmd::: {} '.format(cmd))
         stdin, stdout, _ = ssh.exec_command("source /etc/profile;%s" % cmd)
         if password:
             stdin.write(password+"\n")
+        if password2:
+            stdin.write(password2+"\n")
+        if password3:
+            stdin.write(password3+"\n")
+
         stdout_list = stdout.readlines()
         if len(stdout_list):
             log.info('{}:{}'.format(cmd,stdout_list) )
