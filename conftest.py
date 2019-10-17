@@ -66,7 +66,7 @@ def custom_test_env():
 
 
 def create_env_impl(binfile, nodeFile, confdir, accountFile,initChain=True, startAll=True, installDependency=False, installSuperVisor=False)->TestEnvironment:
-    env = TestEnvironment(node_file=nodeFile, bin_file=binfile, confdir=confdir, account_file=accountFile, init_chain=initChain, startAll=startAll, 
+    env = TestEnvironment(node_file=nodeFile, bin_file=binfile, confdir=confdir, account_file=accountFile, init_chain=initChain, startAll=startAll,
     install_dependency=installDependency, install_supervisor=installSuperVisor)
     print(env.install_dependency)
     print(env.install_supervisor)
