@@ -10,8 +10,9 @@
 ./deploy/node/travis_node.yml
 ./deploy/tmp
 ./deploy/platon
-/deploy/tmp
-/deploy/platon
+deploy/tmp
+deploy/platon
+deploy/temp/
 
 # VE
 venv

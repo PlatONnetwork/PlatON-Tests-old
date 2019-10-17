@@ -31,3 +31,5 @@ def default_thread_pool_callback(worker):
     worker_exception = worker.exception()
     if worker_exception:
         log.exception("Thread return exception: {}".format(worker_exception))
+
+initGlobal()

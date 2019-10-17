@@ -27,7 +27,6 @@ def pytest_addoption(parser):
 # py.test test_start.py -s --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll
 @pytest.fixture(scope="session", autouse=True)
 def global_test_env(request):
-    initGlobal()
 
     log.info("global_test_env>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 

@@ -32,4 +32,4 @@ class Conf:
         self.LOCAL_TMP_FILE_ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, "deploy/{}/tmp".format(dir)))
 
 
-NODE_FILE=os.path.abspath(os.path.join(BASE_DIR, "../deploy/4_node.yml"))
+NODE_FILE=os.path.abspath(os.path.join(BASE_DIR, "./deploy/4_node.yml"))
