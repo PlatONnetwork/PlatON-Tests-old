@@ -10,6 +10,8 @@
 ./deploy/node/travis_node.yml
 ./deploy/tmp
 ./deploy/platon
+/deploy/tmp
+/deploy/platon
 
 # VE
 venv
@@ -38,5 +40,3 @@ test.py
 handle_log.py
 bug_log
 tmp_log
-
-deploy/platon

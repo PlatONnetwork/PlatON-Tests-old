@@ -11,7 +11,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 
 from common.log import log
 from common.load_file import LoadFile
-from common.global_var import getThreadPoolExecutor
+from common.global_var import getThreadPoolExecutor, default_thread_pool_callback
 
 from conf.settings import DEPLOY_PATH, PLATON_BIN_FILE,GENESIS_TEMPLATE_FILE,Conf,CONFIG_JSON_TEMPLATE_FILE,SUPERVISOR_TEMPLATE_FILE
 
@@ -56,7 +56,7 @@ class TestEnvironment:
     def get_all_nodes(self):
         return self.collusionNodeList+self.normalNodeList
 
-    def get_rand_node(self):
+    def get_rand_node(self)->Node:
         return self.collusionNodeList[0]
 
 
@@ -84,16 +84,19 @@ class TestEnvironment:
     def start_nodes(self, node_list):
         futureList = []
         for node in node_list:
-            futureList.append(getThreadPoolExecutor().submit(lambda :node.start(self.initChain)))
-            #futureList.append(getThreadPoolExecutor().submit(start, node, self.initChain))
+            future = getThreadPoolExecutor().submit(lambda: node.start(self.initChain))
+            future.add_done_callback(default_thread_pool_callback)
+            futureList.append(future)
         wait(futureList, return_when=ALL_COMPLETED)
 
     def initNodes(self, node_list):
         log.info("init nodes...")
         futureList = []
         for node in node_list:
-            futureList.append(getThreadPoolExecutor().submit(lambda: node.initNode()))
-            #futureList.append(getThreadPoolExecutor().submit(initNode, node))
+            future = getThreadPoolExecutor().submit(lambda: node.initNode())
+            future.add_done_callback(default_thread_pool_callback)
+            futureList.append(future)
+
         if len(futureList) > 0:
             wait(futureList, return_when=ALL_COMPLETED)
 
@@ -103,8 +106,9 @@ class TestEnvironment:
             log.info("nodes install dependencies: {}".format(self.installDependency))
             futureList.clear()
             for node in node_list:
-                futureList.append(getThreadPoolExecutor().submit(lambda: node.install_dependency()))
-                #futureList.append(getThreadPoolExecutor().submit(install_dependency, node))
+                future = getThreadPoolExecutor().submit(lambda: node.install_dependency())
+                future.add_done_callback(default_thread_pool_callback)
+                futureList.append(future)
             if len(futureList) > 0:
                 wait(futureList, return_when=ALL_COMPLETED)
 
@@ -112,22 +116,18 @@ class TestEnvironment:
         futureList.clear()
         if self.initChain:
             for node in node_list:
-                futureList.append(getThreadPoolExecutor().submit(lambda:node.clean()))
-                #futureList.append(getThreadPoolExecutor().submit(clean, node))
+                future = getThreadPoolExecutor().submit(lambda: node.clean())
+                future.add_done_callback(default_thread_pool_callback)
+                futureList.append(future)
             if len(futureList) > 0:
                 wait(futureList, return_when=ALL_COMPLETED)
 
         log.info("nodes upload files")
         futureList.clear()
-        tmp = ThreadPoolExecutor(max_workers=40)
         for node in node_list:
-            log.info("node:::::::::: {}".format(node.host))
-            thread_pool_exc = tmp.submit(lambda :node.uploadAllFiles())
-           # thread_pool_exc = getThreadPoolExecutor().submit(lambda :node.uploadAllFiles())
-            thread_pool_exc.add_done_callback(self.thread_pool_callback)
-            futureList.append(thread_pool_exc)
-            #futureList.append(getThreadPoolExecutor().submit(uploadAllFiles,node))
-
+            future = getThreadPoolExecutor().submit(lambda :node.uploadAllFiles())
+            future.add_done_callback(default_thread_pool_callback)
+            futureList.append(future)
         if len(futureList) > 0:
             wait(futureList, return_when=ALL_COMPLETED)
         log.info("all files uploaded")
@@ -137,39 +137,30 @@ class TestEnvironment:
             log.info("nodes deploy supervisor")
             futureList.clear()
             for node in node_list:
-                thread_pool_exc = getThreadPoolExecutor().submit(lambda :node.deploy_supervisor())
-                thread_pool_exc.add_done_callback(self.thread_pool_callback)
-                futureList.append(thread_pool_exc)
-                #futureList.append(getThreadPoolExecutor().submit(deploy_supervisor, node))
+                future = getThreadPoolExecutor().submit(lambda :node.deploy_supervisor())
+                future.add_done_callback(default_thread_pool_callback)
+                futureList.append(future)
             if len(futureList) > 0:
                 wait(futureList, return_when=ALL_COMPLETED)
             log.info("SuperVisor installed")
 
-    def thread_pool_callback(self, worker):
-        log.info("called thread pool executor callback function")
-        worker_exception = worker.exception()
-        if worker_exception:
-            log.exception("Worker return exception: {}".format(worker_exception))
+    # def thread_pool_callback(self, worker):
+    #     log.info("called thread pool executor callback function")
+    #     worker_exception = worker.exception()
+    #     if worker_exception:
+    #         log.exception("Worker return exception: {}".format(worker_exception))
 
     def stop_nodes(self, node_list):
-        tasks = []
+        futureList = []
         for node in node_list:
-            tasks.append(getThreadPoolExecutor().submit(lambda :node.stop()))
-            #tasks.append(getThreadPoolExecutor().submit(stop, node))
-        wait(tasks, return_when=ALL_COMPLETED)
+            future =getThreadPoolExecutor().submit(lambda: node.stop())
+            future.add_done_callback(default_thread_pool_callback)
+            futureList.append(future)
+        wait(futureList, return_when=ALL_COMPLETED)
 
     def reset_nodes(self, node_list):
-        tasks = []
-        for node in node_list:
-            tasks.append(getThreadPoolExecutor().submit(lambda :node.stop()))
-            #tasks.append(getThreadPoolExecutor().submit(stop, node))
-        wait(tasks, return_when=ALL_COMPLETED)
-
-        tasks2 = []
-        for node in node_list:
-            tasks2.append(getThreadPoolExecutor().submit(lambda :node.start()))
-            #tasks2.append(getThreadPoolExecutor().submit(start, node))
-        wait(tasks2, return_when=ALL_COMPLETED)
+        self.stop_nodes(node_list)
+        self.stop_nodes(node_list)
 
     def parseNodeFile(self):
         nodeConfig = LoadFile(self.nodeFile).get_data()
@@ -185,8 +176,8 @@ class TestEnvironment:
             self.normalNodeList.append(normalNode)
 
     def parseAccountFile(self):
-        if self.account_file:
-            self.account = Account(self.account_file, self.genesis_config['config']['chainId'])
+        if self.accountFile:
+            self.account = Account(self.accountFile, self.genesisConfig['config']['chainId'])
 
     def getInitNodesForGenesis(self):
         initNodeList = []
