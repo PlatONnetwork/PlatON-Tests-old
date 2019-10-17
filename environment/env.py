@@ -11,7 +11,8 @@ import shutil
 import socket
 import tarfile
 from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
-
+import copy
+from common.load_file import get_f
 from client_sdk_python import Web3
 from client_sdk_python.admin import Admin
 from client_sdk_python.debug import Debug
@@ -25,6 +26,7 @@ from common.key import generate_key
 from common.load_file import LoadFile
 from common.log import log
 from conf import setting_old as conf
+from environment.account import Account
 
 
 def check_file_exists(*args):
@@ -37,14 +39,16 @@ def check_file_exists(*args):
         if not os.path.exists(os.path.abspath(arg)):
             raise Exception("文件{}不存在".format(arg))
 
+
 class TestConfig:
-    def __init__(self, install_supervisor=True, install_rely=True, init_chain=True, is_need_static=True):
+    def __init__(self, install_supervisor=True, install_dependency=True, init_chain=True, is_need_static=True):
         # 本地必须文件
         self.platon_bin_file = conf.PLATON_BIN_FILE
         self.genesis_file = conf.GENESIS_FILE
         self.static_node_file = conf.STATIC_NODE_FILE
         self.supervisor_file = conf.SUPERVISOR_FILE
         self.node_file = conf.NODE_FILE
+        self.address_file = conf.ADDRESS_FILE
         self.account_file = conf.ACCOUNT_FILE
         # 本地缓存目录
         self.root_tmp = conf.LOCAL_TMP_FILE_ROOT_DIR
@@ -55,12 +59,12 @@ class TestConfig:
 
         # 服务器依赖安装
         self.install_supervisor = install_supervisor
-        self.install_rely = install_rely
+        self.install_dependency = install_dependency
 
         # 链部署定制
         self.init_chain = init_chain
         self.is_need_static = is_need_static
-        self.log_level = 5
+        self.log_level = 4
         self.syncmode = "full"
         self.append_cmd = ""
 
@@ -114,6 +118,7 @@ class Server:
 
     def install_dependency(self):
         try:
+            self.run_ssh("rm -rf {} bn bn.tar.gz tmp")
             self.run_ssh("sudo -S -p '' ntpdate 0.centos.pool.ntp.org", True)
             self.run_ssh("sudo -S -p '' apt install llvm g++ libgmp-dev libssl-dev -y", True)
         except Exception as e:
@@ -263,12 +268,20 @@ class Node:
     def clean_log(self):
         try:
             self.stop()
-            self.run_ssh("rm -rf {};mkdir -p {}".format(self.remote_log_dir, self.remote_log_dir))
+            self.run_ssh("rm -rf {}".format(self.remote_log_dir))
+            self.append_log_file()
+        except Exception as e:
+            raise Exception("{}-clean log failed:{}".format(self.node_mark, e))
+
+    def append_log_file(self):
+        try:
+            self.run_ssh("mkdir -p {};echo {} >> {}/platon.log".format(self.remote_log_dir, self.cfg.env_id, self.remote_log_dir))
         except Exception as e:
             raise Exception("{}-clean log failed:{}".format(self.node_mark, e))
 
     def stop(self):
         try:
+            self.__is_connected = False
             if not self.running:
                 return True, "{}-node is not running".format(self.node_mark)
             self.run_ssh("sudo -S -p '' supervisorctl stop {}".format(self.node_name), True)
@@ -281,7 +294,7 @@ class Node:
             self.stop()
             if is_init:
                 self.init()
-            self.run_ssh("sudo -S -p '' supervisorctl update " + self.node_name, True)
+            self.append_log_file()
             result = self.run_ssh("sudo -S -p '' supervisorctl start " + self.node_name, True)
             for r in result:
                 if "ERROR" in r:
@@ -292,7 +305,7 @@ class Node:
 
     def restart(self) -> tuple:
         try:
-            self.run_ssh("sudo -S -p '' supervisorctl update " + self.node_name, True)
+            self.append_log_file()
             result = self.run_ssh("sudo -S -p '' supervisorctl restart " + self.node_name, True)
             for r in result:
                 if "ERROR" in r:
@@ -315,6 +328,7 @@ class Node:
         msg = "close success"
         try:
             self.clean()
+            self.run_ssh("sudo -S -p '' rm -rf /etc/supervisor/conf.d/{}.conf".format(self.node_name), True)
         except Exception as e:
             is_success = False
             msg = "{}-close failed:{}".format(self.node_mark, e)
@@ -411,7 +425,7 @@ class Node:
                 cmd = cmd + " --wsapi platon,debug,personal,admin,net,web3"
             cmd = cmd + " --rpc --rpcaddr 0.0.0.0 --rpcport " + str(self.rpc_port)
             cmd = cmd + " --rpcapi platon,debug,personal,admin,net,web3"
-            cmd = cmd + " --txpool.nolocals"
+            cmd = cmd + " --txpool.nolocals --nodiscover"
             if self.cfg.append_cmd:
                 cmd = cmd + " " + self.cfg.append_cmd
             fp.write("command=" + cmd + "\n")
@@ -433,6 +447,7 @@ class Node:
             is_success, msg = self.clean()
             if not is_success:
                 return is_success, msg
+            self.clean_log()
             ls = self.run_ssh("cd {};ls".format(self.cfg.remote_compression_tmp_path))
             tar = self.cfg.env_id + ".tar.gz\n"
             if tar in ls:
@@ -452,6 +467,8 @@ class Node:
             self.put_nodekey()
             self.put_deploy_conf()
             log.debug("{}-use supervisor start node...".format(self.node_mark))
+            log.debug("{}".format(self.run_ssh("cd {};ls".format(self.remote_log_dir))))
+            self.run_ssh("sudo -S -p '' supervisorctl update " + self.node_name, True)
             return self.start(self.cfg.init_chain)
         except Exception as e:
             return False, "{}-deploy failed:{}".format(self.node_mark, e)
@@ -508,13 +525,13 @@ class TestEnvironment:
 
         # these file must be exist
         check_file_exists(self.cfg.platon_bin_file, self.cfg.genesis_file, self.cfg.supervisor_file,
-                          self.cfg.node_file, self.cfg.account_file)
+                          self.cfg.node_file, self.cfg.address_file)
         if not os.path.exists(self.cfg.root_tmp):
             os.mkdir(self.cfg.root_tmp)
 
         # env info
         if not environment_id:
-            self.cfg.env_id = self.reset_env()
+            self.cfg.env_id = self.__reset_env()
         else:
             self.cfg.env_id = environment_id
 
@@ -536,8 +553,10 @@ class TestEnvironment:
 
         # genesis
         self.genesis_config = LoadFile(self.cfg.genesis_file).get_data()
+        # accounts
+        self.account = Account(self.cfg.account_file, self.genesis_config["config"]["chainId"])
 
-    def reset_env(self) -> str:
+    def __reset_env(self) -> str:
         if os.path.exists(self.cfg.env_tmp):
             shutil.rmtree(self.cfg.env_tmp)
         os.makedirs(self.cfg.env_tmp)
@@ -555,11 +574,35 @@ class TestEnvironment:
             static_node_list.append(node.enode)
         return static_node_list
 
+    @property
+    def version(self):
+        return ""
+
+    @property
+    def running(self):
+        for node in self.get_all_nodes():
+            if not node.running:
+                return False
+        return True
+
+    @property
+    def max_byzantium(self):
+        return get_f(self.collusion_node_config_list)
+
+    @property
+    def block_interval(self) -> int:
+        period = self.genesis_config["config"]["cbft"].get("period")
+        amount = self.genesis_config["config"]["cbft"].get("amount")
+        return int(period/1000/amount)
+
     def get_all_nodes(self) -> list:
         return self.collusion_node_list + self.normal_node_list
 
     def get_rand_node(self) -> Node:
         return random.choice(self.collusion_node_list)
+
+    def get_a_normal_node(self) -> Node:
+        return self.normal_node_list[0]
 
     def __executor(self, func, data_list, *args) -> bool:
         with ThreadPoolExecutor(max_workers=self.cfg.max_worker) as exe:
@@ -576,29 +619,12 @@ class TestEnvironment:
 
     def deploy_all(self, static_file=None, genesis_file=None):
         log.info("deploy all node")
-        self.stop_all()
-        # self.parseAccountFile()
-        self.__rewrite_genesis_file()
-        self.__rewrite_static_nodes()
-        if not self.cfg.is_need_static:
-            self.__compression(None)
-        elif static_file:
-            self.__compression(static_file)
-        else:
-            self.__compression(self.cfg.static_node_file)
-        if self.cfg.install_supervisor:
-            self.install_all_supervisor()
-            self.cfg.install_supervisor = False
-        if self.cfg.install_rely:
-            self.install_all_dependency()
-            self.cfg.install_rely = False
-        self.put_all_compression()
         if genesis_file:
             log.info("new genesis")
-            self.deploy_nodes(genesis_file, self.get_all_nodes())
+            self.deploy_nodes(self.get_all_nodes(), static_file, genesis_file)
         else:
             log.info("default genesis")
-            self.deploy_nodes(self.cfg.genesis_tmp, self.get_all_nodes())
+            self.deploy_nodes(self.get_all_nodes(), static_file, self.cfg.genesis_tmp)
         log.info("deploy success")
 
     def start_all(self):
@@ -629,14 +655,31 @@ class TestEnvironment:
 
         return self.__executor(close, self.get_all_nodes())
 
-    def start_nodes(self, node_list):
-        def start(node: Node, init_chain):
-            return node.start(init_chain)
+    def start_nodes(self, node_list, init_chain=True):
+        def start(node: Node, need_init_chain):
+            return node.start(need_init_chain)
 
-        return self.__executor(start, node_list, self.cfg.init_chain)
+        return self.__executor(start, node_list, init_chain)
 
-    def deploy_nodes(self, genesis_file, node_list):
+    def deploy_nodes(self, node_list, static_file=None, genesis_file=None):
         log.info("deploy node")
+        self.stop_nodes(node_list)
+        # self.parseAccountFile()
+        self.__rewrite_genesis_file()
+        self.__rewrite_static_nodes()
+        if not self.cfg.is_need_static:
+            self.__compression(None)
+        elif static_file:
+            self.__compression(static_file)
+        else:
+            self.__compression(self.cfg.static_node_file)
+        if self.cfg.install_supervisor:
+            self.install_all_supervisor()
+            self.cfg.install_supervisor = False
+        if self.cfg.install_dependency:
+            self.install_all_dependency()
+            self.cfg.install_dependency = False
+        self.put_all_compression()
 
         def deploy(node: Node):
             return node.deploy_me(genesis_file)
@@ -734,17 +777,25 @@ class TestEnvironment:
             server_list.append(do.result())
         return server_list
 
-    # def parseAccountFile(self):
-    #     pass
-    #
-    #
-    #
-
-    def block_numbers(self) -> dict:
+    def block_numbers(self, node_list=None) -> dict:
+        if not node_list:
+            node_list = self.get_all_nodes()
         result = {}
-        for node in self.get_all_nodes():
+        for node in node_list:
             result[node.node_mark] = node.block_number
         return result
+
+    def check_block(self, need_number=10, multiple=3, node_list=None):
+        if not node_list:
+            node_list = self.get_all_nodes()
+        use_time = int(need_number * self.block_interval * multiple)
+        while use_time:
+            if max(self.block_numbers(node_list).values()) < need_number:
+                time.sleep(1)
+                use_time -= 1
+                continue
+            return
+        raise Exception("环境无法正常出块")
 
     def backup_all_logs(self):
         self.backup_logs(self.get_all_nodes())
@@ -782,13 +833,13 @@ class TestEnvironment:
     def __rewrite_genesis_file(self):
         log.info("rewrite genesis.json")
         self.genesis_config['config']['cbft']["initialNodes"] = self.get_init_nodes()
-        with open(self.cfg.account_file, "r", encoding="UTF-8") as f:
-            key_dict = json.load(f)
-        account = key_dict["address"]
-        self.genesis_config['alloc'][account] = {"balance": str(99999999999999999999999999)}
-        # accounts = self.account.get_all_accounts()
-        # for account in accounts:
-        #     self.genesis_config['alloc'][account['address']] = {"balance": str(account['balance'])}
+        # with open(self.cfg.address_file, "r", encoding="UTF-8") as f:
+        #     key_dict = json.load(f)
+        # account = key_dict["address"]
+        # self.genesis_config['alloc'][account] = {"balance": str(99999999999999999999999999)}
+        accounts = self.account.get_all_accounts()
+        for account in accounts:
+            self.genesis_config['alloc'][account['address']] = {"balance": str(account['balance'])}
         with open(self.cfg.genesis_tmp, 'w', encoding='utf-8') as f:
             f.write(json.dumps(self.genesis_config, indent=4))
 
@@ -851,8 +902,8 @@ class TestEnvironment:
         os.makedirs(data_dir)
         keystore_dir = os.path.join(data_dir, "keystore")
         os.makedirs(keystore_dir)
-        keystore = os.path.join(keystore_dir, os.path.basename(self.cfg.account_file))
-        shutil.copyfile(self.cfg.account_file, keystore)
+        keystore = os.path.join(keystore_dir, os.path.basename(self.cfg.address_file))
+        shutil.copyfile(self.cfg.address_file, keystore)
         shutil.copyfile(self.cfg.platon_bin_file, os.path.join(env_gz, "platon"))
         if static:
             shutil.copyfile(static, os.path.join(data_dir, "static-nodes.json"))
@@ -861,14 +912,28 @@ class TestEnvironment:
         t.close()
 
 
+def create_env(node_file=None, account_file=None, init_chain=True,
+               install_dependency=False, install_supervisor=False) -> TestEnvironment:
+    cfg = TestConfig(install_supervisor=install_supervisor, install_dependency=install_dependency, init_chain=init_chain)
+    if node_file:
+        cfg.node_file = node_file
+    if account_file:
+        cfg.account_file = account_file
+    return TestEnvironment(cfg)
+
+
 if __name__ == "__main__":
     cfg = TestConfig()
-    cfg.node_file = abspath("./deploy/node/25_cbft.yml")
+    cfg.node_file = abspath("deploy/node/25_cbft.yml")
     env = TestEnvironment(cfg)
+    # new_cfg = copy.copy(env.cfg)
+    # new_cfg.syncmode = "fast"
+    # print(env.cfg.syncmode)
     log.info("测试部署")
     env.deploy_all()
-    d = env.block_numbers()
-    print(d)
+    env.deploy_all()
+    # d = env.block_numbers()
+    # print(d)
     # node = env.get_rand_node()
     # node.create_keystore()
     # print(node.node_mark)
