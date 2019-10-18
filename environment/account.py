@@ -2,12 +2,13 @@ from common.load_file import LoadFile
 from common.log import log
 from client_sdk_python.eth import Eth
 from hexbytes import HexBytes
+import random
 
 
 class Account:
-    def __init__(self, accountFile,chainId):
+    def __init__(self, accountFile, chainId):
         '''
-           accounts 包含的属性: address,prikey,nonce,balance
+        accounts 包含的属性: address,prikey,nonce,balance
         '''
         self.accounts = {}
         accounts = LoadFile(accountFile).get_data()
@@ -23,9 +24,10 @@ class Account:
         return accounts
 
     def get_rand_account(self):
-        #todo 实现随机
-        for account in self.accounts.values():
-            return account
+        # todo 实现随机
+        # for account in self.accounts.values():
+        #     return account
+        return random.choice(self.accounts.values())
 
     def sendTransaction(self, connect, data, from_address, to_address, gasPrice, gas, value):
         account = self.accounts[from_address]
@@ -39,7 +41,7 @@ class Account:
             "value": value
         }
         platon = Eth(connect)
-        signedTransactionDict =  platon.account.signTransaction(
+        signedTransactionDict = platon.account.signTransaction(
             transaction_dict, account['prikey']
         )
 

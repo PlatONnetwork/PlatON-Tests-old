@@ -1,6 +1,6 @@
 import os
 
-from conf.setting_merge import BASE_DIR
+from conf.settings import BASE_DIR
 
 
 def abspath(path):

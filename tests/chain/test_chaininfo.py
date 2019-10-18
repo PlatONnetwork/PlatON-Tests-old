@@ -36,7 +36,7 @@ def test_hash_continuous(global_test_env):
     """
     测试区块的连续性，验证一定数量的区块，区块哈希必须是连续的
     """
-    global_test_env.check_block(global_test_env, 100, 2)
+    global_test_env.check_block(100, 2)
     node = global_test_env.get_rand_node()
     block_hash = HexBytes(node.eth.getBlock(1).get("hash")).hex()
     for i in range(2, 100):
@@ -85,7 +85,7 @@ def test_syncmode(global_test_env):
     time.sleep(5)
     log.info("{}".format(test_node.web3.net.peerCount))
     assert test_node.web3.net.peerCount > 0, "加入链失败"
-    global_test_env.check_block(global_test_env, 200, 2)
+    global_test_env.check_block(200, 2)
     time.sleep(5)
     assert test_node.eth.blockNumber >= 200, "区块同步失败,当前块高{}".format(test_node.eth.blockNumber)
 
@@ -107,7 +107,7 @@ def test_deconsensus_block_synchronize(global_test_env):
     test_node.admin.addPeer(global_test_env.get_rand_node().enode)
     time.sleep(5)
     assert test_node.web3.net.peerCount > 0, "加入链失败"
-    global_test_env.check_block(global_test_env)
+    global_test_env.check_block()
     assert test_node.block_number > 0, "非共识节点同步区块失败，块高：{}".format(test_node.block_number)
 
 
