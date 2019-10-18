@@ -39,3 +39,5 @@ test.py
 handle_log.py
 bug_log
 tmp_log
+./deploy/global/
+/deploy/global/

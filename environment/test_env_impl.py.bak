@@ -248,8 +248,8 @@ class TestEnvironment:
 
 
     def backupAllLogs(self):
-        self.backupLogs(self.collusionNodeList)
-        self.backupLogs(self.normalNodeList)
+        self.backupLogs(self.collusion_node_list)
+        self.backupLogs(self.normal_node_list)
 
     def backupLogs(self, node_list):
         self.checkLogPath()
@@ -269,7 +269,7 @@ class TestEnvironment:
     def zipAllLog(self):
         print("开始压缩.....")
         t = time.strftime("%Y-%m-%d_%H%M%S", time.localtime())
-        tar = tarfile.open("{}/{}_{}_log.tar.gz".format(LOG_PATH, self.nodeFile, t), "w:gz")
+        tar = tarfile.open("{}/{}_{}_log.tar.gz".format(LOG_PATH, self.node_file, t), "w:gz")
         tar.add(TMP_LOG)
         tar.close()
         print("压缩完成")

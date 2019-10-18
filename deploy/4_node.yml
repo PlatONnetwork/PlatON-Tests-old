@@ -9,7 +9,7 @@ collusion:
   id: 05d5012208a2192e92729f8825bee305dc1f67ab353928293e31552064f3d91faba3d6a4da8a46236964605af2a7ed357b92183b99fc667124cc5404687ed2ec
   nodekey: 33a64a6f38ff3502e95b5b1f0d9d1aab31605530c209cbe4cae7f2d42687c317
   syncmode: full
-  rpctype: http
+  rpctype: ws
 - host: 192.168.112.31
   port: 16789
   rpcport: 6789
@@ -20,7 +20,7 @@ collusion:
   id: e12899126feb3ac04fc8cc36a8765e001d9644856aee43554fa122c7f98074b09afe9f0ecda5d382ad87cf218accac6810e6572747aad4c87ec97b7d5e07088e
   nodekey: cb177248ed491aec486aa1563c83f842b47c98a621222d0073135da31577c5f0
   syncmode: full
-  rpctype: http
+  rpctype: ws
 - host: 192.168.112.32
   port: 16789
   rpcport: 6789
@@ -31,7 +31,7 @@ collusion:
   id: d26d8febf6a904dea72596481096fb0edddfb190bfe2494728e0213bcafd937918b20b2119d01b54e2a2bbc203d5cf2a25e3dab978c8671292773d0b2e7beace
   nodekey: 15c1079061b434fa181d651ff8b3094660da9230891367328f6ede95f0eb369e
   syncmode: full
-  rpctype: http
+  rpctype: ws
 - host: 192.168.112.33
   port: 16789
   rpcport: 6789
@@ -42,7 +42,7 @@ collusion:
   id: 48224bc02b26929990e260cfee6ff154a8c0f6e9417d8196809ab4f3a8f9e948b4fe7e08a9337bd519da5f1bc4dfb9026f9f120faa17f6cd6bd9ff5289f82c46
   nodekey: a0d1a0b43a5db8f4798d53fcb371fd61883afc691c0298408d104b4ace3b52fe
   syncmode: full
-  rpctype: http
+  rpctype: ws
 nocollusion:
 - host: 192.168.112.34
   port: 16789
@@ -54,4 +54,4 @@ nocollusion:
   id: 5fc01015457f4e0a3072d08687980ed6211e36791b70598296d2ede1c9b1aa55ed82e64aa05795505ce9095ab495dc489ba12e0cbc9dc1620f6e84cc5b39e973
   nodekey: 8b2f361966e93a5500135408e79ed2e525a32ff671c882e3279b176c988f7a06
   syncmode: full
-  rpctype: http
+  rpctype: ws
