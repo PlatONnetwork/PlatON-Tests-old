@@ -11,7 +11,7 @@ from client_sdk_python.admin import Admin
 
 #作用域设置为module，自动运行
 from conf.settings import NODE_FILE
-from environment import test_env_impl
+# from environment import test_env_impl
 
 
 # py.test tests/cmd/account/test_account.py -s --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll

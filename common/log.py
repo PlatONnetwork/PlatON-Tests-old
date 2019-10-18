@@ -1,16 +1,9 @@
-'''
-@Author: xiaoming
-@Date: 2018-12-29 11:28:34
-@LastEditors: xiaoming
-@LastEditTime: 2019-01-02 10:24:10
-@Description: 测试过程日志
-'''
 import logging
 import os
 import time
 from logging import handlers
 
-from conf.settings import BASE_DIR
+from conf.settings import BASE_DIR, RUN_LOG_LEVEL
 
 
 class Logger(object):
@@ -42,7 +35,7 @@ def setup_logger(logfile, loglevel):
 if not os.path.exists('{}/log'.format(BASE_DIR)):
     os.makedirs('{}/log'.format(BASE_DIR))
 log = setup_logger('{}/log/{}.log'.format(BASE_DIR, str(
-    time.strftime("%Y-%m-%d", time.localtime()))), 'info').logger
+    time.strftime("%Y-%m-%d", time.localtime()))), RUN_LOG_LEVEL).logger
 
 
 

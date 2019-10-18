@@ -1,11 +1,3 @@
-'''
-@Author: xiaoming
-@Date: 2018-12-01 11:42:43
-@LastEditors: xiaoming
-@LastEditTime: 2018-12-05 14:16:00
-@Description: 用于读取yml或json文件中的内容
-'''
-
 import json
 import os
 

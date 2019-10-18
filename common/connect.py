@@ -1,10 +1,3 @@
-'''
-@Author: xiaoming
-@Date: 2018-12-01 14:38:42
-@LastEditors: xiaoming
-@LastEditTime: 2019-01-16 10:47:19
-@Description: 用于连接linux服务器或者web3
-'''
 import paramiko
 from client_sdk_python import HTTPProvider, Web3, WebsocketProvider
 from client_sdk_python.middleware import geth_poa_middleware

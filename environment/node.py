@@ -1,381 +1,466 @@
-import time
-
-from common.connect import connect_web3, connect_linux, runCMDBySSH
-
-from conf.settings import DEPLOY_PATH,PLATON_BIN_FILE,SUPERVISOR_TEMPLATE_FILE
 import os
+
+from client_sdk_python import Web3
+from client_sdk_python.admin import Admin
+from client_sdk_python.debug import Debug
+from client_sdk_python.eth import Eth
+from client_sdk_python.personal import Personal
+
+from common.connect import run_ssh, connect_linux, connect_web3
+from environment.config import TestConfig
 from common.log import log
-import configparser
-from client_sdk_python import HTTPProvider, Web3, WebsocketProvider
 
-
-
-TMP_LOG = "./tmp_log"
-LOG_PATH = "./bug_log"
 
 class Node:
-    def __init__(self,conf,node_conf):
-        self.data_tmp_dir = None
-        self.supervisor_service_id = None
-        self.supervisor_conf_file_name = None
-        self.id = node_conf.get("id")
-        self.host = node_conf.get("host")
-        self.port = node_conf.get("port")
-        self.rpcport = node_conf.get("rpcport")
-        self.username = node_conf.get("username")
-        self.password = node_conf.get("password")
-        self.blsprikey = node_conf.get("blsprikey")
-        self.blspubkey = node_conf.get("blspubkey")
-        self.nodekey = node_conf.get("nodekey")
-        self.remoteDeployDir = node_conf.get("deployDir")
-        if not self.remoteDeployDir:
-            self.remoteDeployDir = DEPLOY_PATH
-        self.syncMode = node_conf.get("syncmode")
-        self.rpctype = node_conf.get("rpctype")
-        self.conf = conf
-        self.remoteDeployDir = '{}/node-{}'.format(self.remoteDeployDir, self.port)
-        self.remoteDataDir = '{}/data'.format(self.remoteDeployDir)
-        self.remoteKeystoreDir = '{}/data/keystore'.format(self.remoteDeployDir)
-        self.remoteBinFile = '{}/platon'.format(self.remoteDeployDir)
-        self.remoteGenesisFile = '{}/genesis.json'.format(self.remoteDeployDir)
-        self.remoteConfigFile = '{}/config.json'.format(self.remoteDeployDir)
-        self.remoteBlskeyFile = '{}/blskey'.format(self.remoteDataDir)
-        self.remoteNodekeyFile = '{}/nodekey'.format(self.remoteDataDir)
-        self.remoteStaticNodesFile = '{}/static-nodes.json'.format(self.remoteDeployDir)
+    def __init__(self, node_conf, cfg: TestConfig):
+        self.cfg = cfg
+        # 节点身份参数
+        self.blspubkey = node_conf["blspubkey"]
+        self.blsprikey = node_conf["blsprikey"]
+        self.node_id = node_conf["id"]
+        self.nodekey = node_conf["nodekey"]
+        # 节点启动必要参数
+        self.p2p_port = str(node_conf["port"])
+        self.rpc_port = str(node_conf["rpcport"])
+        # 节点启动非必要参数
+        self.wsport = node_conf.get("wsport")
+        self.wsurl = node_conf.get("wsurl")
+        self.pprofport = node_conf.get("pprofport")
+        self.fail_point = node_conf.get("fail_point")
+        # 节点服务器信息
+        self.host = node_conf["host"]
+        self.username = node_conf["username"]
+        self.password = node_conf["password"]
+        self.ssh_port = node_conf.get("sshport", 22)
+        self.ssh, self.sftp, self.t = connect_linux(self.host, self.username, self.password, self.ssh_port)
 
+        # 节点标识信息
+        self.url = node_conf["url"]
+        self.node_name = "node-" + self.p2p_port
+        self.node_mark = self.host + ":" + self.p2p_port
+        # 节点远程目录信息
+        self.remote_node_path = "{}/{}".format(self.cfg.deploy_path, self.node_name)
 
-        self.tmp_root_dir = os.path.join(self.conf.LOCAL_TMP_FILE_ROOT_DIR,"{}_{}".format(self.host, self.port))  # 生成的各个节点的data/supervesor数据，存放子目录
-        self.supervisor_tmp_dir = os.path.join(self.tmp_root_dir, "supervisor")
-        self.data_tmp_dir = os.path.join(self.tmp_root_dir, "data")
-        self.supervisor_service_id = "node-" + str(self.port)  # supervisor服务启停节点的 ID
-        self.supervisor_conf_file_name = "node-" + str(self.port) + ".conf"  # 生成的各个节点的supervesor配置文件名称
+        self.remote_log_dir = '{}/log'.format(self.remote_node_path)
+        self.remote_bin_file = self.remote_node_path + "/platon"
+        self.remote_genesis_file = self.remote_node_path + "/genesis.json"
+        self.remote_config_file = self.remote_node_path + "/config.json"
+        self.remote_data_dir = self.remote_node_path + "/data"
 
-    def getEnodeUrl(self):
-        return r"enode://" + self.id + "@" + self.host + ":" + str(self.port)
+        self.remote_blskey_file = '{}/blskey'.format(self.remote_data_dir)
+        self.remote_nodekey_file = '{}/nodekey'.format(self.remote_data_dir)
+        self.remote_keystore_dir = '{}/keystore'.format(self.remote_data_dir)
+        self.remote_static_nodes_file = '{}/static-nodes.json'.format(self.remote_data_dir)
+        self.remote_db_dir = '{}/platon'.format(self.remote_data_dir)
 
-    def connect_node(self):
-        url = "{}://{}:{}".format(self.rpctype, self.host, self.rpcport)
-        collusion_w3 = connect_web3(url)
-        return collusion_w3
+        self.remote_supervisor_node_file = '{}/{}.conf'.format(self.cfg.remote_supervisor_tmp, self.node_name)
 
+        # RPC连接
+        self.__is_connected = False
+        self.__rpc = None
 
-    def generate_supervisor_node_conf_file(self):
+        # node local tmp
+        self.local_node_tmp = self.gen_node_tmp()
+
+    def gen_node_tmp(self):
         """
-        生成supervisor部署platon的配置
-        :param node:
+        生成本地节点缓存目录
         :return:
         """
-        if not os.path.exists(self.supervisor_tmp_dir):
-            os.makedirs(self.supervisor_tmp_dir)
+        tmp = os.path.join(self.cfg.node_tmp, self.host + "_" + self.p2p_port)
+        if not os.path.exists(tmp):
+            os.makedirs(tmp)
+        return tmp
 
-        supervisorConfFile = self.supervisor_tmp_dir + "/" + self.supervisor_conf_file_name
+    @property
+    def enode(self):
+        return r"enode://" + self.node_id + "@" + self.host + ":" + self.p2p_port
 
-        with open(supervisorConfFile, "w") as fp:
-            fp.write("[program:" + self.supervisor_service_id + "]\n")
-            cmd = "{}/platon --identity platon --datadir {}".format(self.remoteDeployDir, self.remoteDataDir)
-            cmd = cmd + " --port {}".format(self.port)
+    def init(self):
+        """
+        初始化
+        :return:
+        """
+        try:
+            cmd = '{} --datadir {} init {}'.format(self.remote_bin_file, self.remote_data_dir, self.remote_genesis_file)
+            result = self.run_ssh(cmd)
+        except Exception as e:
+            raise Exception("{}-init failed:{}".format(self.node_mark, e))
+        if len(result) > 0:
+            log.error("{}-init failed:{}".format(self.node_mark, result[0]))
+            raise Exception("{}-init failed:{}".format(self.node_mark, result[0]))
 
-            cmd = cmd + " --syncmode '{}'".format(self.syncMode)
-            # if self.netType:
-            #     cmd = cmd + " --" + self.netType
-
-            # if node.get("mpcactor", None):
-            #     cmd = cmd + " --mpc --mpc.actor {}".format(node.get("mpcactor"))
-            # if node.get("vcactor", None):
-            #     cmd = cmd + \
-            #           " --vc --vc.actor {} --vc.password 88888888".format(
-            #               node.get("vcactor"))
-
-            cmd = cmd + " --debug --verbosity 5"
-            if self.rpctype == "http":
-                cmd = cmd + " --rpc --rpcaddr 0.0.0.0 --rpcport " + str(self.rpcport)
-                cmd = cmd + " --rpcapi platon,debug,personal,admin,net,web3"
-            else:
-                cmd = cmd + " --ws --wsorigins '*' --wsaddr 0.0.0.0 --wsport " + str(self.rpcport)
-                cmd = cmd + " --wsapi platon,debug,personal,admin,net,web3"
-
-            cmd = cmd + " --txpool.nolocals"
-
-            # 监控指标
-            # if self.is_metrics:
-            #     cmd = cmd + " --metrics"
-            #     cmd = cmd + " --metrics.influxdb --metrics.influxdb.endpoint http://10.10.8.16:8086"
-            #     cmd = cmd + " --metrics.influxdb.database platon"
-            #     cmd = cmd + " --metrics.influxdb.host.tag {}:{}".format(self.host, str(self.port))
-
-            cmd = cmd + " --gcmode archive --nodekey {}".format(self.remoteNodekeyFile)
-
-            log.info(">>>>>>>>>>>>>>--config {}".format(self.remoteConfigFile))
-
-            cmd = cmd + " --config {}".format(self.remoteConfigFile)
-
-            cmd = cmd + " --cbft.blskey {}".format(self.remoteBlskeyFile)
-
-            fp.write("command=" + cmd + "\n")
-
-
-            # go_fail_point = ""
-            # if node.get("fail_point", None):
-            #     go_fail_point = " GO_FAILPOINTS='{}' ".format(
-            #         node.get("fail_point", None))
-            # if go_fail_point:
-            #     fp.write("environment=LD_LIBRARY_PATH={}/mpclib,{}\n".format(pwd, go_fail_point))
-            # else:
-            #     fp.write("environment=LD_LIBRARY_PATH={}/mpclib\n".format(pwd))
-
-            fp.write("numprocs=1\n")
-            fp.write("autostart=false\n")
-            fp.write("startsecs=3\n")
-            fp.write("startretries=3\n")
-            fp.write("autorestart=unexpected\n")
-            fp.write("exitcode=0\n")
-            fp.write("stopsignal=TERM\n")
-            fp.write("stopwaitsecs=10\n")
-            fp.write("redirect_stderr=true\n")
-            fp.write("stdout_logfile={}/log/platon.log\n".format(self.remoteDeployDir))
-            fp.write("stdout_logfile_maxbytes=200MB\n")
-            fp.write("stdout_logfile_backups=20\n")
-            fp.close()
-
-    def generateKeyFiles(self):
-        if not os.path.exists(self.data_tmp_dir):
-            os.makedirs(self.data_tmp_dir)
-        blskey_file = os.path.join(self.data_tmp_dir, "blskey")
-        with open(blskey_file, 'w', encoding="utf-8") as f:
-            f.write(self.blsprikey)
-            f.close()
-
-        nodekey_file = os.path.join(self.data_tmp_dir, "nodekey")
-        with open(nodekey_file, 'w', encoding="utf-8") as f:
-            f.write(self.nodekey)
-            f.close()
-
-
-    def initNode(self):
-        # connect_ssh
-        self.ssh, self.sftp, self.transport = connect_linux(self.host, self.username, self.password, 22)
-
-        pwd_list = runCMDBySSH(self.ssh, "pwd")
-        pwd = pwd_list[0].strip("\r\n")
-
-        if not os.path.isabs(self.remoteDeployDir):
-            self.remoteDeployDir = pwd + "/" + self.remoteDeployDir
-            self.remoteDataDir = pwd + "/" + self.remoteDataDir
-            self.remoteConfigFile = pwd + "/" + self.remoteConfigFile
-            self.remoteKeystoreDir = pwd + "/" + self.remoteKeystoreDir
-            self.remoteBinFile = pwd + "/" + self.remoteBinFile
-            self.remoteNodekeyFile = pwd + "/" + self.remoteNodekeyFile
-            self.remoteBlskeyFile = pwd + "/" + self.remoteBlskeyFile
-
-
-    def start(self, initChain):
-        log.info("to stop PlatON {}:{}".format(self.host,self.port))
-        self.stop()
-
-        if initChain:
-            log.info("to init PlatON chain")
-            self.initPlatON()
-
-        runCMDBySSH(self.ssh, "sudo -S -p '' supervisorctl update " + self.supervisor_service_id, self.password)
-        runCMDBySSH(self.ssh, "sudo -S -p '' supervisorctl start " + self.supervisor_service_id, self.password)
-
+    def run_ssh(self, cmd, need_password=False):
+        if need_password:
+            return run_ssh(self.ssh, cmd, self.password)
+        return run_ssh(self.ssh, cmd)
 
     def clean(self):
-        time.sleep(0.5)
-        runCMDBySSH(self.ssh, "sudo -S -p '' rm -rf {}".format(self.remoteDeployDir), self.password)
-        runCMDBySSH(self.ssh, "mkdir -p {}".format(self.remoteDeployDir))
-        runCMDBySSH(self.ssh, "mkdir -p {}".format(self.remoteDataDir))
-        runCMDBySSH(self.ssh, 'mkdir -p {}/log'.format(self.remoteDeployDir))
+        """
+        清空节点数据
+        :return:
+        """
+        try:
+            self.stop()
+            self.run_ssh("sudo -S -p '' rm -rf {};mkdir -p {}".format(self.remote_node_path, self.remote_node_path),
+                         True)
+        except Exception as e:
+            return False, "{}-clean failed:{}".format(self.node_mark, e)
+        return True, "{}-clean success".format(self.node_mark)
+
+    def clean_db(self):
+        """
+        清空节点数据库
+        :return:
+        """
+        try:
+            self.stop()
+            self.run_ssh("sudo -S -p '' rm -rf {}".format(self.remote_db_dir), True)
+        except Exception as e:
+            return False, "{}-clean db failed:{}".format(self.node_mark, e)
+        return True, "{}-clean db success".format(self.node_mark)
 
     def clean_log(self):
-        runCMDBySSH(self.ssh, "rm -rf {}/nohup.out".format(self.remoteDeployDir))
-        runCMDBySSH(self.ssh, "rm -rf {}/log".format(self.remoteDeployDir))
-        runCMDBySSH(self.ssh, 'mkdir -p {}/log'.format(self.remoteDeployDir))
+        """
+        清空节点日志
+        :return:
+        """
+        try:
+            self.stop()
+            self.run_ssh("rm -rf {}".format(self.remote_log_dir))
+            self.append_log_file()
+        except Exception as e:
+            raise Exception("{}-clean log failed:{}".format(self.node_mark, e))
 
+    def append_log_file(self):
+        """
+        追加日志标识
+        :return:
+        """
+        try:
+            self.run_ssh("mkdir -p {};echo {} >> {}/platon.log".format(self.remote_log_dir, self.cfg.env_id, self.remote_log_dir))
+        except Exception as e:
+            raise Exception("{}-clean log failed:{}".format(self.node_mark, e))
 
-    """
-    以kill的方式停止节点，关闭后节点可以重启
-    """
     def stop(self):
-        log.info("关闭platon进程...")
-        runCMDBySSH(self.ssh, "sudo -S -p '' supervisorctl stop {}".format(self.supervisor_service_id), self.password)
-
-    def uploadAllFiles(self):
-        log.info("uploadAllFiles:::::::::: {}".format(self.host))
-        self.uploadBinFile()
-        self.uploadGenesisFile()
-        self.uploadStaticNodeFile()
-        self.uploadConfigFile()
-        self.uploadKeyFiles()
-        self.upload_supervisor_node_conf_file()
-
-    def uploadBinFile(self):
-        if PLATON_BIN_FILE and os.path.exists(PLATON_BIN_FILE):
-            #remoteFile = os.path.join(self.remoteDeployDir, "platon").replace("\\", "/")
-            #remoteFile = os.path.join(self.remoteDeployDir, "platon").replace("\\", "/")
-            self.sftp.put(PLATON_BIN_FILE, self.remoteBinFile)
-            runCMDBySSH(self.ssh, 'chmod +x {}'.format(self.remoteBinFile))
-            #log.info("platon bin file uploaded to node: {}".format(self.host))
-        else:
-            log.error("platon bin file not found: {}".format(PLATON_BIN_FILE))
-
-    def uploadGenesisFile(self):
-        if self.conf.GENESIS_FILE and os.path.exists(self.conf.GENESIS_FILE):
-            remoteFile = os.path.join(self.remoteDeployDir, "genesis.json").replace("\\", "/")
-            self.sftp.put(self.conf.GENESIS_FILE, remoteFile)
-            log.info("genesis.json uploaded to node: {}".format(self.host))
-        else:
-            log.warn("genesis.json not found: {}".format(self.conf.GENESIS_FILE))
-
-
-    def uploadStaticNodeFile(self):
-        if self.conf.STATIC_NODE_FILE and os.path.exists(self.conf.STATIC_NODE_FILE):
-            remoteFile = os.path.join(self.remoteDeployDir, "static-nodes.json").replace("\\", "/")
-            self.sftp.put(self.conf.STATIC_NODE_FILE, remoteFile)
-            #log.info("static-nodes.json uploaded to node: {}".format(self.host))
-        else:
-            log.warn("static-nodes.json not found: {}".format(self.conf.STATIC_NODE_FILE))
-
-    def uploadConfigFile(self):
-        if self.conf.CONFIG_JSON_FILE and os.path.exists(self.conf.CONFIG_JSON_FILE):
-            remoteFile = os.path.join(self.remoteDeployDir, "config.json").replace("\\", "/")
-            self.sftp.put(self.conf.CONFIG_JSON_FILE, remoteFile)
-            #log.info("config.json uploaded to node: {}".format(self.host))
-        else:
-            log.warn("config.json not found: {}".format(self.conf.CONFIG_JSON_FILE))
-
-
-
-    def uploadKeyFiles(self):
-        blskey_file = os.path.join(self.data_tmp_dir, "blskey")
-        if os.path.exists(blskey_file):
-            remoteFile = os.path.join(self.remoteDataDir, "blskey").replace("\\", "/")
-            self.sftp.put(blskey_file, remoteFile)
-            #log.info("blskey uploaded to node: {}".format(self.host))
-
-        nodekey_file = os.path.join(self.data_tmp_dir, "nodekey")
-        if os.path.exists(nodekey_file):
-            remoteFile = os.path.join(self.remoteDataDir, "nodekey").replace("\\", "/")
-            self.sftp.put(nodekey_file, remoteFile)
-            #log.info("nodekey_file uploaded to node: {}".format(self.host))
-
-    def upload_supervisor_node_conf_file(self):
-        supervisorConfFile = self.supervisor_tmp_dir + "/" + self.supervisor_conf_file_name
-        if os.path.exists(supervisorConfFile):
-            runCMDBySSH(self.ssh, "rm -rf ./tmp/{}".format(self.supervisor_conf_file_name))
-            runCMDBySSH(self.ssh, "mkdir  ./tmp")
-            self.sftp.put(supervisorConfFile, "./tmp/{}".format(self.supervisor_conf_file_name))
-            runCMDBySSH(self.ssh, "sudo -S -p '' cp ./tmp/" + self.supervisor_conf_file_name + " /etc/supervisor/conf.d", self.password)
-            #log.info("supervisor startup config uploaded to node: {}".format(self.host))
-
-    def uploadFile(self, localFile, remoteFile):
-        if localFile and os.path.exists(localFile):
-            self.sftp.put(localFile, remoteFile)
-        else:
-            log.info("file: {} not found".format(localFile))
-
-    def deleteRemoteFile(self, remoteFile):
-        runCMDBySSH(self.ssh, "rm {}".format(remoteFile))
-
-    def backupLog(self):
-        runCMDBySSH(self.ssh, "cd {};tar zcvf log.tar.gz ./log".format(self.remoteDeployDir))
-        self.sftp.get("{}/log.tar.gz".format(self.remoteDeployDir), "{}/{}_{}.tar.gz".format(TMP_LOG, self.host, self.port))
-        runCMDBySSH(self.ssh, "cd {};rm -rf ./log.tar.gz".format(self.remoteDeployDir))
-        # self.transport.close()
-
-
-    def genSupervisorConf(self):
         """
-        更新supervisor配置
-        :param node:
-        :param sup_template:
-        :param sup_tmp:
+        关闭节点
         :return:
         """
-        template = configparser.ConfigParser()
-        template.read(SUPERVISOR_TEMPLATE_FILE)
-        template.set("inet_http_server", "username", self.username)
-        template.set("inet_http_server", "password", self.password)
-        template.set("supervisorctl", "username", self.username)
-        template.set("supervisorctl", "password", self.password)
+        try:
+            self.__is_connected = False
+            if not self.running:
+                return True, "{}-node is not running".format(self.node_mark)
+            self.run_ssh("sudo -S -p '' supervisorctl stop {}".format(self.node_name), True)
+        except Exception as e:
+            return False, "{}-close node failed:{}".format(self.node_mark, e)
+        return True, "{}-stop node success".format(self.node_mark)
 
-        with open(self.conf.SUPERVISOR_FILE, "w") as file:
-            template.write(file)
-            file.close()
-        return self.conf.SUPERVISOR_FILE
-
-    def judge_restart_supervisor(self, supervisor_pid_str):
-        supervisor_pid = supervisor_pid_str[0].strip("\n")
-
-
-        result = runCMDBySSH(self.ssh, "sudo -S -p '' supervisorctl stop {}".format(self.supervisor_service_id), self.password)
-
-        if "node-{}".format(self.port) not in result[0]:
-
-            runCMDBySSH(self.ssh, "sudo -S -p '' kill {}".format(supervisor_pid), self.password)
-            runCMDBySSH(self.ssh, "sudo -S -p '' killall supervisord", self.password)
-            runCMDBySSH(self.ssh, "sudo -S -p '' sudo apt remove supervisor -y", self.password)
-            runCMDBySSH(self.ssh, "sudo -S -p '' apt update", self.password)
-            runCMDBySSH(self.ssh, "sudo -S -p '' apt install -y supervisor", self.password)
-            runCMDBySSH(self.ssh, "sudo -S -p '' cp ./tmp/supervisord.conf /etc/supervisor/", self.password)
-            runCMDBySSH(self.ssh, "sudo -S -p '' /etc/init.d/supervisor start", self.password)
-
-
-    def install_dependency(self):
+    def start(self, is_init=False) -> tuple:
         """
-        配置服务器依赖
-        :param nodedict:
-        :param file:
+        启动节点
+        :param is_init:
         :return:
         """
-        runCMDBySSH(self.ssh, "sudo -S -p '' ntpdate 0.centos.pool.ntp.org", self.password)
-        #pwd_list = runCMDBySSH(self.ssh, "pwd")
-        #pwd = pwd_list[0].strip("\r\n")
-        #cmd = r"sudo -S -p '' sed -i '$a /usr/local/lib' /etc/ld.so.conf".format(pwd)
-        runCMDBySSH(self.ssh, "sudo -S -p '' apt install llvm g++ libgmp-dev libssl-dev -y", self.password)
-        #runCMDBySSH(self.ssh, cmd, self.password)
-        #runCMDBySSH(self.ssh, "sudo -S -p '' ldconfig", self.password)
+        try:
+            self.stop()
+            if is_init:
+                self.init()
+            self.append_log_file()
+            result = self.run_ssh("sudo -S -p '' supervisorctl start " + self.node_name, True)
+            for r in result:
+                if "ERROR" in r:
+                    raise Exception("{}-start failed:{}".format(self.node_mark, r.strip("\n")))
+        except Exception as e:
+            return False, "{}-start failed:{}".format(self.node_mark, e)
+        return True, "{}-start success".format(self.node_mark)
 
-
-    def initPlatON(self):
-        #cmd = '{} --datadir {} --config {} init {}'.format(self.remoteBinFile, self.remoteDataDir, self.remoteConfigFile, self.remoteGenesisFile)
-        cmd = '{} --datadir {} init {}'.format(self.remoteBinFile, self.remoteDataDir, self.remoteGenesisFile)
-        runCMDBySSH(self.ssh, cmd)
-
-
-    def deploy_supervisor(self):
+    def restart(self) -> tuple:
         """
-        部署supervisor
-        :param node:
+        重启节点
         :return:
         """
-        #log.info("call deploy_supervisor() for node: {}".format(self.host))
-        tmpConf = self.genSupervisorConf()
-        runCMDBySSH(self.ssh, "mkdir -p ./tmp")
-        self.sftp.put(tmpConf, "./tmp/supervisord.conf")
+        try:
+            self.append_log_file()
+            result = self.run_ssh("sudo -S -p '' supervisorctl restart " + self.node_name, True)
+            for r in result:
+                if "ERROR" in r:
+                    raise Exception("{}-restart failed:{}".format(self.node_mark, r.strip("\n")))
+        except Exception as e:
+            return False, "{}-restart failed:{}".format(self.node_mark, e)
+        return True, "{}-restart success".format(self.node_mark)
 
-        supervisor_pid_str = runCMDBySSH(self.ssh, "ps -ef|grep supervisord|grep -v grep|awk {'print $2'}")
+    def update(self) -> tuple:
+        """
+        更新节点
+        :return:
+        """
+        try:
+            self.stop()
+            self.put_bin()
+            self.start()
+        except Exception as e:
+            return False, "{}-update failed:{}".format(self.node_mark, e)
+        return True, "{}-update success".format(self.node_mark)
 
-        #log.info("supervisor_pid_str: {}".format(supervisor_pid_str))
+    def close(self):
+        """
+        关闭节点，删除节点数据，删除节点supervisor配置
+        :return:
+        """
+        is_success = True
+        msg = "close success"
+        try:
+            self.clean()
+            self.run_ssh("sudo -S -p '' rm -rf /etc/supervisor/conf.d/{}.conf".format(self.node_name), True)
+        except Exception as e:
+            is_success = False
+            msg = "{}-close failed:{}".format(self.node_mark, e)
+        finally:
+            self.t.close()
+            return is_success, msg
 
-        if len(supervisor_pid_str) > 0:
-            self.judge_restart_supervisor(supervisor_pid_str)
-        else:
-            runCMDBySSH(self.ssh, "sudo -S -p '' apt update", self.password)
-            runCMDBySSH(self.ssh, "sudo -S -p '' apt install -y supervisor", self.password)
-            runCMDBySSH(self.ssh, "sudo -S -p '' cp ./tmp/supervisord.conf /etc/supervisor/", self.password)
-            supervisor_pid_str = runCMDBySSH(self.ssh, "ps -ef|grep supervisord|grep -v grep|awk {'print $2'}")
-            if len(supervisor_pid_str) > 0:
-                self.judge_restart_supervisor(supervisor_pid_str)
+    def put_bin(self):
+        """
+        上传二进制包
+        :return:
+        """
+        try:
+            self.run_ssh("rm -rf {}".format(self.remote_bin_file))
+            self.sftp.put(self.cfg.platon_bin_file, self.remote_node_path)
+            self.run_ssh('chmod +x {}'.format(self.remote_bin_file))
+        except Exception as e:
+            raise Exception("{}-upload platon failed:{}".format(self.node_mark, e))
+
+    def put_nodekey(self):
+        """
+        上传nodekey
+        :return:
+        """
+        try:
+            nodekey_file = os.path.join(self.local_node_tmp, "nodekey")
+            with open(nodekey_file, 'w', encoding="utf-8") as f:
+                f.write(self.nodekey)
+            self.run_ssh('mkdir -p {}'.format(self.remote_data_dir))
+            self.sftp.put(nodekey_file, self.remote_nodekey_file)
+        except Exception as e:
+            raise "{}-upload nodekey failed:{}".format(self.node_mark, e)
+
+    def put_blskey(self):
+        """
+        上传blskey
+        :return:
+        """
+        try:
+            blskey_file = os.path.join(self.local_node_tmp, "blskey")
+            with open(blskey_file, 'w', encoding="utf-8") as f:
+                f.write(self.blsprikey)
+            self.run_ssh('mkdir -p {}'.format(self.remote_data_dir))
+            self.sftp.put(blskey_file, self.remote_blskey_file)
+        except Exception as e:
+            raise Exception("{}-upload blskey failed:{}".format(self.node_mark, e))
+
+    def create_keystore(self, password="88888888"):
+        """
+        创建钱包
+        :param password:
+        :return:
+        """
+        try:
+            cmd = "{} account new --datadir {}".format(self.remote_bin_file, self.remote_data_dir)
+            stdin, stdout, _ = self.ssh.exec_command("source /etc/profile;%s" % cmd)
+            stdin.write(str(password) + "\n")
+            stdin.write(str(password) + "\n")
+        except Exception as e:
+            raise Exception("{}-create keystore failed:{}".format(self.node_mark, e))
+
+    def put_genesis(self, genesis_file):
+        """
+        上传genesis
+        :param genesis_file:
+        :return:
+        """
+        try:
+            self.sftp.put(genesis_file, self.remote_genesis_file)
+        except Exception as e:
+            raise Exception("{}-upload genesis failed:{}".format(self.node_mark, e))
+
+    def put_config(self):
+        """
+        上传config
+        :return:
+        """
+        try:
+            self.sftp.put(self.cfg.config_json_tmp, self.remote_config_file)
+        except Exception as e:
+            raise Exception("{}-upload config failed:{}".format(self.node_mark, e))
+
+    def put_static(self):
+        """
+        上传static
+        :return:
+        """
+        try:
+            self.sftp.put(self.cfg.static_node_tmp, self.remote_static_nodes_file)
+        except Exception as e:
+            raise Exception("{}-upload static nodes json failed:{}".format(self.node_mark, e))
+
+    def put_deploy_conf(self):
+        """
+        上传节点部署的supervisor配置
+        :return:
+        """
+        try:
+            log.debug("{}-generate supervisor deploy conf...".format(self.node_mark))
+            supervisor_tmp_file = os.path.join(self.local_node_tmp, "{}.conf".format(self.node_name))
+            self.__gen_deploy_conf(supervisor_tmp_file)
+            log.debug("{}-upload supervisor deploy conf...".format(self.node_mark))
+            self.run_ssh("rm -rf {}".format(self.remote_supervisor_node_file))
+            self.run_ssh("mkdir -p {}".format(self.cfg.remote_supervisor_tmp))
+            self.sftp.put(supervisor_tmp_file, self.remote_supervisor_node_file)
+            self.run_ssh("sudo -S -p '' cp {} /etc/supervisor/conf.d".format(self.remote_supervisor_node_file), True)
+        except Exception as e:
+            raise Exception("{}-upload deploy conf failed:{}".format(self.node_mark, e))
+
+    def __gen_deploy_conf(self, sup_tmp_file):
+        """
+        生成节点部署的supervisor配置
+        :param sup_tmp_file:
+        :return:
+        """
+        pwd_list = self.run_ssh("pwd")
+        pwd = pwd_list[0].strip("\r\n")
+        with open(sup_tmp_file, "w") as fp:
+            fp.write("[program:" + self.node_name + "]\n")
+            go_fail_point = ""
+            if self.fail_point:
+                go_fail_point = " GO_FAILPOINTS='{}' ".format(self.fail_point)
+            if not os.path.isabs(self.cfg.deploy_path):
+                cmd = "{}/{} --identity platon --datadir".format(pwd, self.remote_bin_file)
+                cmd = cmd + " {}/{} --port ".format(pwd, self.remote_data_dir) + self.p2p_port
+                cmd = cmd + " --gcmode archive --nodekey {}/{}".format(pwd, self.remote_nodekey_file)
+                cmd = cmd + " --cbft.blskey {}/{}".format(pwd, self.remote_blskey_file)
+                cmd = cmd + " --config {}/{}".format(pwd, self.remote_config_file)
             else:
-                runCMDBySSH(self.ssh, "sudo -S -p '' /etc/init.d/supervisor start", self.password)
+                cmd = "{} --identity platon --datadir".format(self.remote_bin_file)
+                cmd = cmd + " {} --port ".format(self.remote_data_dir) + self.p2p_port
+                cmd = cmd + " --gcmode archive --nodekey " + self.remote_nodekey_file
+                cmd = cmd + " --cbft.blskey " + self.remote_blskey_file
+                cmd = cmd + " --config " + self.remote_config_file
+            cmd = cmd + " --syncmode '{}'".format(self.cfg.syncmode)
+            cmd = cmd + " --debug --verbosity {}".format(self.cfg.log_level)
+            if self.pprofport:
+                cmd = cmd + " --pprof --pprofaddr 0.0.0.0 --pprofport " + str(self.pprofport)
+            if self.wsport:
+                cmd = cmd + " --ws --wsorigins '*' --wsaddr 0.0.0.0 --wsport " + str(self.wsport)
+                cmd = cmd + " --wsapi platon,debug,personal,admin,net,web3"
+            cmd = cmd + " --rpc --rpcaddr 0.0.0.0 --rpcport " + str(self.rpc_port)
+            cmd = cmd + " --rpcapi platon,debug,personal,admin,net,web3"
+            cmd = cmd + " --txpool.nolocals --nodiscover"
+            if self.cfg.append_cmd:
+                cmd = cmd + " " + self.cfg.append_cmd
+            fp.write("command=" + cmd + "\n")
+            if go_fail_point:
+                fp.write("environment={}\n".format(go_fail_point))
+            supervisor_default_conf = "numprocs=1\n" + "autostart=false\n" + "startsecs=3\n" + "startretries=3\n" + \
+                                      "autorestart=unexpected\n" + "exitcode=0\n" + "stopsignal=TERM\n" + \
+                                      "stopwaitsecs=10\n" + "redirect_stderr=true\n" + \
+                                      "stdout_logfile_maxbytes=200MB\n" + "stdout_logfile_backups=20\n"
+            fp.write(supervisor_default_conf)
+            if os.path.isabs(self.cfg.deploy_path):
+                fp.write("stdout_logfile={}/platon.log\n".format(self.remote_log_dir))
+            else:
+                fp.write("stdout_logfile={}/{}/platon.log\n".format(pwd, self.remote_log_dir))
 
+    def deploy_me(self, genesis_file) -> tuple:
+        """
+        部署本节点
+        1.清空环境数据
+        2.根据节点服务器判断是否需要上传文件
+        3.判断是否初始化，选择上传genesis
+        4.上传节点key文件
+        5.上传节点间supervisor配置
+        6.启动节点
+        :param genesis_file:
+        :return:
+        """
+        try:
+            log.debug("{}-clean node path...".format(self.node_mark))
+            is_success, msg = self.clean()
+            if not is_success:
+                return is_success, msg
+            self.clean_log()
+            ls = self.run_ssh("cd {};ls".format(self.cfg.remote_compression_tmp_path))
+            if self.cfg.env_id and (self.cfg.env_id + ".tar.gz\n") in ls:
+                log.debug("{}-copy bin...".format(self.remote_node_path))
+                cmd = "cp -r {}/{}/* {}".format(self.cfg.remote_compression_tmp_path, self.cfg.env_id,
+                                                self.remote_node_path)
+                self.run_ssh(cmd)
+                self.run_ssh("chmod +x {};mkdir {}".format(self.remote_bin_file, self.remote_log_dir))
+            else:
+                self.put_bin()
+                self.put_config()
+                self.put_static()
+                self.create_keystore()
+            if self.cfg.init_chain:
+                log.debug("{}-upload genesis...".format(self.node_mark))
+                self.put_genesis(genesis_file)
+            log.debug("{}-upload blskey...".format(self.node_mark))
+            self.put_blskey()
+            log.debug("{}-upload nodekey...".format(self.node_mark))
+            self.put_nodekey()
+            self.put_deploy_conf()
+            log.debug("{}-use supervisor start node...".format(self.node_mark))
+            log.debug("{}".format(self.run_ssh("cd {};ls".format(self.remote_log_dir))))
+            self.run_ssh("sudo -S -p '' supervisorctl update " + self.node_name, True)
+            return self.start(self.cfg.init_chain)
+        except Exception as e:
+            return False, "{}-deploy failed:{}".format(self.node_mark, e)
 
-    def w3_connector(self, is_http = True):
-        if is_http:
-            url = "http://" + self.host + ':' + str(self.rpcport)
-            w3 = Web3(HTTPProvider(url))
-        else:
-            url = "ws://" + self.host + ':' + str(self.rpcport)
-            w3 = Web3(WebsocketProvider(url))
-        return w3
+    def backup_log(self):
+        """
+        下载日志
+        :return:
+        """
+        try:
+            self.run_ssh("cd {};tar zcvf log.tar.gz ./log".format(self.remote_node_path))
+            self.sftp.get("{}/log.tar.gz".format(self.remote_node_path),
+                          "{}/{}_{}.tar.gz".format(self.cfg.tmp_log, self.host, self.p2p_port))
+            self.run_ssh("cd {};rm -rf ./log.tar.gz".format(self.remote_node_path))
+        except Exception as e:
+            return False, "{}-backup log failed:{}".format(self.node_mark, e)
+        return True, "{}-backup log success".format(self.node_mark)
+
+    @property
+    def running(self) -> bool:
+        p_id = self.run_ssh("ps -ef|grep platon|grep port|grep %s|grep -v grep|awk {'print $2'}" % self.p2p_port)
+        if len(p_id) == 0:
+            return False
+        return True
+
+    @property
+    def web3(self) -> Web3:
+        if not self.__is_connected:
+            self.__rpc = connect_web3(self.url)
+            self.__is_connected = True
+        return self.__rpc
+
+    @property
+    def eth(self) -> Eth:
+        return Eth(self.web3)
+
+    @property
+    def admin(self) -> Admin:
+        return Admin(self.web3)
+
+    @property
+    def debug(self) -> Debug:
+        return Debug(self.web3)
+
+    @property
+    def personal(self) -> Personal:
+        return Personal(self.web3)
+
+    @property
+    def block_number(self) -> int:
+        return self.eth.blockNumber
