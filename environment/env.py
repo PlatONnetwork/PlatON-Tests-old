@@ -54,7 +54,11 @@ class TestEnvironment:
         self.collusion_node_config_list = self.node_config.get("collusion")
         self.nocollusion_node_config_list = self.node_config.get("nocollusion")
         self.__rewrite_node_file()
-        self.node_config_list = self.collusion_node_config_list + self.nocollusion_node_config_list
+        self.node_config_list = []
+        if self.collusion_node_config_list:
+            self.node_config_list += self.collusion_node_config_list
+        if self.nocollusion_node_config_list:
+            self.node_config_list += self.nocollusion_node_config_list
         self.collusion_node_list = []
         self.normal_node_list = []
 
@@ -345,11 +349,12 @@ class TestEnvironment:
         for do in done:
             self.collusion_node_list.append(do.result())
 
-        with ThreadPoolExecutor(max_workers=self.cfg.max_worker) as executor:
-            futures = [executor.submit(init, pair) for pair in self.nocollusion_node_config_list]
-            done, unfinished = wait(futures, timeout=30, return_when=ALL_COMPLETED)
-        for do in done:
-            self.normal_node_list.append(do.result())
+        if self.nocollusion_node_config_list:
+            with ThreadPoolExecutor(max_workers=self.cfg.max_worker) as executor:
+                futures = [executor.submit(init, pair) for pair in self.nocollusion_node_config_list]
+                done, unfinished = wait(futures, timeout=30, return_when=ALL_COMPLETED)
+            for do in done:
+                self.normal_node_list.append(do.result())
 
     def put_all_compression(self):
         """
@@ -561,7 +566,7 @@ class TestEnvironment:
             for node_config in self.collusion_node_config_list:
                 result_collusion_list.append(self.__fill_node_config(node_config))
             result["collusion"] = result_collusion_list
-        if len(self.nocollusion_node_config_list) >= 1:
+        if self.nocollusion_node_config_list and len(self.nocollusion_node_config_list) >= 1:
             for node_config in self.nocollusion_node_config_list:
                 result_nocollusion_list.append(self.__fill_node_config(node_config))
             result["nocollusion"] = result_nocollusion_list
