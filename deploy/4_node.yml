@@ -10,6 +10,7 @@ collusion:
   nodekey: 33a64a6f38ff3502e95b5b1f0d9d1aab31605530c209cbe4cae7f2d42687c317
   syncmode: full
   rpctype: ws
+  url: http://192.168.112.30:6789
 - host: 192.168.112.31
   port: 16789
   rpcport: 6789
@@ -21,6 +22,7 @@ collusion:
   nodekey: cb177248ed491aec486aa1563c83f842b47c98a621222d0073135da31577c5f0
   syncmode: full
   rpctype: ws
+  url: http://192.168.112.31:6789
 - host: 192.168.112.32
   port: 16789
   rpcport: 6789
@@ -32,6 +34,7 @@ collusion:
   nodekey: 15c1079061b434fa181d651ff8b3094660da9230891367328f6ede95f0eb369e
   syncmode: full
   rpctype: ws
+  url: http://192.168.112.32:6789
 - host: 192.168.112.33
   port: 16789
   rpcport: 6789
@@ -43,6 +46,7 @@ collusion:
   nodekey: a0d1a0b43a5db8f4798d53fcb371fd61883afc691c0298408d104b4ace3b52fe
   syncmode: full
   rpctype: ws
+  url: http://192.168.112.33:6789
 nocollusion:
 - host: 192.168.112.34
   port: 16789
@@ -55,3 +59,4 @@ nocollusion:
   nodekey: 8b2f361966e93a5500135408e79ed2e525a32ff671c882e3279b176c988f7a06
   syncmode: full
   rpctype: ws
+  url: http://192.168.112.34:6789

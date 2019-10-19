@@ -15,7 +15,7 @@ deploy/tmp
 deploy/bin
 deploy/rely/bin/platon
 deploy/temp/
-deploy/platon
+deploy/bin/platon
 
 # VE
 venv
@@ -42,3 +42,4 @@ bug_log
 tmp_log
 ./deploy/global/
 /deploy/global/
+/deploy/bin/
