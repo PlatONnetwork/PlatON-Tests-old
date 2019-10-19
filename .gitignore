@@ -16,6 +16,7 @@ deploy/bin
 deploy/rely/bin/platon
 deploy/temp/
 deploy/bin/platon
+deploy/platon
 
 # VE
 venv
