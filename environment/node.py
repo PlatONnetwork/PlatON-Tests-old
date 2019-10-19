@@ -59,8 +59,17 @@ class Node:
         self.__is_connected = False
         self.__rpc = None
 
+        # 远程目录：
+        self.make_remote_dir()
+
         # node local tmp
         self.local_node_tmp = self.gen_node_tmp()
+
+    def make_remote_dir(self):
+        self.run_ssh("mkdir -p {}".format(self.remote_node_path))
+        self.run_ssh('mkdir -p {}/log'.format(self.remote_node_path))
+        self.run_ssh("mkdir -p {}".format(self.remote_data_dir))
+        self.run_ssh('mkdir -p {}'.format(self.remote_keystore_dir))
 
     def gen_node_tmp(self):
         """
@@ -321,6 +330,12 @@ class Node:
             self.run_ssh("sudo -S -p '' cp {} /etc/supervisor/conf.d".format(self.remote_supervisor_node_file), True)
         except Exception as e:
             raise Exception("{}-upload deploy conf failed:{}".format(self.node_mark, e))
+
+    def upload_file(self, localFile, remoteFile):
+        if localFile and os.path.exists(localFile):
+            self.sftp.put(localFile, remoteFile)
+        else:
+            log.info("file: {} not found".format(localFile))
 
     def __gen_deploy_conf(self, sup_tmp_file):
         """
