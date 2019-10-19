@@ -157,7 +157,7 @@ class TestEnvironment:
         """
         return self.normal_node_list[0]
 
-    def __executor(self, func, data_list, *args) -> bool:
+    def executor(self, func, data_list, *args) -> bool:
         with ThreadPoolExecutor(max_workers=self.cfg.max_worker) as exe:
             futures = [exe.submit(func, pair, *args) for pair in data_list]
             done, unfinished = wait(futures, timeout=30, return_when=ALL_COMPLETED)
@@ -167,7 +167,7 @@ class TestEnvironment:
             if not is_success:
                 result.append(msg)
         if len(result) > 0:
-            raise Exception("__executor {} failed:{}".format(func.__name__, result))
+            raise Exception("executor {} failed:{}".format(func.__name__, result))
         return True
 
     def deploy_all(self, static_file=None, genesis_file=None):
@@ -237,7 +237,7 @@ class TestEnvironment:
         def close(node: Node):
             return node.close()
 
-        return self.__executor(close, self.get_all_nodes())
+        return self.executor(close, self.get_all_nodes())
 
     def start_nodes(self, node_list: list, init_chain=True):
         """
@@ -249,7 +249,7 @@ class TestEnvironment:
         def start(node: Node, need_init_chain):
             return node.start(need_init_chain)
 
-        return self.__executor(start, node_list, init_chain)
+        return self.executor(start, node_list, init_chain)
 
     def deploy_nodes(self, node_list: list, static_file=None, genesis_file=None):
         """
@@ -271,7 +271,7 @@ class TestEnvironment:
         self.rewrite_genesis_file()
         self.rewrite_static_nodes()
         self.rewrite_config_json()
-        
+
         if not self.cfg.is_need_static:
             self.__compression(None)
         elif static_file:
@@ -289,7 +289,7 @@ class TestEnvironment:
         def deploy(node: Node):
             return node.deploy_me(genesis_file)
 
-        return self.__executor(deploy, node_list)
+        return self.executor(deploy, node_list)
 
     def stop_nodes(self, node_list: list):
         """
@@ -300,7 +300,7 @@ class TestEnvironment:
         def stop(node: Node):
             return node.stop()
 
-        return self.__executor(stop, node_list)
+        return self.executor(stop, node_list)
 
     def reset_nodes(self, node_list: list):
         """
@@ -311,7 +311,7 @@ class TestEnvironment:
         def restart(node: Node):
             return node.restart()
 
-        return self.__executor(restart, node_list)
+        return self.executor(restart, node_list)
 
     def clean_nodes(self, node_list: list):
         """
@@ -322,7 +322,7 @@ class TestEnvironment:
         def clean(node: Node):
             return node.clean()
 
-        return self.__executor(clean, node_list)
+        return self.executor(clean, node_list)
 
     def clean_db_nodes(self, node_list: list):
         """
@@ -333,7 +333,7 @@ class TestEnvironment:
         def clean_db(node: Node):
             return node.clean_db()
 
-        return self.__executor(clean_db, node_list)
+        return self.executor(clean_db, node_list)
 
     def __parse_node(self):
         """
@@ -367,7 +367,7 @@ class TestEnvironment:
         def uploads(server: Server):
             return server.put_compression()
 
-        return self.__executor(uploads, self.server_list)
+        return self.executor(uploads, self.server_list)
 
     def install_all_dependency(self):
         """
@@ -379,7 +379,7 @@ class TestEnvironment:
         def install(server: Server):
             return server.install_dependency()
 
-        return self.__executor(install, self.server_list)
+        return self.executor(install, self.server_list)
 
     def install_all_supervisor(self):
         """
@@ -391,7 +391,7 @@ class TestEnvironment:
         def install(server: Server):
             return server.install_supervisor()
 
-        return self.__executor(install, self.server_list)
+        return self.executor(install, self.server_list)
 
     def __parse_servers(self) -> list:
         """
@@ -467,7 +467,7 @@ class TestEnvironment:
         def backup(node: Node):
             return node.backup_log()
 
-        self.__executor(backup, node_list)
+        self.executor(backup, node_list)
         self.__zip_all_log()
 
     def __check_log_path(self):
