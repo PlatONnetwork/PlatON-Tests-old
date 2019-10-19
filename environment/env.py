@@ -271,6 +271,7 @@ class TestEnvironment:
         self.rewrite_genesis_file()
         self.rewrite_static_nodes()
         self.rewrite_config_json()
+        
         if not self.cfg.is_need_static:
             self.__compression(None)
         elif static_file:
@@ -513,17 +514,9 @@ class TestEnvironment:
         :return:
         """
         log.info("rewrite static-nodes.json")
-        num = 0
         static_nodes = self.get_static_nodes()
         with open(self.cfg.static_node_tmp, 'w', encoding='utf-8') as f:
-            f.write('[\n')
-            for i in static_nodes:
-                num += 1
-                if num < len(static_nodes):
-                    f.write('\"' + i + '\",\n')
-                else:
-                    f.write('\"' + i + '\"\n')
-            f.write(']')
+            f.write(json.dumps(static_nodes, indent=4))
 
     def rewrite_config_json(self):
         """
