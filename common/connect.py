@@ -71,7 +71,7 @@ def run_ssh(ssh, cmd, password=None):
     return stdout_list
 
 
-def runCMDBySSH(ssh, cmd, password=None, password2=None, password3=None):
+def run_ssh_cmd(ssh, cmd, password=None, password2=None, password3=None):
     try:
         log.info('execute shell cmd::: {} '.format(cmd))
         stdin, stdout, _ = ssh.exec_command("source /etc/profile;%s" % cmd)

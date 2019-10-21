@@ -54,7 +54,11 @@ class TestEnvironment:
         self.collusion_node_config_list = self.node_config.get("collusion")
         self.nocollusion_node_config_list = self.node_config.get("nocollusion")
         self.__rewrite_node_file()
-        self.node_config_list = self.collusion_node_config_list + self.nocollusion_node_config_list
+        self.node_config_list = []
+        if self.collusion_node_config_list:
+            self.node_config_list += self.collusion_node_config_list
+        if self.nocollusion_node_config_list:
+            self.node_config_list += self.nocollusion_node_config_list
         self.collusion_node_list = []
         self.normal_node_list = []
 
@@ -153,7 +157,7 @@ class TestEnvironment:
         """
         return self.normal_node_list[0]
 
-    def __executor(self, func, data_list, *args) -> bool:
+    def executor(self, func, data_list, *args) -> bool:
         with ThreadPoolExecutor(max_workers=self.cfg.max_worker) as exe:
             futures = [exe.submit(func, pair, *args) for pair in data_list]
             done, unfinished = wait(futures, timeout=30, return_when=ALL_COMPLETED)
@@ -163,7 +167,7 @@ class TestEnvironment:
             if not is_success:
                 result.append(msg)
         if len(result) > 0:
-            raise Exception("__executor {} failed:{}".format(func.__name__, result))
+            raise Exception("executor {} failed:{}".format(func.__name__, result))
         return True
 
     def deploy_all(self, static_file=None, genesis_file=None):
@@ -233,7 +237,7 @@ class TestEnvironment:
         def close(node: Node):
             return node.close()
 
-        return self.__executor(close, self.get_all_nodes())
+        return self.executor(close, self.get_all_nodes())
 
     def start_nodes(self, node_list: list, init_chain=True):
         """
@@ -245,7 +249,7 @@ class TestEnvironment:
         def start(node: Node, need_init_chain):
             return node.start(need_init_chain)
 
-        return self.__executor(start, node_list, init_chain)
+        return self.executor(start, node_list, init_chain)
 
     def deploy_nodes(self, node_list: list, static_file=None, genesis_file=None):
         """
@@ -267,6 +271,7 @@ class TestEnvironment:
         self.rewrite_genesis_file()
         self.rewrite_static_nodes()
         self.rewrite_config_json()
+
         if not self.cfg.is_need_static:
             self.__compression(None)
         elif static_file:
@@ -284,7 +289,7 @@ class TestEnvironment:
         def deploy(node: Node):
             return node.deploy_me(genesis_file)
 
-        return self.__executor(deploy, node_list)
+        return self.executor(deploy, node_list)
 
     def stop_nodes(self, node_list: list):
         """
@@ -295,7 +300,7 @@ class TestEnvironment:
         def stop(node: Node):
             return node.stop()
 
-        return self.__executor(stop, node_list)
+        return self.executor(stop, node_list)
 
     def reset_nodes(self, node_list: list):
         """
@@ -306,7 +311,7 @@ class TestEnvironment:
         def restart(node: Node):
             return node.restart()
 
-        return self.__executor(restart, node_list)
+        return self.executor(restart, node_list)
 
     def clean_nodes(self, node_list: list):
         """
@@ -317,7 +322,7 @@ class TestEnvironment:
         def clean(node: Node):
             return node.clean()
 
-        return self.__executor(clean, node_list)
+        return self.executor(clean, node_list)
 
     def clean_db_nodes(self, node_list: list):
         """
@@ -328,7 +333,7 @@ class TestEnvironment:
         def clean_db(node: Node):
             return node.clean_db()
 
-        return self.__executor(clean_db, node_list)
+        return self.executor(clean_db, node_list)
 
     def __parse_node(self):
         """
@@ -345,11 +350,12 @@ class TestEnvironment:
         for do in done:
             self.collusion_node_list.append(do.result())
 
-        with ThreadPoolExecutor(max_workers=self.cfg.max_worker) as executor:
-            futures = [executor.submit(init, pair) for pair in self.nocollusion_node_config_list]
-            done, unfinished = wait(futures, timeout=30, return_when=ALL_COMPLETED)
-        for do in done:
-            self.normal_node_list.append(do.result())
+        if self.nocollusion_node_config_list:
+            with ThreadPoolExecutor(max_workers=self.cfg.max_worker) as executor:
+                futures = [executor.submit(init, pair) for pair in self.nocollusion_node_config_list]
+                done, unfinished = wait(futures, timeout=30, return_when=ALL_COMPLETED)
+            for do in done:
+                self.normal_node_list.append(do.result())
 
     def put_all_compression(self):
         """
@@ -361,7 +367,7 @@ class TestEnvironment:
         def uploads(server: Server):
             return server.put_compression()
 
-        return self.__executor(uploads, self.server_list)
+        return self.executor(uploads, self.server_list)
 
     def install_all_dependency(self):
         """
@@ -373,7 +379,7 @@ class TestEnvironment:
         def install(server: Server):
             return server.install_dependency()
 
-        return self.__executor(install, self.server_list)
+        return self.executor(install, self.server_list)
 
     def install_all_supervisor(self):
         """
@@ -385,7 +391,7 @@ class TestEnvironment:
         def install(server: Server):
             return server.install_supervisor()
 
-        return self.__executor(install, self.server_list)
+        return self.executor(install, self.server_list)
 
     def __parse_servers(self) -> list:
         """
@@ -461,7 +467,7 @@ class TestEnvironment:
         def backup(node: Node):
             return node.backup_log()
 
-        self.__executor(backup, node_list)
+        self.executor(backup, node_list)
         self.__zip_all_log()
 
     def __check_log_path(self):
@@ -508,17 +514,9 @@ class TestEnvironment:
         :return:
         """
         log.info("rewrite static-nodes.json")
-        num = 0
         static_nodes = self.get_static_nodes()
         with open(self.cfg.static_node_tmp, 'w', encoding='utf-8') as f:
-            f.write('[\n')
-            for i in static_nodes:
-                num += 1
-                if num < len(static_nodes):
-                    f.write('\"' + i + '\",\n')
-                else:
-                    f.write('\"' + i + '\"\n')
-            f.write(']')
+            f.write(json.dumps(static_nodes, indent=4))
 
     def rewrite_config_json(self):
         """
@@ -561,7 +559,7 @@ class TestEnvironment:
             for node_config in self.collusion_node_config_list:
                 result_collusion_list.append(self.__fill_node_config(node_config))
             result["collusion"] = result_collusion_list
-        if len(self.nocollusion_node_config_list) >= 1:
+        if self.nocollusion_node_config_list and len(self.nocollusion_node_config_list) >= 1:
             for node_config in self.nocollusion_node_config_list:
                 result_nocollusion_list.append(self.__fill_node_config(node_config))
             result["nocollusion"] = result_nocollusion_list

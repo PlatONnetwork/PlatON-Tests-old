@@ -6,40 +6,36 @@ from environment.env import create_env
 from conf.settings import NODE_FILE
 from common.log import log
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-@pytest.fixture(scope="module")
-def global_env():
-    env = create_env(node_file=NODE_FILE)
-    # env = TestEnvironment(node_file=NODE_FILE)
-    env.deploy_all()
-    # env.start_all()
-    return env
+@pytest.fixture(scope="function", autouse=True)
+def restart_env(global_test_env):
+    if not global_test_env.running:
+        global_test_env.deploy_all()
+    global_test_env.check_block(multiple=3)
 
 
 @allure.title("查看创世账户")
 @pytest.mark.P1
-def test_initial_account(global_env):
+def test_initial_account(global_test_env):
     """
     查看存在genesis.json文件中配置的创世账户
     """
     log.info("查看存在genesis.json文件中配置的创世账户")
-    w3_list = [one_node.w3_connector() for one_node in global_env.collusion_node_list]
+    w3_list = [one_node.web3 for one_node in global_test_env.collusion_node_list]
     for w3 in w3_list:
-        for one_address in global_env.genesis_config['alloc']:
+        for one_address in global_test_env.genesis_config['alloc']:
             balance = w3.eth.getBalance(w3.toChecksumAddress(one_address))
             assert balance >= 0, "初始化账户错误"
 
 
 @allure.title("经济模型参数，治理参数，惩罚参数，奖励参数")
 @pytest.mark.P1
-def test_initial_economic(global_env):
+def test_initial_economic(global_test_env):
     """
     查看经济模型参数，治理参数，惩罚参数，奖励参数是否为正确配置的参数
     """
     log.info("查看经济模型参数，治理参数，惩罚参数，奖励参数是否为正确配置的参数")
-    economic_info = global_env.genesis_config['EconomicModel']
-    w3_list = [one_node.w3_connector() for one_node in global_env.collusion_node_list]
+    economic_info = global_test_env.genesis_config['EconomicModel']
+    w3_list = [one_node.web3 for one_node in global_test_env.collusion_node_list]
     for w3 in w3_list:
         info = json.loads(w3.debug.economicConfig())
         assert economic_info['Common']['ExpectedMinutes'] == info['Common']['ExpectedMinutes']
@@ -73,12 +69,12 @@ def test_initial_economic(global_env):
    
 @allure.title("基金会锁仓计划查询")
 @pytest.mark.P1
-def test_initial_plan(global_env):
+def test_initial_plan(global_test_env):
     """
     查看基金会锁仓计划查询
     """
     log.info("查看基金会锁仓计划查询")
-    w3_list = [one_node.w3_connector() for one_node in global_env.collusion_node_list]
+    w3_list = [one_node.web3 for one_node in global_test_env.collusion_node_list]
     for w3 in w3_list:
         info = w3.eth.call({"to": "0x1000000000000000000000000000000000000001", "data":"0xda8382100495941000000000000000000000000000000000000003"}, 0)
         recive = json.loads(str(info, encoding="ISO-8859-1"))
@@ -105,13 +101,13 @@ def test_initial_plan(global_env):
 
 @allure.title("共识参数")
 @pytest.mark.P1
-def test_initial_consensus(global_env):
+def test_initial_consensus(global_test_env):
     """
     查看共识的每个共识节点的出块个数
     """
     log.info("查看共识的每个共识节点的出块个数 和 总共的共识节点的个数")
-    amount = global_env.genesis_config['config']['cbft']['amount']
-    w3_list = [one_node.w3_connector() for one_node in global_env.collusion_node_list]
+    amount = global_test_env.genesis_config['config']['cbft']['amount']
+    w3_list = [one_node.web3 for one_node in global_test_env.collusion_node_list]
     for w3 in w3_list:
         info = w3.eth.getPrepareQC(amount)
         assert info['viewNumber'] == 0
