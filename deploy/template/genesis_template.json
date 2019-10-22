@@ -19,10 +19,10 @@
 		"Common":{
 			"ExpectedMinutes":3,
 			"ValidatorCount":4,
-			"AdditionalCycleTime":28		
+			"AdditionalCycleTime":28
 		},
 		"Staking":{
-			"StakeThreshold":				500000000000000000000000,
+			"StakeThreshold":				5000000000000000000000000,
 			"MinimumThreshold":				10000000000000000000,
 			"EpochValidatorNum":			24,
 			"HesitateRatio":				1,
