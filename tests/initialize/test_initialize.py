@@ -47,7 +47,7 @@ def test_initial_economic(global_test_env):
         assert info['Staking']['HesitateRatio'] == economic_info['Staking']['HesitateRatio']
         assert info['Staking']['UnStakeFreezeRatio'] == economic_info['Staking']['UnStakeFreezeRatio']
         assert info['Staking']['ActiveUnDelegateFreezeRatio'] == economic_info['Staking']['ActiveUnDelegateFreezeRatio']
-        assert info['Slashing']['PackAmountAbnormal'] == economic_info['Slashing']['PackAmountAbnormal']
+        assert info['Slashing']['DuplicateSignReportReward'] == economic_info['Slashing']['DuplicateSignReportReward']
         assert info['Slashing']['DuplicateSignHighSlashing'] == economic_info['Slashing']['DuplicateSignHighSlashing']
         assert info['Slashing']['NumberOfBlockRewardForSlashing'] == economic_info['Slashing']['NumberOfBlockRewardForSlashing']
         assert info['Slashing']['EvidenceValidEpoch'] == economic_info['Slashing']['EvidenceValidEpoch']
