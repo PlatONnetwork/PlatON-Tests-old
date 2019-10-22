@@ -18,7 +18,7 @@ from client_sdk_python.exceptions import (
 )
 
 from common.log import log
-
+import time
 
 UNKNOWN_ADDRESS = '0xdEADBEeF00000000000000000000000000000000'
 UNKNOWN_HASH = '0xdeadbeef00000000000000000000000000000000000000000000000000000000'
@@ -62,7 +62,7 @@ def block_with_txn_with_log(global_test_env):
     env = global_test_env
     node = env.get_rand_node()
     plan = [{"Epoch":1,"Amount":1000000}]
-    res = env.account.create_restricting_plan( node.web3,COMMON_ADDRESS,plan,env.account.account_with_money['address'],node.eth.gasPrice,300000)
+    res = env.account.create_restricting_plan( node.web3,COMMON_ADDRESS,plan,env.account.account_with_money['address'],node.eth.gasPrice*2,300000)
     platon = Eth(node.web3)
     return platon.getBlock(res['blockNumber'])
 
@@ -437,61 +437,70 @@ class TestPlaton():
         replace_txn = platon.getTransaction(replace_txn_hash)
 
         # todo minimum gas price is what
-        assert replace_txn['gasPrice'] == platon.gasPrice
+        assert replace_txn['gasPrice'] == 1100000000
 
     @pytest.mark.P1
     def test_platon_replaceTransaction_gas_price_defaulting_strategy_higher(self,unlocked_account):
         node = unlocked_account['node']
         platon = Eth(node.web3)
+        price = platon.gasPrice
 
         txn_params = {
             'from': unlocked_account['address'],
-            'to': unlocked_account['address'],
+            'to': UNKNOWN_ADDRESS,
             'value': 1,
             'gas': 21000,
-            'gasPrice': platon.gasPrice*10,
+            'gasPrice': price*10,
             'nonce': 1000,
         }
 
         txn_hash = platon.sendTransaction(txn_params)
 
         def higher_gas_price_strategy(web3, txn):
-            return platon.gasPrice * 20
+            return price*20
 
         platon.setGasPriceStrategy(higher_gas_price_strategy)
+        node.web3.eth = platon
+
 
         txn_params.pop('gasPrice')
+
         replace_txn_hash = platon.replaceTransaction(txn_hash, txn_params)
         replace_txn = platon.getTransaction(replace_txn_hash)
-        assert replace_txn['gasPrice'] == platon.gasPrice*20  # Strategy provides higher gas price
+        log.info(replace_txn)
+        assert replace_txn['gasPrice'] == price*20 # Strategy provides higher gas price
 
     @pytest.mark.P1
     def test_platon_replaceTransaction_gas_price_defaulting_strategy_lower(self, unlocked_account):
 
         node = unlocked_account['node']
         platon = Eth(node.web3)
-
+        price = platon.gasPrice
         txn_params = {
             'from': unlocked_account['address'],
             'to': unlocked_account['address'],
-            'value': 1,
+            'value': 3,
             'gas': 21000,
-            'gasPrice': platon.gasPrice * 2,
+            'gasPrice': price * 2,
             'nonce': 3000,
         }
 
         txn_hash = platon.sendTransaction(txn_params)
 
         def lower_gas_price_strategy(web3, txn):
-            return platon.gasPrice
+            return price
 
         platon.setGasPriceStrategy(lower_gas_price_strategy)
 
+        node.web3.eth = platon
+
         txn_params.pop('gasPrice')
         replace_txn_hash = platon.replaceTransaction(txn_hash, txn_params)
+
         replace_txn = platon.getTransaction(replace_txn_hash)
+
         # Strategy provices lower gas price - minimum preferred
-        assert replace_txn['gasPrice'] == platon.gasPrice
+        assert replace_txn['gasPrice'] == price * 2*1.1
 
     #todo  需要一个出块很慢的环境
     # def test_platon_modifyTransaction(self,  unlocked_account):
