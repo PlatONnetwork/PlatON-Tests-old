@@ -18,7 +18,7 @@ def connect_web3(url, chain_id=100):
     return w3
 
 
-def wait_connect_web3(url, chain_id, timeout=20, poll_latency=0.2):
+def wait_connect_web3(url, chain_id=100, timeout=20, poll_latency=0.2):
     with Timeout(timeout) as _timeout:
         while True:
             web3 = connect_web3(url, chain_id)
@@ -46,6 +46,7 @@ def connect_linux(ip, username='root', password='Juzhen123!', port=22):
     ssh._transport = t
     sftp = paramiko.SFTPClient.from_transport(t)
     return ssh, sftp, t
+
 
 def connect_linux_pem(ip, username, pem_path):
     '''
@@ -98,8 +99,3 @@ def run_ssh_cmd(ssh, cmd, password=None, password2=None, password3=None):
     except Exception as e:
         raise e
     return stdout_list
-
-
-if __name__ == "__main__":
-    w3 = wait_for_web3("http://192.168.9.201:6789", 10, timeout=5)
-    print(w3.eth.blockNumber)
