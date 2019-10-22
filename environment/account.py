@@ -75,7 +75,7 @@ class Account:
         address = personal.newAccount(passwd)
         log.info(address)
         if balance > 0:
-            self.sendTransaction(node.web3, '', self.account_with_money['address'],address, 40000, 40000, balance)
+            self.sendTransaction(node.web3, '', self.account_with_money['address'],address, node.eth.gasPrice, 40000, balance)
         account = {
             "node_id": node.node_id,
             "address": address,
