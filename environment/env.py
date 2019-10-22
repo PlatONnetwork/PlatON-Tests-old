@@ -73,6 +73,10 @@ class TestEnvironment:
         # accounts
         self.account = Account(self.cfg.account_file, self.genesis_config["config"]["chainId"])
 
+    @property
+    def chain_id(self):
+        return self.genesis_config["config"]["chainId"]
+
     def __reset_env(self) -> str:
         """
         新的环境
@@ -575,7 +579,7 @@ class TestEnvironment:
         :param static:
         :return:
         """
-        log.info("__compression data")
+        log.info("compression data")
         env_gz = os.path.join(self.cfg.env_tmp, self.cfg.env_id)
         if os.path.exists(env_gz):
             return
@@ -615,7 +619,7 @@ if __name__ == "__main__":
     # print(env.cfg.syncmode)
     log.info("测试部署")
     env.deploy_all()
-    # time.sleep(36000)
+    time.sleep(36000)
     # env.deploy_all()
     # d = env.block_numbers()
     # print(d)

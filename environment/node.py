@@ -6,7 +6,8 @@ from client_sdk_python.debug import Debug
 from client_sdk_python.eth import Eth
 from client_sdk_python.personal import Personal
 
-from common.connect import run_ssh, connect_linux, connect_web3
+from common.connect import run_ssh, connect_linux, wait_connect_web3
+from common.load_file import LoadFile
 from environment.config import TestConfig
 from common.log import log
 
@@ -64,6 +65,10 @@ class Node:
 
         # node local tmp
         self.local_node_tmp = self.gen_node_tmp()
+
+        # genesis info
+        self.genesis_config = LoadFile(self.cfg.genesis_file).get_data()
+        self.__chain_id = self.genesis_config["config"]["chainId"]
 
     def make_remote_dir(self):
         self.run_ssh("mkdir -p {}".format(self.remote_node_path))
@@ -456,7 +461,7 @@ class Node:
     @property
     def web3(self) -> Web3:
         if not self.__is_connected:
-            self.__rpc = connect_web3(self.url)
+            self.__rpc = wait_connect_web3(self.url, self.__chain_id)
             self.__is_connected = True
         return self.__rpc
 

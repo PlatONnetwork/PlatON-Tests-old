@@ -8,6 +8,7 @@ from client_sdk_python import (
     Web3
 )
 
+
 class Account:
     def __init__(self, accountFile, chainId):
         '''
@@ -56,16 +57,16 @@ class Account:
         data = signedTransactionDict.rawTransaction
         result = HexBytes(platon.sendRawTransaction(data)).hex()
         res = platon.waitForTransactionReceipt(result)
-        account['nonce'] = account['nonce']+1
+        account['nonce'] = account['nonce'] + 1
         self.accounts[from_address] = account
         return res
 
-    def generate_account_in_node(self, node, passwd,balance=0):
+    def generate_account_in_node(self, node, passwd, balance=0):
         personal = Personal(node.web3)
         address = personal.newAccount(passwd)
         log.info(address)
         if balance > 0:
-            self.sendTransaction(node.web3, '', self.account_with_money['address'],address, 40000, 40000, balance)
+            self.sendTransaction(node.web3, '', self.account_with_money['address'], address, 40000, 40000, balance)
         account = {
             "node_id": node.node_id,
             "address": address,
@@ -87,6 +88,3 @@ class Account:
             if account['node_id'] == node.id:
                 return account
         self.generate_account_in_node(node, '123456')
-
-
-
