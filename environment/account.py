@@ -7,6 +7,7 @@ import random
 from client_sdk_python import (
     Web3
 )
+import rlp
 
 
 class Account:
@@ -35,20 +36,28 @@ class Account:
         return random.choice(list(self.accounts.values()))
 
     def sendTransaction(self, connect, data, from_address, to_address, gasPrice, gas, value):
+        platon = Eth(connect)
+
         account = self.accounts[from_address]
         tmp_to_address = Web3.toChecksumAddress(to_address)
         tmp_from_address = Web3.toChecksumAddress(from_address)
+        nonce = platon.getTransactionCount(from_address)
+
+        if nonce < account['nonce']:
+            nonce = account['nonce']
+
+
+
         transaction_dict = {
             "to": tmp_to_address,
             "gasPrice": gasPrice,
             "gas": gas,
-            "nonce": account['nonce'],
+            "nonce": nonce,
             "data": data,
             "chainId": self.chain_id,
             "value": value,
             'from': tmp_from_address,
         }
-        platon = Eth(connect)
 
         signedTransactionDict = platon.account.signTransaction(
             transaction_dict, account['prikey']
@@ -57,16 +66,16 @@ class Account:
         data = signedTransactionDict.rawTransaction
         result = HexBytes(platon.sendRawTransaction(data)).hex()
         res = platon.waitForTransactionReceipt(result)
-        account['nonce'] = account['nonce'] + 1
+        account['nonce'] = nonce+1
         self.accounts[from_address] = account
         return res
 
-    def generate_account_in_node(self, node, passwd, balance=0):
+    def generate_account_in_node(self, node, passwd,balance=0):
         personal = Personal(node.web3)
         address = personal.newAccount(passwd)
         log.info(address)
         if balance > 0:
-            self.sendTransaction(node.web3, '', self.account_with_money['address'], address, 40000, 40000, balance)
+            self.sendTransaction(node.web3, '', self.account_with_money['address'],address, 40000, 40000, balance)
         account = {
             "node_id": node.node_id,
             "address": address,
@@ -88,3 +97,34 @@ class Account:
             if account['node_id'] == node.id:
                 return account
         self.generate_account_in_node(node, '123456')
+
+
+    def create_restricting_plan(self, connect,receive_address, plan, from_address, gasPrice=None, gas=None):
+        '''
+        创建锁仓计划
+        :param account: 20bytes
+        :param plan: []RestrictingPlan
+        :param from_address:
+        :param gasPrice:
+        :param gas:
+        :return:
+        '''
+        to_address = "0x1000000000000000000000000000000000000001"
+        if receive_address[:2] == '0x':
+            receive_address = receive_address[2:]
+        plan_list = []
+        for dict_ in plan:
+            v = [dict_[k] for k in dict_]
+            plan_list.append(v)
+        rlp_list = rlp.encode(plan_list)
+        data = rlp.encode([rlp.encode(int(4000)),
+                           rlp.encode(bytes.fromhex(receive_address)),
+                           rlp_list])
+        # print ("len:", len (data))
+        # l = [hex (int (i)) for i in data]
+        # print (" ".join (l))
+        result = self.sendTransaction(connect,data, from_address, to_address, gasPrice, gas, 0)
+        return result
+
+
+
