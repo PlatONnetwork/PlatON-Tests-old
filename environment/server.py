@@ -34,8 +34,8 @@ class Server:
             self.run_ssh("tar -zxvf {}/{}.tar.gz -C {}".format(self.cfg.remote_compression_tmp_path, self.cfg.env_id,
                                                                self.cfg.remote_compression_tmp_path))
         except Exception as e:
-            return False, "{}-upload __compression failed:{}".format(self.host, e)
-        return True, "upload __compression success"
+            return False, "{}-upload compression failed:{}".format(self.host, e)
+        return True, "upload compression success"
 
     def install_dependency(self):
         try:

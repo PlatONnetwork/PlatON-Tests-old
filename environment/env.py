@@ -73,6 +73,10 @@ class TestEnvironment:
         # accounts
         self.account = Account(self.cfg.account_file, self.genesis_config["config"]["chainId"])
 
+    @property
+    def chain_id(self):
+        return self.genesis_config["config"]["chainId"]
+
     def __reset_env(self) -> str:
         """
         新的环境
@@ -575,7 +579,7 @@ class TestEnvironment:
         :param static:
         :return:
         """
-        log.info("__compression data")
+        log.info("compression data")
         env_gz = os.path.join(self.cfg.env_tmp, self.cfg.env_id)
         if os.path.exists(env_gz):
             return
@@ -615,44 +619,45 @@ if __name__ == "__main__":
     # print(env.cfg.syncmode)
     log.info("测试部署")
     env.deploy_all()
-    env.deploy_all()
-    d = env.block_numbers()
-    print(d)
-    node = env.get_rand_node()
-    node.create_keystore()
-    print(node.node_mark)
-    time.sleep(80)
-    log.info("测试关闭")
-    env.stop_all()
-    time.sleep(30)
-    log.info("测试不初始化启动")
-    env.cfg.init_chain = False
-    env.start_all()
-    time.sleep(60)
-    d = env.block_numbers()
-    print(d)
-    log.info("测试重启")
-    env.reset_all()
-    time.sleep(60)
-    d = env.block_numbers()
-    print(d)
-    log.info("测试删除数据库")
-    env.clean_db_all()
-    log.info("删除数据库成功")
-    time.sleep(60)
-    env.cfg.init_chain = True
-    env.start_all()
-    time.sleep(30)
-    d = env.block_numbers()
-    print(d)
-    log.info("测试删除所有数据")
-    env.clean_all()
-    log.info("删除数据成功")
-    log.info("重新部署")
-    env.deploy_all()
-    d = env.block_numbers()
-    print(d)
-    time.sleep(60)
-    d = env.block_numbers()
-    print(d)
+    time.sleep(36000)
+    # env.deploy_all()
+    # d = env.block_numbers()
+    # print(d)
+    # node = env.get_rand_node()
+    # node.create_keystore()
+    # print(node.node_mark)
+    # time.sleep(80)
+    # log.info("测试关闭")
+    # env.stop_all()
+    # time.sleep(30)
+    # log.info("测试不初始化启动")
+    # env.cfg.init_chain = False
+    # env.start_all()
+    # time.sleep(60)
+    # d = env.block_numbers()
+    # print(d)
+    # log.info("测试重启")
+    # env.reset_all()
+    # time.sleep(60)
+    # d = env.block_numbers()
+    # print(d)
+    # log.info("测试删除数据库")
+    # env.clean_db_all()
+    # log.info("删除数据库成功")
+    # time.sleep(60)
+    # env.cfg.init_chain = True
+    # env.start_all()
+    # time.sleep(30)
+    # d = env.block_numbers()
+    # print(d)
+    # log.info("测试删除所有数据")
+    # env.clean_all()
+    # log.info("删除数据成功")
+    # log.info("重新部署")
+    # env.deploy_all()
+    # d = env.block_numbers()
+    # print(d)
+    # time.sleep(60)
+    # d = env.block_numbers()
+    # print(d)
     env.shutdown()
