@@ -15,7 +15,7 @@ class Ppos(Account):
 
     @property
     def ppos(self):
-        return ""
+        return self.node.ppos
 
     def create_staking(self, typ, benifit_address, from_address, amount=None, program_version=None,
                        program_version_sign=None, bls_pubkey=None, bls_proof=None, transaction_cfg=None):

@@ -1,7 +1,7 @@
 import math
 import time
 from common.key import get_pub_key
-
+from .utils import wait_block_number
 
 class PposConfig:
     external_id = None
@@ -94,98 +94,81 @@ class CommonConfig:
         staking_reward = node.web3.toWei(staking_reward, 'ether')
         return block_reward, staking_reward
 
-    def get_settlement_switchpoint(self, web3, number=0):
+    def get_settlement_switchpoint(self, node, number=0):
         """
         获取当前结算周期最后一块高
-        :param web3: w3链接
+        :param node: w3链接
         :param number: 结算周期数
         :return:
         """
         block_namber = self.settlement_size * number
-        tmp_current_block = web3.eth.blockNumber
+        tmp_current_block = node.eth.blockNumber
         current_end_block = math.ceil(tmp_current_block / self.settlement_size) * self.settlement_size + block_namber
         return current_end_block
 
-    def get_front_settlement_switchpoint(self, web3, number=0):
+    def get_front_settlement_switchpoint(self, node, number=0):
         """
         获取当前结算周期前一个块高
-        :param web3: w3链接
+        :param node: w3链接
         :param number: 结算周期数
         :return:
         """
         block_num = self.settlement_size * (number + 1)
-        current_end_block = self.get_settlement_switchpoint(web3)
+        current_end_block = self.get_settlement_switchpoint(node)
         history_block = current_end_block - block_num
         return history_block
 
-    def wait_settlement_blocknum(self, web3, number=0):
+    def wait_settlement_blocknum(self, node, number=0):
         """
         等待当个结算周期结算
-        :param web3: w3链接
+        :param node:
         :param number: 结算周期数
         :return:
         """
-        current_block = web3.eth.blockNumber
-        current_end_block = self.get_settlement_switchpoint(web3, number)
-        endtime = int(time.time()) + (current_end_block - current_block) * self.interval * 2
-        while endtime > int(time.time()):
-            time.sleep(1)
-            current_block = web3.eth.blockNumber
-            if current_block >= current_end_block:
-                break
+        end_block = self.get_settlement_switchpoint(node, number)
+        wait_block_number(node, end_block, self.interval)
 
-    def get_annual_switchpoint(self, web3):
+    def get_annual_switchpoint(self, node):
         """
         获取年度结算周期数
         :return:
         """
         annual_cycle = (self.additional_cycle_time * 60) // (self.settlement_size * self.interval)
         annualsize = annual_cycle * self.settlement_size
-        current_block = web3.eth.blockNumber
+        current_block = node.eth.blockNumber
         current_end_block = math.ceil(current_block / annualsize) * annualsize
         return annual_cycle, annualsize, current_end_block
 
-    def wait_annual_blocknum(self, web3):
+    def wait_annual_blocknum(self, node):
         """
         等待当个年度块高结束
         :param web3:
         :return:
         """
-        annualcycle, annualsize, current_end_block = self.get_annual_switchpoint(web3)
-        current_block = web3.eth.blockNumber
+        annualcycle, annualsize, current_end_block = self.get_annual_switchpoint(node)
+        current_block = node.eth.blockNumber
         differ_block = annualsize - (current_block % annualsize)
         annual_end_block = current_block + differ_block
-        endtime = int(time.time()) + differ_block * self.interval * 2
-        while endtime > int(time.time()):
-            time.sleep(1)
-            current_block = web3.eth.blockNumber
-            if current_block > annual_end_block:
-                break
+        wait_block_number(node, annual_end_block, self.interval)
 
-    def wait_consensus_blocknum(self, web3, number=0):
+    def wait_consensus_blocknum(self, node, number=0):
         """
         等待当个共识轮块高结束
-        :param web3:
+        :param node:
         :param number:
         :return:
         """
-        current_end_block = self.get_consensus_switchpoint(web3, number)
-        current_block = web3.eth.blockNumber
-        endtime = int(time.time()) + (current_end_block - current_block) * 3
-        while endtime > int(time.time()):
-            time.sleep(1)
-            current_block = web3.eth.blockNumber
-            if current_block > current_end_block:
-                break
+        end_block = self.get_consensus_switchpoint(node, number)
+        wait_block_number(node, end_block, self.interval)
 
-    def get_consensus_switchpoint(self, web3, number=0):
+    def get_consensus_switchpoint(self, node, number=0):
         """
         获取指定共识轮块高
-        :param web3:
+        :param node:
         :param number:
         :return:
         """
         block_namber = self.consensussize * number
-        current_block = web3.eth.blockNumber
+        current_block = node.eth.blockNumber
         current_end_block = math.ceil(current_block / self.consensussize) * self.consensussize + block_namber
         return current_end_block

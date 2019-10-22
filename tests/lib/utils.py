@@ -68,61 +68,8 @@ def get_no_pledge_info(node_list):
     return
 
 
-def get_current_candidate(node):
-    """
-    获取查询所有实时的候选人列表
-    :param node:
-    :return:
-    """
-    result = node.getCandidateList()
-    candidate_info = result.get('Data')
-
-    candidate_list = []
-    for list1 in candidate_info:
-        candidate_list.append(list1.get('NodeId'))
-    if not candidate_list:
-        time.sleep(10)
-        for list1 in candidate_info:
-            candidate_list.append(list1.get('NodeId'))
-    return candidate_list
-
-def find_node_id(candidate_info):
-    candidate_list = []
-    for info in candidate_info:
-        candidate_list.append(info.get('NodeId'))
-    if len(candidate_list) == 0:
-        time.sleep(10)
-        for list1 in candidate_info:
-            candidate_list.append(list1.get('NodeId'))
-    return candidate_list
-
-def get_current_verifier(node):
-    """
-    获取当前结算周期验证人列表
-    :param node: 节点对象
-    :return:
-    """
-    result = node.ppos.getVerifierList()
-    verifier_info = result.get('Data')
-
-    verifier_list = []
-    for list1 in verifier_info:
-        verifier_list.append(list1.get('NodeId'))
-    if not verifier_list:
-        time.sleep(10)
-        for list1 in verifier_info:
-            verifier_list.append(list1.get('NodeId'))
-    return verifier_list
-
-
-def get_current_validator(node):
-    """
-    获取当前共识轮验证人列表
-    :param node: 节点对象
-    :return:
-    """
-    result = node.ppos.getValidatorList()
-    validator_info = result.get('Data')
+def get_pledgelist(func):
+    validator_info = func().get('Data')
     validator_list = []
     for info in validator_info:
         validator_list.append(info.get('NodeId'))
@@ -189,10 +136,8 @@ def update_param_by_file(key1, key2, key3, value, filename, newfilename):
         data[key1][key2] = value
     else:
         data[key1][key2][key3] = value
-    jsondata = json.dumps(data)
     with open(newfilename, "w") as f:
-        f.write(jsondata)
-        f.close()
+        f.write(json.dumps(data, indent=4))
 
 
 def update_param_by_dict(data, key1, key2, key3, value):
@@ -231,18 +176,27 @@ def update_genesis(genesis):
     return update_param_by_dict(tmp_data, 'EconomicModel', 'Slashing', 'EvidenceValidEpoch', 27)
 
 
-# ppos
-def view_available_nodes(link):
-    """
-    比对两个节点list
-    :return:
-    """
-    node_info = get_node_info(node_yml_path)
-    rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get('nocollusion')
-    candidateinfo = link.getCandidateList()
-    candidateinfo = candidateinfo.get('Data')
-    candidate_list = []
-    for nodeid in candidateinfo:
-        candidate_list.append(nodeid.get('NodeId'))
-    if set(nodeid_list) <= set(candidate_list):
-        start_init()
+def wait_block_number(node, block, interval=1):
+    current_block = node.block_number
+    timeout = int((block - current_block) * interval * 1.5) + int(time.time())
+    while int(time.time()) < timeout:
+        if node.block_number > block:
+            break
+        time.sleep(1)
+    raise Exception("无法正常出块")
+
+# # ppos
+# def view_available_nodes(link):
+#     """
+#     比对两个节点list
+#     :return:
+#     """
+#     node_info = get_node_info(node_yml_path)
+#     rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get('nocollusion')
+#     candidateinfo = link.getCandidateList()
+#     candidateinfo = candidateinfo.get('Data')
+#     candidate_list = []
+#     for nodeid in candidateinfo:
+#         candidate_list.append(nodeid.get('NodeId'))
+#     if set(nodeid_list) <= set(candidate_list):
+#         start_init()
