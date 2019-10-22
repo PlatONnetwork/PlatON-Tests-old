@@ -55,7 +55,7 @@ def account_env(global_test_env)->(Node, AccountEnv):
 @allure.title("指定datadir和keystore路径，通过输入密码创建新账号")
 @pytest.mark.P1
 @pytest.mark.SYNC
-def t1est_account_new(account_env):
+def test_account_new(account_env):
     node, env = account_env
     returnList = run_ssh_cmd(node.ssh, "{} account list --datadir {}".format(node.remote_bin_file, node.remote_data_dir))
     oldCounts = len(returnList) - 1
@@ -69,7 +69,7 @@ def t1est_account_new(account_env):
 @allure.title("指定datadir，在缺省的datadir/keystore下，通过输入密码创建新账号")
 @pytest.mark.P1
 @pytest.mark.SYNC
-def t1est_account_new_defualt_keystore_dir(account_env):
+def test_account_new_defualt_keystore_dir(account_env):
     node, env = account_env
     returnList = run_ssh_cmd(node.ssh, "{} account list --datadir {}".format(node.remote_bin_file, node.remote_data_dir))
     oldCounts = len(returnList) - 1
@@ -84,7 +84,7 @@ def t1est_account_new_defualt_keystore_dir(account_env):
 @allure.title("指定keystore下，通过输入密码创建新账号")
 @pytest.mark.P1
 @pytest.mark.SYNC
-def t1est_account_new_keystore_dir(account_env):
+def test_account_new_keystore_dir(account_env):
     node, env = account_env
     returnList = run_ssh_cmd(node.ssh, "{} account list --keystore {}".format(node.remote_bin_file, node.remote_keystore_dir))
     oldCounts = len(returnList) - 1
@@ -99,7 +99,7 @@ def t1est_account_new_keystore_dir(account_env):
 @allure.title("指定datadir和keystore路径，通过密码文件创建新账号")
 @pytest.mark.P1
 @pytest.mark.SYNC
-def t1est_account_new_with_pwd_file(account_env):
+def test_account_new_with_pwd_file(account_env):
     node, env = account_env
     returnList = run_ssh_cmd(node.ssh, "{} account list --datadir {}".format(node.remote_bin_file, node.remote_data_dir))
     oldCounts = len(returnList) - 1
@@ -117,7 +117,7 @@ def t1est_account_new_with_pwd_file(account_env):
 @allure.title("指定datadir，在缺省的datadir/keystore下，通过密码文件创建新账号")
 @pytest.mark.P1
 @pytest.mark.SYNC
-def t1est_account_new_defualt_keystore_dir(account_env):
+def test_account_new_defualt_keystore_dir(account_env):
     node, env = account_env
     returnList = run_ssh_cmd(node.ssh, "{} account list --datadir {}".format(node.remote_bin_file, node.remote_data_dir))
     oldCounts = len(returnList) - 1
@@ -133,7 +133,7 @@ def t1est_account_new_defualt_keystore_dir(account_env):
 @allure.title("指定keystore下，通过输入密码创建新账号")
 @pytest.mark.P1
 @pytest.mark.SYNC
-def t1est_account_new_with_pwd_file_just_keystore_dir(account_env):
+def test_account_new_with_pwd_file_just_keystore_dir(account_env):
     node, env = account_env
     returnList = run_ssh_cmd(node.ssh, "{} account list --keystore {}".format(node.remote_bin_file, node.remote_keystore_dir))
     oldCounts = len(returnList) - 1
@@ -149,7 +149,7 @@ def t1est_account_new_with_pwd_file_just_keystore_dir(account_env):
 @allure.title("修改账号密码，指定datadir")
 @pytest.mark.P1
 @pytest.mark.SYNC
-def t1est_account_update_with_data_dir(account_env):
+def test_account_update_with_data_dir(account_env):
     node, env = account_env
     run_ssh_cmd(node.ssh, "{} account update {} --datadir {}".format(node.remote_bin_file, env.remote_account_address, node.remote_data_dir), "88888888", "88888888", "88888888")
     pass
@@ -158,7 +158,7 @@ def t1est_account_update_with_data_dir(account_env):
 @allure.title("修改账号密码，指定keystore")
 @pytest.mark.P1
 @pytest.mark.SYNC
-def t1est_account_update_with_keystore_dir(account_env):
+def test_account_update_with_keystore_dir(account_env):
     node, env = account_env
     run_ssh_cmd(node.ssh, "{} account update {} --keystore {}".format(node.remote_bin_file, env.remote_account_address, node.remote_keystore_dir), "88888888", "88888888", "88888888")
     pass
@@ -167,7 +167,7 @@ def t1est_account_update_with_keystore_dir(account_env):
 @allure.title("导入账号，不指定密码文件，指定datadir")
 @pytest.mark.P1
 @pytest.mark.SYNC
-def t1est_account_import(account_env):
+def test_account_import(account_env):
     node, env = account_env
 
     returnList = run_ssh_cmd(node.ssh, "{} account list --datadir {}".format(node.remote_bin_file, node.remote_data_dir))
@@ -187,7 +187,7 @@ def t1est_account_import(account_env):
 @allure.title("导入账号，不指定密码文件，指定keystore")
 @pytest.mark.P1
 @pytest.mark.SYNC
-def t1est_account_import_2(account_env):
+def test_account_import_2(account_env):
     node, env = account_env
 
     returnList = run_ssh_cmd(node.ssh, "{} account list --keystore {}".format(node.remote_bin_file, node.remote_keystore_dir))
@@ -208,7 +208,7 @@ def t1est_account_import_2(account_env):
 @allure.title("导入账号，指定密码文件，指定datadir")
 @pytest.mark.P1
 @pytest.mark.SYNC
-def t1est_account_import_3(account_env):
+def test_account_import_3(account_env):
     node, env = account_env
 
     returnList = run_ssh_cmd(node.ssh, "{} account list --datadir {}".format(node.remote_bin_file, node.remote_data_dir))
@@ -228,7 +228,7 @@ def t1est_account_import_3(account_env):
 @allure.title("导入账号，指定密码文件，指定keystore")
 @pytest.mark.P1
 @pytest.mark.SYNC
-def t1est_account_import_4(account_env):
+def test_account_import_4(account_env):
     node, env = account_env
 
     returnList = run_ssh_cmd(node.ssh, "{} account list --keystore {}".format(node.remote_bin_file, node.remote_keystore_dir))
@@ -249,7 +249,7 @@ def t1est_account_import_4(account_env):
 @allure.title("列出账号")
 @pytest.mark.P1
 @pytest.mark.SYNC
-def t1est_account_list(account_env):
+def test_account_list(account_env):
     node, env = account_env
 
     returnList1 = run_ssh_cmd(node.ssh, "{} account list --datadir {}".format(node.remote_bin_file, node.remote_data_dir))
@@ -265,7 +265,7 @@ def t1est_account_list(account_env):
 '''
 platon attach http / ws
 '''
-def t1est_attach_http(account_env):
+def test_attach_http(account_env):
     node, env = account_env
 
     print("node.remote_bin_file:::", node.remote_bin_file)
@@ -326,7 +326,7 @@ def test_copydb(global_test_env):
 
     pass
 
-def t1est_dump_block(global_test_env):
+def test_dump_block(global_test_env):
     globalEnv = global_test_env
 
     node = globalEnv.collusion_node_list[0]
@@ -340,7 +340,7 @@ def t1est_dump_block(global_test_env):
     assert len(returnList) > 0 and "root" in returnList[1]
 
 
-def t1est_dump_config(global_test_env):
+def test_dump_config(global_test_env):
     globalEnv = global_test_env
 
     node = globalEnv.collusion_node_list[0]
@@ -348,7 +348,7 @@ def t1est_dump_config(global_test_env):
     returnList = run_ssh_cmd(node.ssh, "{} --nodekey {} --cbft.blskey {} dumpconfig".format(node.remote_bin_file, node.remote_nodekey_file, node.remote_blskey_file))
     assert returnList[0].strip()=='[Eth]'
 
-def t1est_update_dumped_config(global_test_env):
+def test_update_dumped_config(global_test_env):
     globalEnv = global_test_env
 
     node = globalEnv.collusion_node_list[0]
@@ -358,7 +358,7 @@ def t1est_update_dumped_config(global_test_env):
     assert returnList[1].strip()=='NetworkId = 1500'
 
 
-def t1est_export_import_preimages(global_test_env):
+def test_export_import_preimages(global_test_env):
     globalEnv = global_test_env
 
     node = globalEnv.collusion_node_list[0]
@@ -381,7 +381,7 @@ def t1est_export_import_preimages(global_test_env):
     assert len(importList) == 1
 
 
-def t1est_license(global_test_env):
+def test_license(global_test_env):
     globalEnv = global_test_env
 
     node = globalEnv.collusion_node_list[0]
@@ -392,7 +392,7 @@ def t1est_license(global_test_env):
 
     assert returnList[0].strip()=="platon is free software: you can redistribute it and/or modify"
 
-def t1est_version(global_test_env):
+def test_version(global_test_env):
     globalEnv = global_test_env
 
     node = globalEnv.collusion_node_list[0]
@@ -405,7 +405,7 @@ def t1est_version(global_test_env):
     assert "Version:" in returnList[1]
 
 
-def t1est_config(global_test_env):
+def test_config(global_test_env):
     globalEnv = global_test_env
 
     node = globalEnv.collusion_node_list[0]
