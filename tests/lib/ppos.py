@@ -1,7 +1,7 @@
 from environment.env import TestEnvironment
 from environment.node import Node
 from environment.account import Account
-from .config import PposConfig
+from .config import PposConfig, CommonConfig
 
 
 class Ppos(Account):
@@ -11,6 +11,7 @@ class Ppos(Account):
         self.cfg = cfg
         self.node = node
         self.accounts = env.account.accounts
+        self.common_cfg = CommonConfig(self.env.genesis_config)
 
     @property
     def ppos(self):
@@ -20,8 +21,7 @@ class Ppos(Account):
                        program_version_sign=None, bls_pubkey=None, bls_proof=None, transaction_cfg=None):
         pass
 
-    def edit_candidate(self, from_address, benifit_address=None, node_id=None, external_id=None,
-                       node_name=None, website=None, details=None, transaction_cfg=None):
+    def edit_candidate(self, from_address, benifit_address=None, node_id=None, transaction_cfg=None):
         pass
 
     def increase_staking(self, typ, from_address, node_id=None, amount=None, transaction_cfg=None):
