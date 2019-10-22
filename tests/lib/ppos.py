@@ -29,3 +29,9 @@ class Ppos(Account):
 
     def withdrew_staking(self, from_address, node_id=None, transaction_cfg=None):
         pass
+
+    def delegate(self, typ, from_address, node_id=None, amount=None, tansaction_cfg=None):
+        pass
+
+    def withdrew_delegate(self, staking_blocknum, from_address, node_id=None, transaction_cfg=None):
+        pass

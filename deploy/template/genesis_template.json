@@ -1,86 +1,73 @@
 {
-    "config":{
-        "chainId":100,
-        "eip155Block":3,
-        "cbft":{
-            "initialNodes":[
-                {
-                    "node":"enode://05d5012208a2192e92729f8825bee305dc1f67ab353928293e31552064f3d91faba3d6a4da8a46236964605af2a7ed357b92183b99fc667124cc5404687ed2ec@192.168.112.30:16789",
-                    "blsPubKey":"c47491e23cc760a437b87429374ed85087f07833e18fd4723e0b4268cb167d9305ddd8a3d3a16a898697143a170d37066b32e355ae38a794da8004f95d07e339631ed20d5dcf6527fae02dd1154b4db71778b879e8da3aafd10004d9eac31794"
-                },
-                {
-                    "node":"enode://e12899126feb3ac04fc8cc36a8765e001d9644856aee43554fa122c7f98074b09afe9f0ecda5d382ad87cf218accac6810e6572747aad4c87ec97b7d5e07088e@192.168.112.31:16789",
-                    "blsPubKey":"160398fbf079b71455a5d067ea050ef01e25e4d68ff23a39d529bf2aed9ac2d986e39c10c8c9a2e97806f1901309ad081bdd31e9381f65476784be0d73fd83ae1b1fc5e714beed630eeecdb60ae77fb714668fc7652ae6d21a101bacef035310"
-                },
-                {
-                    "node":"enode://d26d8febf6a904dea72596481096fb0edddfb190bfe2494728e0213bcafd937918b20b2119d01b54e2a2bbc203d5cf2a25e3dab978c8671292773d0b2e7beace@192.168.112.32:16789",
-                    "blsPubKey":"b49ff1aaac01c5f74e2ca19d94e72702ccc446b9f8434645dd1d943e5b3f42bf8a984c443497120bc1c877a35ba37b1862628dd9fd7e9460333ba2c0d77f08f331efcf95f4d9da68dd676053217993c776a378d9d7cc6668c898ce1849f38817"
-                },
-                {
-                    "node":"enode://48224bc02b26929990e260cfee6ff154a8c0f6e9417d8196809ab4f3a8f9e948b4fe7e08a9337bd519da5f1bc4dfb9026f9f120faa17f6cd6bd9ff5289f82c46@192.168.112.33:16789",
-                    "blsPubKey":"01f8d5f796dccb37cf917f1fd61df6a96092836f2232f035394fad2983348a1f7bf71d2a3407d983c2183f1d46c6c905152714d5996cddd405f3d96ff559fe0d71a65996ba3d90fa979f7581b120ba9deff047f98a4448de0a7627285e672c99"
-                }
-            ],
-            "epoch":10,
-            "amount":10,
-            "validatorMode":"ppos",
-            "period":10000
-        }
+    "config": {
+        "chainId": 100,
+        "eip155Block": 3,
+        "cbft": {
+			"initialNodes": [
+			  {
+				"node": "enode://f71e1bc638456363a66c4769284290ef3ccff03aba4a22fb60ffaed60b77f614bfd173532c3575abe254c366df6f4d6248b929cb9398aaac00cbcc959f7b2b7c@127.0.0.1:16789",
+				"blsPubKey":"299d43acbef4390b6dccc11dbdd9b506ab928e0706b7f997bd99f225fb5398331a09e33c292e1d121d32d9ade3d02d0e08302c3b0fcc1d496ef63c4c2ea0a7508ca9665999a60f312fd6928ff997e59d67367213a69be5f0245849952cf6d680"
+			  }
+			],
+			"epoch": 10,
+			"amount": 10,
+			"validatorMode": "ppos",
+			"period": 10000
+		}
     },
-    "EconomicModel":{
-        "Common":{
-            "ExpectedMinutes":3,
-            "ValidatorCount":4,
-            "AdditionalCycleTime":28
-        },
-        "Staking":{
-            "StakeThreshold":5000000000000000000000000,
-            "MinimumThreshold":10000000000000000000,
-            "EpochValidatorNum":24,
-            "HesitateRatio":1,
-            "EffectiveRatio":1,
-            "UnStakeFreezeRatio":2,
-            "PassiveUnDelegateFreezeRatio":0,
-            "ActiveUnDelegateFreezeRatio":0
-        },
-        "Slashing":{
-            "PackAmountAbnormal":6,
-            "DuplicateSignHighSlashing":100,
-            "DuplicateSignReportReward":50,
-            "NumberOfBlockRewardForSlashing":20,
-            "EvidenceValidEpoch":1
-        },
-        "Gov":{
-            "VersionProposalVote_DurationSeconds":160,
-            "VersionProposalActive_ConsensusRounds":5,
-            "VersionProposal_SupportRate":0.667,
-            "TextProposalVote_DurationSeconds":160,
-            "TextProposal_VoteRate":0.5,
-            "TextProposal_SupportRate":0.667,
-            "CancelProposal_VoteRate":0.5,
-            "CancelProposal_SupportRate":0.667
-        },
-        "Reward":{
-            "NewBlockRate":50,
-            "PlatONFoundationYear":10
-        },
+	"EconomicModel":{
+		"Common":{
+			"ExpectedMinutes":3,
+			"ValidatorCount":4,
+			"AdditionalCycleTime":28		
+		},
+		"Staking":{
+			"StakeThreshold":				500000000000000000000000,
+			"MinimumThreshold":				10000000000000000000,
+			"EpochValidatorNum":			24,
+			"HesitateRatio":				1,
+			"EffectiveRatio":				1,
+			"UnStakeFreezeRatio":			2,
+			"PassiveUnDelegateFreezeRatio":	0,
+			"ActiveUnDelegateFreezeRatio":	0
+		},
+		"Slashing":{
+		   "DuplicateSignHighSlashing": 10,
+		   "DuplicateSignReportReward":50,
+		   "NumberOfBlockRewardForSlashing":0, 
+		   "EvidenceValidEpoch":1
+		},
+		"Gov": {
+			"VersionProposalVote_DurationSeconds": 160,
+			"VersionProposalActive_ConsensusRounds": 5,
+			"VersionProposal_SupportRate": 0.667,
+			"TextProposalVote_DurationSeconds": 160,
+			"TextProposal_VoteRate": 0.5,
+			"TextProposal_SupportRate": 0.667,			
+			"CancelProposal_VoteRate": 0.50,
+			"CancelProposal_SupportRate": 0.667
+		},
+		"Reward":{
+			"NewBlockRate": 50,
+			"PlatONFoundationYear": 10 
+		},
         "InnerAcc":{
-            "PlatONFundAccount":"0x493301712671ada506ba6ca7891f436d29185821",
-            "PlatONFundBalance":2000000000000000000000000000,
-            "CDFAccount":"0xc1f330b214668beac2e6418dd651b09c759a4bf5",
-            "CDFBalance":0
+            "PlatONFundAccount": "0x493301712671ada506ba6ca7891f436d29185821",
+            "PlatONFundBalance": 2000000000000000000000000000,
+            "CDFAccount": "0xc1f330b214668beac2e6418dd651b09c759a4bf5",
+            "CDFBalance": 0
         }
+	},
+    "nonce": "0x0376e56dffd12ab53bb149bda4e0cbce2b6aabe4cccc0df0b5a39e12977a2fcd23",
+    "timestamp": "0x5bc94a8a",
+    "extraData": "0xd782070186706c61746f6e86676f312e3131856c696e757800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "gasLimit": "0x99947b760",
+    "alloc": {
+		"1000000000000000000000000000000000000003": {
+			"balance": "200000000000000000000000000"
+		}
     },
-    "nonce":"0x0376e56dffd12ab53bb149bda4e0cbce2b6aabe4cccc0df0b5a39e12977a2fcd23",
-    "timestamp":"0x5bc94a8a",
-    "extraData":"0xd782070186706c61746f6e86676f312e3131856c696e757800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-    "gasLimit":"0x99947b760",
-    "alloc":{
-        "1000000000000000000000000000000000000003":{
-            "balance":"200000000000000000000000000"
-        }
-    },
-    "number":"0x0",
-    "gasUsed":"0x0",
-    "parentHash":"0x0000000000000000000000000000000000000000000000000000000000000000"
+    "number": "0x0",
+    "gasUsed": "0x0",
+    "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000"
 }
