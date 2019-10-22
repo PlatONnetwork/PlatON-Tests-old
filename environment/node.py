@@ -484,3 +484,15 @@ class Node:
     @property
     def block_number(self) -> int:
         return self.eth.blockNumber
+
+    @property
+    def program_version(self):
+        return self.admin.getProgramVersion()['Version']
+
+    @property
+    def program_version_sign(self):
+        return self.admin.getProgramVersion()['Sign']
+
+    @property
+    def schnorr_NIZK_prove(self):
+        return self.admin.getSchnorrNIZKProve()
