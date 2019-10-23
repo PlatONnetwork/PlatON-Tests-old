@@ -1,5 +1,7 @@
 import math
 import time
+import os
+from conf.settings import BASE_DIR
 from common.key import get_pub_key
 from .utils import wait_block_number
 
@@ -17,29 +19,39 @@ class PposConfig:
 
 
 class PipConfig:
-    pass
+    PLATON_NEW_BIN = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/platon"))
+    PLATON_NEW_BIN1 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version1/platon"))
+    PLATON_NEW_BIN2 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version2/platon"))
+    PLATON_NEW_BIN3 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version3/platon"))
+    PLATON_NEW_BIN4 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version4/platon"))
+    PLATON_NEW_BIN8 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version8/platon"))
+    PLATON_NEW_BIN9 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version9/platon"))
+    PLATON_NEW_BIN6 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version6/platon"))
+    PLATON_NEW_BIN7 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version7/platon"))
+    PLATON_NEW_BIN0 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/platon"))
+    PLATON_NEW_BIN120 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/diffcodeversion/platon"))
 
 
 class CommonConfig:
-    release_zero = 62215742.48691650
-    TOKENTOTAL = 10250000000000000000000000000
-    FOUNDATIONADDRESS = "0x493301712671ada506ba6ca7891f436d29185821"
+    RELEASE_ZERO = 62215742.48691650
+    TOKEN_TOTAL = 10250000000000000000000000000
+    FOUNDATION_ADDRESS = "0x493301712671ada506ba6ca7891f436d29185821"
     # 锁仓合约账户地址
-    FOUNDATIONLOCKUPADDRESS = "0x1000000000000000000000000000000000000001"
+    FOUNDATION_LOCKUP_ADDRESS = "0x1000000000000000000000000000000000000001"
     # 质押合约地址
-    STAKINGADDRESS = "0x1000000000000000000000000000000000000002"
+    STAKING_ADDRESS = "0x1000000000000000000000000000000000000002"
     # platON激励池账户
-    INCENTIVEPOOLADDRESS = "0x1000000000000000000000000000000000000003"
+    INCENTIVEPOOL_ADDRESS = "0x1000000000000000000000000000000000000003"
     # 剩余总账户
-    REMAINACCOUNTADDRESS = "0x2e95e3ce0a54951eb9a99152a6d5827872dfb4fd"
+    REMAIN_ACCOUNT_ADDRESS = "0x2e95e3ce0a54951eb9a99152a6d5827872dfb4fd"
     # 开发者基金会账户
-    developer_foundation_address = '0x60ceca9c1290ee56b98d4e160ef0453f7c40d219'
-    init_token_info = {FOUNDATIONLOCKUPADDRESS: 259096240418673500000000000,
-                       STAKINGADDRESS: 40000000000000000000000000,
-                       INCENTIVEPOOLADDRESS: 262215742486916500000000000,
-                       FOUNDATIONADDRESS: 1638688017094410000000000000,
-                       REMAINACCOUNTADDRESS: 8000000000000000000000000000,
-                       developer_foundation_address: 50000000000000000000000000
+    DEVELOPER_FOUNDATAION_ADDRESS = '0x60ceca9c1290ee56b98d4e160ef0453f7c40d219'
+    init_token_info = {FOUNDATION_LOCKUP_ADDRESS: 259096240418673500000000000,
+                       STAKING_ADDRESS: 40000000000000000000000000,
+                       INCENTIVEPOOL_ADDRESS: 262215742486916500000000000,
+                       FOUNDATION_ADDRESS: 1638688017094410000000000000,
+                       REMAIN_ACCOUNT_ADDRESS: 8000000000000000000000000000,
+                       DEVELOPER_FOUNDATAION_ADDRESS: 50000000000000000000000000
                        }
     release_info = [{"blockNumber": 1600, "amount": 55965742486916500000000000},
                     {"blockNumber": 3200, "amount": 49559492486916500000000000},
@@ -88,9 +100,9 @@ class CommonConfig:
         annualcycle, annual_size, current_end_block = self.get_annual_switchpoint(node.web3)
         verifier_list = node.ppos.getVerifierList()
         count = len(verifier_list['Data'])
-        block_reward = node.web3.fromWei(self.init_token_info[self.INCENTIVEPOOLADDRESS], 'ether') / 2 / annual_size
+        block_reward = node.web3.fromWei(self.init_token_info[self.INCENTIVEPOOL_ADDRESS], 'ether') / 2 / annual_size
         block_reward = node.web3.toWei(block_reward, 'ether')
-        staking_reward = node.web3.fromWei(self.init_token_info[self.INCENTIVEPOOLADDRESS], 'ether') / 2 / annualcycle / count
+        staking_reward = node.web3.fromWei(self.init_token_info[self.INCENTIVEPOOL_ADDRESS], 'ether') / 2 / annualcycle / count
         staking_reward = node.web3.toWei(staking_reward, 'ether')
         return block_reward, staking_reward
 
@@ -142,7 +154,7 @@ class CommonConfig:
     def wait_annual_blocknum(self, node):
         """
         等待当个年度块高结束
-        :param web3:
+        :param node:
         :return:
         """
         annualcycle, annualsize, current_end_block = self.get_annual_switchpoint(node)
