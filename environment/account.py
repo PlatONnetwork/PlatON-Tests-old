@@ -8,6 +8,15 @@ from client_sdk_python import (
     Web3
 )
 import rlp
+import os
+from eth_keys import (
+    keys,
+)
+from eth_utils.curried import (
+    keccak,
+    text_if_str,
+    to_bytes,
+)
 
 
 class Account:
@@ -79,7 +88,7 @@ class Account:
 
         return res
 
-    def generate_account_in_node(self, node, passwd,balance=0):
+    def generate_account_in_node(self, node, passwd, balance=0):
         personal = Personal(node.web3)
         address = personal.newAccount(passwd)
         log.info(address)
@@ -134,6 +143,24 @@ class Account:
         # print (" ".join (l))
         result = self.sendTransaction(connect,data, from_address, to_address, gasPrice, gas, 0)
         return result
+
+    def generate_account(self, web3, balance=0):
+        extra_entropy = ''
+        extra_key_bytes = text_if_str(to_bytes, extra_entropy)
+        key_bytes = keccak(os.urandom(32) + extra_key_bytes)
+        privatekey = keys.PrivateKey(key_bytes)
+        address = privatekey.public_key.to_address()
+        prikey = privatekey.to_hex()[2:]
+        if balance > 0:
+            self.sendTransaction(web3, '', self.account_with_money['address'], address, web3.platon.gasPrice, 21000, balance)
+        account = {
+            "address": address,
+            "nonce": 0,
+            "balance": balance,
+            "prikey": prikey,
+        }
+        self.accounts[address] = account
+        return address
 
 
 

@@ -8,17 +8,17 @@ pip install -r requirements.txt
 
 # Run test:
 ## 以并发方式，执行所有用例
-py.test test_start.py -s --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc
+py.test test_start.py -s --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain
 
 ## 以同步方式，执行所有用例
-py.test test_start.py -s --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc
+py.test test_start.py -s --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain
 
 
 ## 以并发方式，执行所有并发的用例
-py.test test_start.py -s -m "not SYNC" --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc
+py.test test_start.py -s -m "not SYNC" --concmode=asyncnet --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain 
 
 ## 以同步方式，执行所有同步的用例
-py.test test_start.py -s -m "SYNC" --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain --startAll --httpRpc 
+py.test test_start.py -s -m "SYNC" --nodeFile "deploy/4_node.yml" --accountFile "deploy/accounts.yml" --initChain
 
 # py.test 命令行参数
 --nodeFile "deploy/4_node.yml":  指定节点配置文件

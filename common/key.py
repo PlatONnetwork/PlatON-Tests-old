@@ -21,3 +21,7 @@ def generate_key():
     key_bytes = keccak(os.urandom(32) + extra_key_bytes)
     privatekey = keys.PrivateKey(key_bytes)
     return privatekey.to_hex()[2:], keys.private_key_to_public_key(privatekey).to_hex()[2:]
+
+
+def get_pub_key(web3, block_number):
+    pass

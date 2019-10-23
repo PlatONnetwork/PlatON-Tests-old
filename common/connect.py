@@ -1,21 +1,31 @@
 import paramiko
 from client_sdk_python import HTTPProvider, Web3, WebsocketProvider
 from client_sdk_python.middleware import geth_poa_middleware
-
+from client_sdk_python.utils.threads import Timeout
 from common.log import log
 
 
-def connect_web3(url):
+def connect_web3(url, chain_id=100):
     '''
     连接web3服务,增加区块查询中间件,用于实现eth_getBlockByHash,eth_getBlockByNumber等方法
     '''
     if "ws" in url:
-        w3 = Web3(WebsocketProvider(url))
+        w3 = Web3(WebsocketProvider(url), chain_id=chain_id)
     else:
-        w3 = Web3(HTTPProvider(url))
+        w3 = Web3(HTTPProvider(url), chain_id=chain_id)
     w3.middleware_stack.inject(geth_poa_middleware, layer=0)
     
     return w3
+
+
+def wait_connect_web3(url, chain_id=100, timeout=20, poll_latency=0.2):
+    with Timeout(timeout) as _timeout:
+        while True:
+            web3 = connect_web3(url, chain_id)
+            if web3.isConnected():
+                break
+            _timeout.sleep(poll_latency)
+    return web3
 
 
 def connect_linux(ip, username='root', password='Juzhen123!', port=22):
@@ -36,6 +46,7 @@ def connect_linux(ip, username='root', password='Juzhen123!', port=22):
     ssh._transport = t
     sftp = paramiko.SFTPClient.from_transport(t)
     return ssh, sftp, t
+
 
 def connect_linux_pem(ip, username, pem_path):
     '''
@@ -65,7 +76,7 @@ def run_ssh(ssh, cmd, password=None):
             stdin.write(password+"\n")
         stdout_list = stdout.readlines()
         if len(stdout_list):
-            log.debug(stdout_list)
+            log.debug('{}:{}'.format(cmd, stdout_list))
     except Exception as e:
         raise e
     return stdout_list
@@ -84,7 +95,7 @@ def run_ssh_cmd(ssh, cmd, password=None, password2=None, password3=None):
 
         stdout_list = stdout.readlines()
         if len(stdout_list):
-            log.info('{}:{}'.format(cmd,stdout_list) )
+            log.info('{}:{}'.format(cmd, stdout_list))
     except Exception as e:
         raise e
     return stdout_list

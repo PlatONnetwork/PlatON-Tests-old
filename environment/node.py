@@ -5,8 +5,11 @@ from client_sdk_python.admin import Admin
 from client_sdk_python.debug import Debug
 from client_sdk_python.eth import Eth
 from client_sdk_python.personal import Personal
+from client_sdk_python.ppos import Ppos
+from client_sdk_python.pip import Pip
 
-from common.connect import run_ssh, connect_linux, connect_web3
+from common.connect import run_ssh, connect_linux, wait_connect_web3
+from common.load_file import LoadFile
 from environment.config import TestConfig
 from common.log import log
 
@@ -39,7 +42,10 @@ class Node:
         self.node_name = "node-" + self.p2p_port
         self.node_mark = self.host + ":" + self.p2p_port
         # 节点远程目录信息
-        self.remote_node_path = "{}/{}".format(self.cfg.deploy_path, self.node_name)
+        if os.path.isabs(self.cfg.deploy_path):
+            self.remote_node_path = "{}/{}".format(self.cfg.deploy_path, self.node_name)
+        else:
+            self.remote_node_path = "{}/{}/{}".format(self.pwd, self.cfg.deploy_path, self.node_name)
 
         self.remote_log_dir = '{}/log'.format(self.remote_node_path)
         self.remote_bin_file = self.remote_node_path + "/platon"
@@ -64,6 +70,16 @@ class Node:
 
         # node local tmp
         self.local_node_tmp = self.gen_node_tmp()
+
+        # genesis info
+        self.genesis_config = LoadFile(self.cfg.genesis_file).get_data()
+        self.__chain_id = self.genesis_config["config"]["chainId"]
+
+    @property
+    def pwd(self):
+        pwd_list = self.run_ssh("pwd")
+        pwd = pwd_list[0].strip("\r\n")
+        return pwd
 
     def make_remote_dir(self):
         self.run_ssh("mkdir -p {}".format(self.remote_node_path))
@@ -343,25 +359,25 @@ class Node:
         :param sup_tmp_file:
         :return:
         """
-        pwd_list = self.run_ssh("pwd")
-        pwd = pwd_list[0].strip("\r\n")
+        # pwd_list = self.run_ssh("pwd")
+        # pwd = pwd_list[0].strip("\r\n")
         with open(sup_tmp_file, "w") as fp:
             fp.write("[program:" + self.node_name + "]\n")
             go_fail_point = ""
             if self.fail_point:
                 go_fail_point = " GO_FAILPOINTS='{}' ".format(self.fail_point)
-            if not os.path.isabs(self.cfg.deploy_path):
-                cmd = "{}/{} --identity platon --datadir".format(pwd, self.remote_bin_file)
-                cmd = cmd + " {}/{} --port ".format(pwd, self.remote_data_dir) + self.p2p_port
-                cmd = cmd + " --gcmode archive --nodekey {}/{}".format(pwd, self.remote_nodekey_file)
-                cmd = cmd + " --cbft.blskey {}/{}".format(pwd, self.remote_blskey_file)
-                cmd = cmd + " --config {}/{}".format(pwd, self.remote_config_file)
-            else:
-                cmd = "{} --identity platon --datadir".format(self.remote_bin_file)
-                cmd = cmd + " {} --port ".format(self.remote_data_dir) + self.p2p_port
-                cmd = cmd + " --gcmode archive --nodekey " + self.remote_nodekey_file
-                cmd = cmd + " --cbft.blskey " + self.remote_blskey_file
-                cmd = cmd + " --config " + self.remote_config_file
+            # if not os.path.isabs(self.cfg.deploy_path):
+            #     cmd = "{}/{} --identity platon --datadir".format(pwd, self.remote_bin_file)
+            #     cmd = cmd + " {}/{} --port ".format(pwd, self.remote_data_dir) + self.p2p_port
+            #     cmd = cmd + " --gcmode archive --nodekey {}/{}".format(pwd, self.remote_nodekey_file)
+            #     cmd = cmd + " --cbft.blskey {}/{}".format(pwd, self.remote_blskey_file)
+            #     cmd = cmd + " --config {}/{}".format(pwd, self.remote_config_file)
+            # else:
+            cmd = "{} --identity platon --datadir".format(self.remote_bin_file)
+            cmd = cmd + " {} --port ".format(self.remote_data_dir) + self.p2p_port
+            cmd = cmd + " --gcmode archive --nodekey " + self.remote_nodekey_file
+            cmd = cmd + " --cbft.blskey " + self.remote_blskey_file
+            cmd = cmd + " --config " + self.remote_config_file
             cmd = cmd + " --syncmode '{}'".format(self.cfg.syncmode)
             cmd = cmd + " --debug --verbosity {}".format(self.cfg.log_level)
             if self.pprofport:
@@ -382,10 +398,10 @@ class Node:
                                       "stopwaitsecs=10\n" + "redirect_stderr=true\n" + \
                                       "stdout_logfile_maxbytes=200MB\n" + "stdout_logfile_backups=20\n"
             fp.write(supervisor_default_conf)
-            if os.path.isabs(self.cfg.deploy_path):
-                fp.write("stdout_logfile={}/platon.log\n".format(self.remote_log_dir))
-            else:
-                fp.write("stdout_logfile={}/{}/platon.log\n".format(pwd, self.remote_log_dir))
+            # if os.path.isabs(self.cfg.deploy_path):
+            fp.write("stdout_logfile={}/platon.log\n".format(self.remote_log_dir))
+            # else:
+            #     fp.write("stdout_logfile={}/{}/platon.log\n".format(pwd, self.remote_log_dir))
 
     def deploy_me(self, genesis_file) -> tuple:
         """
@@ -456,7 +472,7 @@ class Node:
     @property
     def web3(self) -> Web3:
         if not self.__is_connected:
-            self.__rpc = connect_web3(self.url)
+            self.__rpc = wait_connect_web3(self.url, self.__chain_id)
             self.__is_connected = True
         return self.__rpc
 
@@ -477,5 +493,25 @@ class Node:
         return Personal(self.web3)
 
     @property
+    def ppos(self) -> Ppos:
+        return Ppos(self.web3)
+
+    @property
+    def pip(self) -> Pip:
+        return Pip(self.web3)
+
+    @property
     def block_number(self) -> int:
         return self.eth.blockNumber
+
+    @property
+    def program_version(self):
+        return self.admin.getProgramVersion()['Version']
+
+    @property
+    def program_version_sign(self):
+        return self.admin.getProgramVersion()['Sign']
+
+    @property
+    def schnorr_NIZK_prove(self):
+        return self.admin.getSchnorrNIZKProve()
