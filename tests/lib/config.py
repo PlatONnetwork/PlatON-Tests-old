@@ -1,7 +1,9 @@
 import math
 import time
+import os
+from conf.settings import BASE_DIR
 from common.key import get_pub_key
-
+from .utils import wait_block_number
 
 class PposConfig:
     external_id = None
@@ -17,29 +19,39 @@ class PposConfig:
 
 
 class PipConfig:
-    pass
+    PLATON_NEW_BIN = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/platon"))
+    PLATON_NEW_BIN1 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version1/platon"))
+    PLATON_NEW_BIN2 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version2/platon"))
+    PLATON_NEW_BIN3 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version3/platon"))
+    PLATON_NEW_BIN4 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version4/platon"))
+    PLATON_NEW_BIN8 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version8/platon"))
+    PLATON_NEW_BIN9 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version9/platon"))
+    PLATON_NEW_BIN6 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version6/platon"))
+    PLATON_NEW_BIN7 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version7/platon"))
+    PLATON_NEW_BIN0 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/platon"))
+    PLATON_NEW_BIN120 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/diffcodeversion/platon"))
 
 
 class CommonConfig:
-    release_zero = 62215742.48691650
-    TOKENTOTAL = 10250000000000000000000000000
-    FOUNDATIONADDRESS = "0x493301712671ada506ba6ca7891f436d29185821"
+    RELEASE_ZERO = 62215742.48691650
+    TOKEN_TOTAL = 10250000000000000000000000000
+    FOUNDATION_ADDRESS = "0x493301712671ada506ba6ca7891f436d29185821"
     # 锁仓合约账户地址
-    FOUNDATIONLOCKUPADDRESS = "0x1000000000000000000000000000000000000001"
+    FOUNDATION_LOCKUP_ADDRESS = "0x1000000000000000000000000000000000000001"
     # 质押合约地址
-    STAKINGADDRESS = "0x1000000000000000000000000000000000000002"
+    STAKING_ADDRESS = "0x1000000000000000000000000000000000000002"
     # platON激励池账户
-    INCENTIVEPOOLADDRESS = "0x1000000000000000000000000000000000000003"
+    INCENTIVEPOOL_ADDRESS = "0x1000000000000000000000000000000000000003"
     # 剩余总账户
-    REMAINACCOUNTADDRESS = "0x2e95e3ce0a54951eb9a99152a6d5827872dfb4fd"
+    REMAIN_ACCOUNT_ADDRESS = "0x2e95e3ce0a54951eb9a99152a6d5827872dfb4fd"
     # 开发者基金会账户
-    developer_foundation_address = '0x60ceca9c1290ee56b98d4e160ef0453f7c40d219'
-    init_token_info = {FOUNDATIONLOCKUPADDRESS: 259096240418673500000000000,
-                       STAKINGADDRESS: 40000000000000000000000000,
-                       INCENTIVEPOOLADDRESS: 262215742486916500000000000,
-                       FOUNDATIONADDRESS: 1638688017094410000000000000,
-                       REMAINACCOUNTADDRESS: 8000000000000000000000000000,
-                       developer_foundation_address: 50000000000000000000000000
+    DEVELOPER_FOUNDATAION_ADDRESS = '0x60ceca9c1290ee56b98d4e160ef0453f7c40d219'
+    init_token_info = {FOUNDATION_LOCKUP_ADDRESS: 259096240418673500000000000,
+                       STAKING_ADDRESS: 40000000000000000000000000,
+                       INCENTIVEPOOL_ADDRESS: 262215742486916500000000000,
+                       FOUNDATION_ADDRESS: 1638688017094410000000000000,
+                       REMAIN_ACCOUNT_ADDRESS: 8000000000000000000000000000,
+                       DEVELOPER_FOUNDATAION_ADDRESS: 50000000000000000000000000
                        }
     release_info = [{"blockNumber": 1600, "amount": 55965742486916500000000000},
                     {"blockNumber": 3200, "amount": 49559492486916500000000000},
@@ -88,104 +100,87 @@ class CommonConfig:
         annualcycle, annual_size, current_end_block = self.get_annual_switchpoint(node.web3)
         verifier_list = node.ppos.getVerifierList()
         count = len(verifier_list['Data'])
-        block_reward = node.web3.fromWei(self.init_token_info[self.INCENTIVEPOOLADDRESS], 'ether') / 2 / annual_size
+        block_reward = node.web3.fromWei(self.init_token_info[self.INCENTIVEPOOL_ADDRESS], 'ether') / 2 / annual_size
         block_reward = node.web3.toWei(block_reward, 'ether')
-        staking_reward = node.web3.fromWei(self.init_token_info[self.INCENTIVEPOOLADDRESS], 'ether') / 2 / annualcycle / count
+        staking_reward = node.web3.fromWei(self.init_token_info[self.INCENTIVEPOOL_ADDRESS], 'ether') / 2 / annualcycle / count
         staking_reward = node.web3.toWei(staking_reward, 'ether')
         return block_reward, staking_reward
 
-    def get_settlement_switchpoint(self, web3, number=0):
+    def get_settlement_switchpoint(self, node, number=0):
         """
         获取当前结算周期最后一块高
-        :param web3: w3链接
+        :param node: w3链接
         :param number: 结算周期数
         :return:
         """
         block_namber = self.settlement_size * number
-        tmp_current_block = web3.eth.blockNumber
+        tmp_current_block = node.eth.blockNumber
         current_end_block = math.ceil(tmp_current_block / self.settlement_size) * self.settlement_size + block_namber
         return current_end_block
 
-    def get_front_settlement_switchpoint(self, web3, number=0):
+    def get_front_settlement_switchpoint(self, node, number=0):
         """
         获取当前结算周期前一个块高
-        :param web3: w3链接
+        :param node: w3链接
         :param number: 结算周期数
         :return:
         """
         block_num = self.settlement_size * (number + 1)
-        current_end_block = self.get_settlement_switchpoint(web3)
+        current_end_block = self.get_settlement_switchpoint(node)
         history_block = current_end_block - block_num
         return history_block
 
-    def wait_settlement_blocknum(self, web3, number=0):
+    def wait_settlement_blocknum(self, node, number=0):
         """
         等待当个结算周期结算
-        :param web3: w3链接
+        :param node:
         :param number: 结算周期数
         :return:
         """
-        current_block = web3.eth.blockNumber
-        current_end_block = self.get_settlement_switchpoint(web3, number)
-        endtime = int(time.time()) + (current_end_block - current_block) * self.interval * 2
-        while endtime > int(time.time()):
-            time.sleep(1)
-            current_block = web3.eth.blockNumber
-            if current_block >= current_end_block:
-                break
+        end_block = self.get_settlement_switchpoint(node, number)
+        wait_block_number(node, end_block, self.interval)
 
-    def get_annual_switchpoint(self, web3):
+    def get_annual_switchpoint(self, node):
         """
         获取年度结算周期数
         :return:
         """
         annual_cycle = (self.additional_cycle_time * 60) // (self.settlement_size * self.interval)
         annualsize = annual_cycle * self.settlement_size
-        current_block = web3.eth.blockNumber
+        current_block = node.eth.blockNumber
         current_end_block = math.ceil(current_block / annualsize) * annualsize
         return annual_cycle, annualsize, current_end_block
 
-    def wait_annual_blocknum(self, web3):
+    def wait_annual_blocknum(self, node):
         """
         等待当个年度块高结束
-        :param web3:
+        :param node:
         :return:
         """
-        annualcycle, annualsize, current_end_block = self.get_annual_switchpoint(web3)
-        current_block = web3.eth.blockNumber
+        annualcycle, annualsize, current_end_block = self.get_annual_switchpoint(node)
+        current_block = node.eth.blockNumber
         differ_block = annualsize - (current_block % annualsize)
         annual_end_block = current_block + differ_block
-        endtime = int(time.time()) + differ_block * self.interval * 2
-        while endtime > int(time.time()):
-            time.sleep(1)
-            current_block = web3.eth.blockNumber
-            if current_block > annual_end_block:
-                break
+        wait_block_number(node, annual_end_block, self.interval)
 
-    def wait_consensus_blocknum(self, web3, number=0):
+    def wait_consensus_blocknum(self, node, number=0):
         """
         等待当个共识轮块高结束
-        :param web3:
+        :param node:
         :param number:
         :return:
         """
-        current_end_block = self.get_consensus_switchpoint(web3, number)
-        current_block = web3.eth.blockNumber
-        endtime = int(time.time()) + (current_end_block - current_block) * 3
-        while endtime > int(time.time()):
-            time.sleep(1)
-            current_block = web3.eth.blockNumber
-            if current_block > current_end_block:
-                break
+        end_block = self.get_consensus_switchpoint(node, number)
+        wait_block_number(node, end_block, self.interval)
 
-    def get_consensus_switchpoint(self, web3, number=0):
+    def get_consensus_switchpoint(self, node, number=0):
         """
         获取指定共识轮块高
-        :param web3:
+        :param node:
         :param number:
         :return:
         """
         block_namber = self.consensussize * number
-        current_block = web3.eth.blockNumber
+        current_block = node.eth.blockNumber
         current_end_block = math.ceil(current_block / self.consensussize) * self.consensussize + block_namber
         return current_end_block
