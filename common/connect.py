@@ -65,6 +65,7 @@ def connect_linux_pem(ip, username, pem_path):
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(ip, username=username, pkey=key)
     t = ssh.get_transport()
+    t.set_keepalive(30)
     sftp = paramiko.SFTPClient.from_transport(t)
     return ssh, sftp, t
 
