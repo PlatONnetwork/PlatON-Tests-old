@@ -40,6 +40,6 @@ def global_test_env(request):
     yield env
 
     # todo
-    # env.shutdown()
+    env.shutdown()
 
 

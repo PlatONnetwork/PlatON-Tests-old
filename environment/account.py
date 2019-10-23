@@ -52,8 +52,8 @@ class Account:
         tmp_from_address = Web3.toChecksumAddress(from_address)
         nonce = platon.getTransactionCount(from_address)
 
-        if nonce < account['nonce']:
-            nonce = account['nonce']
+        # if nonce < account['nonce']:
+        #     nonce = account['nonce']
 
 
 
@@ -68,15 +68,24 @@ class Account:
             'from': tmp_from_address,
         }
 
+
+        log.info("account['prikey']:::::::{}".format(account['prikey']))
+
         signedTransactionDict = platon.account.signTransaction(
             transaction_dict, account['prikey']
         )
 
+        log.info("signedTransactionDict:::::::{}，nonce::::::::::{}".format(signedTransactionDict, nonce))
+
         data = signedTransactionDict.rawTransaction
         result = HexBytes(platon.sendRawTransaction(data)).hex()
+        log.info("result:::::::{}".format(result))
         res = platon.waitForTransactionReceipt(result)
         account['nonce'] = nonce+1
         self.accounts[from_address] = account
+
+
+
         return res
 
     def generate_account_in_node(self, node, passwd, balance=0):

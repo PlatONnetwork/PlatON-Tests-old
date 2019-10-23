@@ -62,14 +62,16 @@ def block_with_txn_with_log(global_test_env):
     env = global_test_env
     node = env.get_rand_node()
     plan = [{"Epoch":1,"Amount":1000000}]
-    res = env.account.create_restricting_plan( node.web3,COMMON_ADDRESS,plan,env.account.account_with_money['address'],node.eth.gasPrice*2,300000)
+
+    log.info("send block_with_txn_with_log to host: {}".format(node.host))
+
+    res = env.account.create_restricting_plan( node.web3,COMMON_ADDRESS,plan,env.account.account_with_money['address'],node.eth.gasPrice*2,30000000)
     platon = Eth(node.web3)
     return platon.getBlock(res['blockNumber'])
 
 
 
 class TestPlaton():
-
     @pytest.mark.P1
     def test_getbalance(self, global_test_env,platon_connect):
         env = global_test_env
@@ -437,7 +439,7 @@ class TestPlaton():
         replace_txn = platon.getTransaction(replace_txn_hash)
 
         # todo minimum gas price is what
-        assert replace_txn['gasPrice'] == 1100000000
+        assert replace_txn['gasPrice'] == int( platon.gasPrice*1.1)
 
     @pytest.mark.P1
     def test_platon_replaceTransaction_gas_price_defaulting_strategy_higher(self,unlocked_account):
@@ -500,7 +502,7 @@ class TestPlaton():
         replace_txn = platon.getTransaction(replace_txn_hash)
 
         # Strategy provices lower gas price - minimum preferred
-        assert replace_txn['gasPrice'] == price * 2*1.1
+        assert replace_txn['gasPrice'] == int(price * 2*1.1)
 
     #todo  需要一个出块很慢的环境
     # def test_platon_modifyTransaction(self,  unlocked_account):
@@ -551,7 +553,7 @@ class TestPlaton():
 
 
         txn_hash = platon.sendRawTransaction(data)
-
+        platon.waitForTransactionReceipt(txn_hash)
         assert txn_hash == signedTransactionDict.hash
 
     # todo 合约调用
@@ -693,8 +695,12 @@ class TestPlaton():
 
     @pytest.mark.P1
     def test_platon_getTransactionReceipt_with_log_entry(self, platon_connect, block_with_txn_with_log):
+
+        log.info("block_with_txn_with_log:::{}".format(block_with_txn_with_log))
+
         receipt = platon_connect.getTransactionReceipt(block_with_txn_with_log['transactions'][0])
-        log.info(receipt)
+        log.info(" tx:{}, receipt:::{}".format(block_with_txn_with_log['transactions'][0],receipt))
+
         assert is_dict(receipt)
         assert receipt['blockNumber'] == block_with_txn_with_log['number']
         assert receipt['blockHash'] == block_with_txn_with_log['hash']
@@ -710,14 +716,6 @@ class TestPlaton():
         # assert is_same_address(log_entry['address'],  block_with_txn_with_log['contract_address'])
         assert log_entry['transactionIndex'] == 0
         # assert log_entry['transactionHash'] == HexBytes(block_with_txn_with_log['transactionsRoot'])
-
-
-
-
-
-
-
-
 
 
 

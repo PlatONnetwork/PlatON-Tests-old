@@ -235,7 +235,7 @@ class TestEnvironment:
         关闭所有节点，并删除节点部署目录，supervisor节点配置
         :return:
         """
-        log.info("shutdown all node")
+        log.info("shutdown and clean all nodes")
 
         def close(node: Node):
             return node.close()

@@ -29,7 +29,7 @@ class TestConfig:
         # 链部署定制
         self.init_chain = init_chain
         self.is_need_static = is_need_static
-        self.log_level = 4
+        self.log_level = 5
         self.syncmode = "full"
         self.append_cmd = ""
 
