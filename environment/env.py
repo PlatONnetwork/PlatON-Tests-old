@@ -182,7 +182,7 @@ class TestEnvironment:
         :param genesis_file: 指定genesis， 不传默认使用tmp中生成的
         :return:
         """
-        log.info("deploy all node")
+        log.info("deploy all nodes")
         if genesis_file:
             log.info("new genesis")
             self.deploy_nodes(self.get_all_nodes(), static_file, genesis_file)
@@ -196,7 +196,7 @@ class TestEnvironment:
         启动所有节点，根据cfg的init_chain的值，判断是否初始化
         :return:
         """
-        log.info("start all node")
+        log.info("start all nodes")
         self.start_nodes(self.get_all_nodes(), self.cfg.init_chain)
 
     def stop_all(self):
@@ -204,7 +204,7 @@ class TestEnvironment:
         停止所有节点
         :return:
         """
-        log.info("stop all node")
+        log.info("stop all nodes")
         self.stop_nodes(self.get_all_nodes())
 
     def reset_all(self):
@@ -212,7 +212,7 @@ class TestEnvironment:
         重启所有节点
         :return:
         """
-        log.info("restart all node")
+        log.info("restart all nodes")
         self.reset_nodes(self.get_all_nodes())
 
     def clean_all(self):
@@ -220,7 +220,7 @@ class TestEnvironment:
         关闭所有节点，并删除部署节点的目录
         :return:
         """
-        log.info("clean all node")
+        log.info("clean all nodes")
         self.clean_nodes(self.get_all_nodes())
 
     def clean_db_all(self):
@@ -269,7 +269,7 @@ class TestEnvironment:
         :param genesis_file:
         :return:
         """
-        log.info("deploy node")
+        log.info("deploy nodes")
         self.stop_nodes(node_list)
         # self.parseAccountFile()
         self.rewrite_genesis_file()

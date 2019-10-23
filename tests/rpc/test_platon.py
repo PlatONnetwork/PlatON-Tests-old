@@ -49,7 +49,12 @@ def block_with_txn(global_test_env):
     account = env.account.account_with_money
     res = env.account.sendTransaction(node.web3,'',account['address'],account['address'], node.eth.gasPrice, 21000, 10000)
     platon = Eth(node.web3)
-    return platon.getBlock(res['blockNumber'])
+
+    block = platon.getBlock(res['blockNumber'])
+    log.info("blockNumber:::::::::{}".format(res['blockNumber']))
+    log.info("blockInfo:::::::::{}".format(block))
+    time.sleep(2)
+    return block
 
 @pytest.fixture(scope="module")
 def empty_block(platon_connect):
@@ -67,7 +72,14 @@ def block_with_txn_with_log(global_test_env):
 
     res = env.account.create_restricting_plan( node.web3,COMMON_ADDRESS,plan,env.account.account_with_money['address'],node.eth.gasPrice*2,30000000)
     platon = Eth(node.web3)
-    return platon.getBlock(res['blockNumber'])
+
+    block = platon.getBlock(res['blockNumber'])
+
+    log.info("blockNumber:::::::::{}".format(res['blockNumber']))
+    log.info("blockInfo:::::::::{}".format(block))
+    time.sleep(2)
+
+    return block
 
 
 
@@ -696,10 +708,9 @@ class TestPlaton():
     @pytest.mark.P1
     def test_platon_getTransactionReceipt_with_log_entry(self, platon_connect, block_with_txn_with_log):
 
-        log.info("block_with_txn_with_log:::{}".format(block_with_txn_with_log))
-
+        log.info("block in test_platon_getTransactionReceipt_with_log_entry:::{}".format(block_with_txn_with_log))
         receipt = platon_connect.getTransactionReceipt(block_with_txn_with_log['transactions'][0])
-        log.info(" tx:{}, receipt:::{}".format(block_with_txn_with_log['transactions'][0],receipt))
+        log.info(" tx:{}, receipt:::{}".format(block_with_txn_with_log['transactions'][0].hex(),receipt))
 
         assert is_dict(receipt)
         assert receipt['blockNumber'] == block_with_txn_with_log['number']
