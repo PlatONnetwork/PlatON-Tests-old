@@ -160,7 +160,10 @@ class Account:
             "prikey": prikey,
         }
         self.accounts[address] = account
-        return address
+        return address, prikey
+
+    def find_pri_key(self, address):
+        return self.accounts[address]["prikey"]
 
 
 

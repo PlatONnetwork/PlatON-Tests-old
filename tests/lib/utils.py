@@ -185,18 +185,32 @@ def wait_block_number(node, block, interval=1):
         time.sleep(1)
     raise Exception("无法正常出块")
 
-# # ppos
-# def view_available_nodes(link):
-#     """
-#     比对两个节点list
-#     :return:
-#     """
-#     node_info = get_node_info(node_yml_path)
-#     rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get('nocollusion')
-#     candidateinfo = link.getCandidateList()
-#     candidateinfo = candidateinfo.get('Data')
-#     candidate_list = []
-#     for nodeid in candidateinfo:
-#         candidate_list.append(nodeid.get('NodeId'))
-#     if set(nodeid_list) <= set(candidate_list):
-#         start_init()
+
+def get_validator_term(node):
+    """
+    获取任期最大的nodeID
+    """
+    msg = node.ppos.getValidatorList()
+    term = []
+    nodeid = []
+    for i in msg["Data"]:
+        term.append(i["ValidatorTerm"])
+        nodeid.append(i["NodeId"])
+    max_term = (max(term))
+    term_nodeid_dict = dict(zip(term, nodeid))
+    return term_nodeid_dict[max_term]
+
+
+def get_max_staking_tx_index(node):
+    """
+    获取最大的交易索引的nodeID
+    """
+    msg = node.ppos.getValidatorList()
+    staking_tx_index_list = []
+    nodeid = []
+    for i in msg["Data"]:
+        staking_tx_index_list.append(i["StakingTxIndex"])
+        nodeid.append(i["NodeId"])
+    max_staking_tx_index = (max(staking_tx_index_list))
+    term_nodeid_dict = dict(zip(staking_tx_index_list, nodeid))
+    return term_nodeid_dict[max_staking_tx_index]

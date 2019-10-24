@@ -455,21 +455,21 @@ class TestEnvironment:
             return
         raise Exception("环境无法正常出块")
 
-    def backup_all_logs(self):
+    def backup_all_logs(self, case_name):
         """
         下载所有节点日志，未测试
         :return:
         """
-        self.backup_logs(self.get_all_nodes())
+        self.backup_logs(self.get_all_nodes(), case_name)
 
-    def backup_logs(self, node_list):
+    def backup_logs(self, node_list, case_name):
         self.__check_log_path()
 
         def backup(node: Node):
             return node.backup_log()
 
         self.executor(backup, node_list)
-        self.__zip_all_log()
+        self.__zip_all_log(case_name)
 
     def __check_log_path(self):
         if not os.path.exists(self.cfg.tmp_log):
@@ -480,10 +480,10 @@ class TestEnvironment:
         if not os.path.exists(self.cfg.bug_log):
             os.mkdir(self.cfg.bug_log)
 
-    def __zip_all_log(self):
+    def __zip_all_log(self, case_name):
         log.info("Start compressing.....")
         t = time.strftime("%Y-%m-%d_%H%M%S", time.localtime())
-        tar = tarfile.open("{}/{}_{}_log.tar.gz".format(self.cfg.bug_log, os.path.basename(self.cfg.node_file), t),
+        tar = tarfile.open("{}/{}_{}_{}_log.tar.gz".format(self.cfg.bug_log, os.path.basename(self.cfg.node_file), case_name, t),
                            "w:gz")
         tar.add(self.cfg.tmp_log, arcname=os.path.basename(self.cfg.tmp_log))
         tar.close()

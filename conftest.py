@@ -43,3 +43,17 @@ def global_test_env(request):
     env.shutdown()
 
 
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    # execute all other hooks to obtain the report object
+    outcome = yield
+    rep = outcome.get_result()
+    log.info("try download log")
+    # we only look at actual failing test calls, not setup/teardown
+    if rep.when == "call" and not rep.passed:
+        # download log in here
+        try:
+            log.info(rep.global_test_env.chain_id)
+            # item.global_test_env.backup_all_logs(item.name)
+        except Exception as e:
+            log.info("这个失败没有生成日志:{}".format(e))
