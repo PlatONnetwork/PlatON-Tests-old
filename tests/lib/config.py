@@ -27,6 +27,9 @@ class PipConfig:
     PLATON_NEW_BIN7 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/version7/platon"))
     PLATON_NEW_BIN0 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/platon"))
     PLATON_NEW_BIN120 = os.path.abspath(os.path.join(BASE_DIR, "deploy/bin/newpackage/diffcodeversion/platon"))
+    text_proposal = 1
+    cancel_proposal = 4
+    version_proposal = 2
 
 
 class DefaultEconomicConfig:
