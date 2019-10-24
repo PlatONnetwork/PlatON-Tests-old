@@ -54,7 +54,6 @@ def account_env(global_test_env)->(Node, AccountEnv):
 
 @allure.title("命令account new，指定datadir和keystore路径，通过输入密码创建新账号")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_account_new(account_env):
     node, env = account_env
     returnList = run_ssh_cmd(node.ssh, "{} account list --datadir {}".format(node.remote_bin_file, node.remote_data_dir))
@@ -68,7 +67,6 @@ def test_account_new(account_env):
 
 @allure.title("命令account new，指定datadir，在缺省的datadir/keystore下，通过输入密码创建新账号")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_account_new_defualt_keystore_dir(account_env):
     node, env = account_env
     returnList = run_ssh_cmd(node.ssh, "{} account list --datadir {}".format(node.remote_bin_file, node.remote_data_dir))
@@ -83,7 +81,6 @@ def test_account_new_defualt_keystore_dir(account_env):
 
 @allure.title("命令account new，指定keystore下，通过输入密码创建新账号")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_account_new_keystore_dir(account_env):
     node, env = account_env
     returnList = run_ssh_cmd(node.ssh, "{} account list --keystore {}".format(node.remote_bin_file, node.remote_keystore_dir))
@@ -98,7 +95,6 @@ def test_account_new_keystore_dir(account_env):
 
 @allure.title("命令account new，指定datadir和keystore路径，通过密码文件创建新账号")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_account_new_with_pwd_file(account_env):
     node, env = account_env
     returnList = run_ssh_cmd(node.ssh, "{} account list --datadir {}".format(node.remote_bin_file, node.remote_data_dir))
@@ -116,7 +112,6 @@ def test_account_new_with_pwd_file(account_env):
 
 @allure.title("命令account new，指定datadir，在缺省的datadir/keystore下，通过密码文件创建新账号")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_account_new_defualt_keystore_dir(account_env):
     node, env = account_env
     returnList = run_ssh_cmd(node.ssh, "{} account list --datadir {}".format(node.remote_bin_file, node.remote_data_dir))
@@ -132,7 +127,6 @@ def test_account_new_defualt_keystore_dir(account_env):
 
 @allure.title("命令account new，指定keystore，通过输入密码创建新账号")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_account_new_with_pwd_file_just_keystore_dir(account_env):
     node, env = account_env
     returnList = run_ssh_cmd(node.ssh, "{} account list --keystore {}".format(node.remote_bin_file, node.remote_keystore_dir))
@@ -148,7 +142,6 @@ def test_account_new_with_pwd_file_just_keystore_dir(account_env):
 
 @allure.title("命令account update，指定datadir")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_account_update_with_data_dir(account_env):
     node, env = account_env
     run_ssh_cmd(node.ssh, "{} account update {} --datadir {}".format(node.remote_bin_file, env.remote_account_address, node.remote_data_dir), "88888888", "88888888", "88888888")
@@ -157,7 +150,6 @@ def test_account_update_with_data_dir(account_env):
 
 @allure.title("命令account update，指定keystore")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_account_update_with_keystore_dir(account_env):
     node, env = account_env
     run_ssh_cmd(node.ssh, "{} account update {} --keystore {}".format(node.remote_bin_file, env.remote_account_address, node.remote_keystore_dir), "88888888", "88888888", "88888888")
@@ -166,7 +158,6 @@ def test_account_update_with_keystore_dir(account_env):
 
 @allure.title("命令account import，不指定密码文件，指定datadir")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_account_import(account_env):
     node, env = account_env
 
@@ -186,7 +177,6 @@ def test_account_import(account_env):
 
 @allure.title("命令account import，不指定密码文件，指定keystore")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_account_import_2(account_env):
     node, env = account_env
 
@@ -207,7 +197,6 @@ def test_account_import_2(account_env):
 
 @allure.title("命令account import，指定密码文件，指定datadir")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_account_import_3(account_env):
     node, env = account_env
 
@@ -227,7 +216,6 @@ def test_account_import_3(account_env):
 
 @allure.title("命令account import，指定密码文件，指定keystore")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_account_import_4(account_env):
     node, env = account_env
 
@@ -248,7 +236,6 @@ def test_account_import_4(account_env):
 
 @allure.title("命令account list")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_account_list(account_env):
     node, env = account_env
 
@@ -264,7 +251,6 @@ def test_account_list(account_env):
 
 @allure.title("命令attach")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_attach_http(account_env):
     node, env = account_env
 
@@ -281,7 +267,6 @@ def test_attach_http(account_env):
 
 @allure.title("命令copydb")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_copydb(global_test_env):
     globalEnv = global_test_env
 
@@ -325,7 +310,6 @@ def test_copydb(global_test_env):
 
 @allure.title("命令dump导出区块信息")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_dump_block(global_test_env):
     globalEnv = global_test_env
 
@@ -341,7 +325,6 @@ def test_dump_block(global_test_env):
 
 @allure.title("命令dumpconfig导出配置信息")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_dump_config(global_test_env):
     globalEnv = global_test_env
 
@@ -361,7 +344,6 @@ def test_update_dumped_config(global_test_env):
 
 @allure.title("命令export-preimages/import-preimages")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_export_import_preimages(global_test_env):
     globalEnv = global_test_env
 
@@ -386,7 +368,6 @@ def test_export_import_preimages(global_test_env):
 
 @allure.title("命令license")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_license(global_test_env):
     globalEnv = global_test_env
 
@@ -400,7 +381,6 @@ def test_license(global_test_env):
 
 @allure.title("命令version")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_version(global_test_env):
     globalEnv = global_test_env
 
@@ -415,7 +395,6 @@ def test_version(global_test_env):
 
 @allure.title("可选项-config")
 @pytest.mark.P1
-@pytest.mark.SYNC
 def test_config(global_test_env):
     globalEnv = global_test_env
 
