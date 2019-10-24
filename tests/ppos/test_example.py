@@ -1,6 +1,6 @@
 import pytest
-from tests.lib.common import Staking
-from tests.lib.config import StakingConfig
+from tests.lib import Staking
+from tests.lib import StakingConfig
 from common.log import log
 
 
@@ -12,11 +12,9 @@ def staking_obj(global_test_env):
 
 
 def test_staking(staking_obj):
-    assert False
     address, _ = staking_obj.economic.account.generate_account(staking_obj.node.web3, 10**18*10000000)
     log.info("Generate address:{}".format(address))
     result = staking_obj.create_staking(0, address, address)
     log.info("Staking result:{}".format(result))
     assert result["Code"] == 0
     assert result["ErrMsg"] == "ok"
-    assert False

@@ -2,7 +2,27 @@
 import time
 from common.load_file import LoadFile
 import json
+import random
+import string
+from hexbytes import HexBytes
 
+
+def get_blockhash(node, blocknumber=None):
+    '''
+    根据块高获取块hash
+    :param node:
+    :param blocknumber:
+    :return:
+    '''
+    if not blocknumber:
+        blocknumber = node.blockNumber
+    blockinfo = node.eth.getBlock(blocknumber)
+    blockhash = blockinfo.get('hash')
+    blockhash = HexBytes(blockhash).hex()
+    return blockhash
+
+def int_to_bytes(value):
+    return int(value).to_bytes(length=4, byteorder='big', signed=False)
 
 def stop_node_by_node_id(node_list, nodeid):
     """
@@ -214,3 +234,33 @@ def get_max_staking_tx_index(node):
     max_staking_tx_index = (max(staking_tx_index_list))
     term_nodeid_dict = dict(zip(staking_tx_index_list, nodeid))
     return term_nodeid_dict[max_staking_tx_index]
+
+def gen_random_string(length):
+    '''
+    获取指定生成位数的随机数包含字母和数字
+    :param length:
+    :return: string
+    '''
+    len = length
+    # 随机产生指定个数的字符
+    num_of_numeric = random.randint(1, len - 1)
+
+    # 剩下的都是字母
+    num_of_letter = len - num_of_numeric
+
+    # 随机生成数字
+    numerics = [random.choice(string.digits) for i in range(num_of_numeric)]
+
+    # 随机生成字母
+    letters = [random.choice(string.ascii_letters) for i in range(num_of_letter)]
+
+    # 结合两者
+    all_chars = numerics + letters
+
+    # 对序列随机排序
+    random.shuffle(all_chars)
+
+    # 生成最终字符串
+    result = ''.join([i for i in all_chars]).lower()
+
+    return result

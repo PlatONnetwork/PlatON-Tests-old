@@ -108,6 +108,11 @@ class Genesis:
         data["EconomicModel"]["InnerAcc"] = copy(self.EconomicModel.InnerAcc.__dict__)
         return data
 
+    def to_file(self, file):
+        data = self.to_dict()
+        with open(file, "w") as f:
+            f.write(json.dumps(data, indent=4))
+
 
 if __name__ == "__main__":
     from common.load_file import LoadFile
