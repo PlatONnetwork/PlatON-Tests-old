@@ -174,21 +174,20 @@ class TestEnvironment:
             raise Exception("executor {} failed:{}".format(func.__name__, result))
         return True
 
-    def deploy_all(self, static_file=None, genesis_file=None):
+    def deploy_all(self, genesis_file=None):
         """
         部署所有节点并启动
         1.当传入genesis文件时，使用传入genesis文件部署，不传入使用生成的genesis文件部署
-        :param static_file: 指定静态文件，不传默认使用tmp中生成的
         :param genesis_file: 指定genesis， 不传默认使用tmp中生成的
         :return:
         """
         log.info("deploy all nodes")
         if genesis_file:
             log.info("new genesis")
-            self.deploy_nodes(self.get_all_nodes(), static_file, genesis_file)
+            self.deploy_nodes(self.get_all_nodes(), genesis_file)
         else:
             log.info("default genesis")
-            self.deploy_nodes(self.get_all_nodes(), static_file, self.cfg.genesis_tmp)
+            self.deploy_nodes(self.get_all_nodes(), self.cfg.genesis_tmp)
         log.info("deploy success")
 
     def start_all(self):
@@ -255,17 +254,15 @@ class TestEnvironment:
 
         return self.executor(start, node_list, init_chain)
 
-    def deploy_nodes(self, node_list: list, static_file=None, genesis_file=None):
+    def deploy_nodes(self, node_list: list, genesis_file=None):
         """
         部署节点
         1.关闭所有节点，避免相同genesis节点互相影响
         2.重写genesis，static，config
-        3.判断是否需要上传static，根据其逻辑压缩本次部署环境的必要信息
-        4.依赖安装
-        5.上传压缩吧
-        6.执行部署节点的逻辑
+        3.依赖安装
+        4.上传压缩吧
+        5.执行部署节点的逻辑
         :param node_list:
-        :param static_file:
         :param genesis_file:
         :return:
         """
@@ -275,13 +272,13 @@ class TestEnvironment:
         self.rewrite_genesis_file()
         self.rewrite_static_nodes()
         self.rewrite_config_json()
-
-        if not self.cfg.is_need_static:
-            self.__compression(None)
-        elif static_file:
-            self.__compression(static_file)
-        else:
-            self.__compression(self.cfg.static_node_tmp)
+        self.__compression()
+        # if not self.cfg.is_need_static:
+        #     self.__compression(None)
+        # elif static_file:
+        #     self.__compression(static_file)
+        # else:
+        #     self.__compression(self.cfg.static_node_tmp)
         if self.cfg.install_supervisor:
             self.install_all_supervisor()
             self.cfg.install_supervisor = False
@@ -458,21 +455,21 @@ class TestEnvironment:
             return
         raise Exception("环境无法正常出块")
 
-    def backup_all_logs(self):
+    def backup_all_logs(self, case_name):
         """
         下载所有节点日志，未测试
         :return:
         """
-        self.backup_logs(self.get_all_nodes())
+        self.backup_logs(self.get_all_nodes(), case_name)
 
-    def backup_logs(self, node_list):
+    def backup_logs(self, node_list, case_name):
         self.__check_log_path()
 
         def backup(node: Node):
             return node.backup_log()
 
         self.executor(backup, node_list)
-        self.__zip_all_log()
+        self.__zip_all_log(case_name)
 
     def __check_log_path(self):
         if not os.path.exists(self.cfg.tmp_log):
@@ -483,10 +480,10 @@ class TestEnvironment:
         if not os.path.exists(self.cfg.bug_log):
             os.mkdir(self.cfg.bug_log)
 
-    def __zip_all_log(self):
+    def __zip_all_log(self, case_name):
         log.info("Start compressing.....")
         t = time.strftime("%Y-%m-%d_%H%M%S", time.localtime())
-        tar = tarfile.open("{}/{}_{}_log.tar.gz".format(self.cfg.bug_log, os.path.basename(self.cfg.node_file), t),
+        tar = tarfile.open("{}/{}_{}_{}_log.tar.gz".format(self.cfg.bug_log, os.path.basename(self.cfg.node_file), case_name, t),
                            "w:gz")
         tar.add(self.cfg.tmp_log, arcname=os.path.basename(self.cfg.tmp_log))
         tar.close()
@@ -529,7 +526,7 @@ class TestEnvironment:
         """
         log.info("rewrite config.json")
         config_data = LoadFile(self.cfg.config_json_file).get_data()
-        config_data['node']['P2P']["BootstrapNodes"] = self.get_static_nodes()
+        # config_data['node']['P2P']["BootstrapNodes"] = self.get_static_nodes()
         with open(self.cfg.config_json_tmp, 'w', encoding='utf-8') as f:
             f.write(json.dumps(config_data, indent=4))
 
@@ -573,7 +570,7 @@ class TestEnvironment:
             with open(self.cfg.node_file, encoding="utf-8", mode="w") as f:
                 yaml.dump(result, f, Dumper=yaml.RoundTripDumper)
 
-    def __compression(self, static):
+    def __compression(self):
         """
         压缩文件
         :param static:
@@ -592,8 +589,8 @@ class TestEnvironment:
         shutil.copyfile(self.cfg.address_file, keystore)
         shutil.copyfile(self.cfg.platon_bin_file, os.path.join(env_gz, "platon"))
         shutil.copyfile(self.cfg.config_json_tmp, os.path.join(env_gz, "config.json"))
-        if static:
-            shutil.copyfile(static, os.path.join(data_dir, "static-nodes.json"))
+        # if static:
+        #     shutil.copyfile(static, os.path.join(data_dir, "static-nodes.json"))
         t = tarfile.open(env_gz + ".tar.gz", "w:gz")
         t.add(env_gz, arcname=os.path.basename(env_gz))
         t.close()
