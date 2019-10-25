@@ -9,6 +9,14 @@ class Restricting:
         self.economic = Economic(env)
 
     def createRestrictingPlan(self, account, plan, from_address, transaction_cfg=None):
+        """
+        新建锁仓计划
+        :param account: 
+        :param plan: 
+        :param from_address: 
+        :param transaction_cfg: 
+        :return: 
+        """
         pri_key = self.economic.account.find_pri_key(from_address)
         return self.ppos.createRestrictingPlan(account, plan, pri_key, transaction_cfg)
 

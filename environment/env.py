@@ -73,6 +73,36 @@ class TestEnvironment:
         # accounts
         self.account = Account(self.cfg.account_file, self.genesis_config["config"]["chainId"])
 
+    def copy_env(self):
+        """
+        拷贝环境
+        :return:
+        """
+        return copy.copy(self)
+
+    def set_cfg(self, cfg: TestConfig):
+        """
+        设置配置文件，同时会修改节点的cfg
+        :param cfg:
+        :return:
+        """
+        self.cfg = cfg
+        genesis_config = LoadFile(self.cfg.genesis_file).get_data()
+        self.set_genesis(genesis_config)
+        for node in self.get_all_nodes():
+            node.cfg = cfg
+
+    def set_genesis(self, genesis_config):
+        """
+        设置genesis，同时会修改节点的genesis
+        :param genesis_config:
+        :return:
+        """
+        self.genesis_config = genesis_config
+        self.account.chain_id = self.chain_id
+        for node in self.get_all_nodes():
+            node.genesis_config = genesis_config
+
     @property
     def chain_id(self):
         return self.genesis_config["config"]["chainId"]
@@ -177,25 +207,39 @@ class TestEnvironment:
     def deploy_all(self, genesis_file=None):
         """
         部署所有节点并启动
-        1.当传入genesis文件时，使用传入genesis文件部署，不传入使用生成的genesis文件部署
         :param genesis_file: 指定genesis， 不传默认使用tmp中生成的
         :return:
         """
-        log.info("deploy all nodes")
-        if genesis_file:
-            log.info("new genesis")
-            self.deploy_nodes(self.get_all_nodes(), genesis_file)
-        else:
-            log.info("default genesis")
-            self.deploy_nodes(self.get_all_nodes(), self.cfg.genesis_tmp)
+        self.prepare_all()
+        if genesis_file is None:
+            genesis_file = self.cfg.genesis_tmp
+        log.info("deploy all node")
+        self.deploy_nodes(self.get_all_nodes(), genesis_file)
         log.info("deploy success")
+
+    def prepare_all(self):
+        """
+        准备环境数据
+        :return:
+        """
+        self.rewrite_genesis_file()
+        self.rewrite_static_nodes()
+        self.rewrite_config_json()
+        self.__compression()
+        if self.cfg.install_supervisor:
+            self.install_all_supervisor()
+            self.cfg.install_supervisor = False
+        if self.cfg.install_dependency:
+            self.install_all_dependency()
+            self.cfg.install_dependency = False
+        self.put_all_compression()
 
     def start_all(self):
         """
         启动所有节点，根据cfg的init_chain的值，判断是否初始化
         :return:
         """
-        log.info("start all nodes")
+        log.info("start all node")
         self.start_nodes(self.get_all_nodes(), self.cfg.init_chain)
 
     def stop_all(self):
@@ -203,7 +247,7 @@ class TestEnvironment:
         停止所有节点
         :return:
         """
-        log.info("stop all nodes")
+        log.info("stop all node")
         self.stop_nodes(self.get_all_nodes())
 
     def reset_all(self):
@@ -211,7 +255,7 @@ class TestEnvironment:
         重启所有节点
         :return:
         """
-        log.info("restart all nodes")
+        log.info("restart all node")
         self.reset_nodes(self.get_all_nodes())
 
     def clean_all(self):
@@ -219,7 +263,7 @@ class TestEnvironment:
         关闭所有节点，并删除部署节点的目录
         :return:
         """
-        log.info("clean all nodes")
+        log.info("clean all node")
         self.clean_nodes(self.get_all_nodes())
 
     def clean_db_all(self):
@@ -254,43 +298,33 @@ class TestEnvironment:
 
         return self.executor(start, node_list, init_chain)
 
-    def deploy_nodes(self, node_list: list, genesis_file=None):
+    def deploy_nodes(self, node_list: list, genesis_file):
         """
         部署节点
-        1.关闭所有节点，避免相同genesis节点互相影响
-        2.重写genesis，static，config
-        3.依赖安装
-        4.上传压缩吧
-        5.执行部署节点的逻辑
+        根据是否需要初始化，选择是否清空环境
+        上传所有的节点文件
         :param node_list:
         :param genesis_file:
         :return:
         """
-        log.info("deploy nodes")
-        self.stop_nodes(node_list)
-        # self.parseAccountFile()
-        self.rewrite_genesis_file()
-        self.rewrite_static_nodes()
-        self.rewrite_config_json()
-        self.__compression()
-        # if not self.cfg.is_need_static:
-        #     self.__compression(None)
-        # elif static_file:
-        #     self.__compression(static_file)
-        # else:
-        #     self.__compression(self.cfg.static_node_tmp)
-        if self.cfg.install_supervisor:
-            self.install_all_supervisor()
-            self.cfg.install_supervisor = False
-        if self.cfg.install_dependency:
-            self.install_all_dependency()
-            self.cfg.install_dependency = False
-        self.put_all_compression()
+        log.info("deploy node")
+        if self.cfg.init_chain:
+            self.clean_nodes(node_list)
 
-        def deploy(node: Node):
-            return node.deploy_me(genesis_file)
+        self.put_file_nodes(node_list, genesis_file)
+        return self.start_nodes(node_list, self.cfg.init_chain)
 
-        return self.executor(deploy, node_list)
+    def put_file_nodes(self, node_list, genesis_file):
+        """
+        上传所有文件
+        :param node_list:
+        :param genesis_file:
+        :return:
+        """
+        def prepare(node: Node):
+            return node.put_all_file(genesis_file)
+
+        return self.executor(prepare, node_list)
 
     def stop_nodes(self, node_list: list):
         """
@@ -463,6 +497,12 @@ class TestEnvironment:
         self.backup_logs(self.get_all_nodes(), case_name)
 
     def backup_logs(self, node_list, case_name):
+        """
+        备份日志
+        :param node_list:
+        :param case_name:
+        :return:
+        """
         self.__check_log_path()
 
         def backup(node: Node):
@@ -616,45 +656,45 @@ if __name__ == "__main__":
     # print(env.cfg.syncmode)
     log.info("测试部署")
     env.deploy_all()
-    time.sleep(36000)
-    # env.deploy_all()
-    # d = env.block_numbers()
-    # print(d)
-    # node = env.get_rand_node()
-    # node.create_keystore()
-    # print(node.node_mark)
-    # time.sleep(80)
-    # log.info("测试关闭")
-    # env.stop_all()
-    # time.sleep(30)
-    # log.info("测试不初始化启动")
-    # env.cfg.init_chain = False
-    # env.start_all()
-    # time.sleep(60)
-    # d = env.block_numbers()
-    # print(d)
-    # log.info("测试重启")
-    # env.reset_all()
-    # time.sleep(60)
-    # d = env.block_numbers()
-    # print(d)
-    # log.info("测试删除数据库")
-    # env.clean_db_all()
-    # log.info("删除数据库成功")
-    # time.sleep(60)
-    # env.cfg.init_chain = True
-    # env.start_all()
-    # time.sleep(30)
-    # d = env.block_numbers()
-    # print(d)
-    # log.info("测试删除所有数据")
-    # env.clean_all()
-    # log.info("删除数据成功")
-    # log.info("重新部署")
-    # env.deploy_all()
-    # d = env.block_numbers()
-    # print(d)
-    # time.sleep(60)
-    # d = env.block_numbers()
-    # print(d)
+    time.sleep(30)
+    env.deploy_all()
+    d = env.block_numbers()
+    print(d)
+    node = env.get_rand_node()
+    node.create_keystore()
+    print(node.node_mark)
+    time.sleep(80)
+    log.info("测试关闭")
+    env.stop_all()
+    time.sleep(30)
+    log.info("测试不初始化启动")
+    env.cfg.init_chain = False
+    env.start_all()
+    time.sleep(60)
+    d = env.block_numbers()
+    print(d)
+    log.info("测试重启")
+    env.reset_all()
+    time.sleep(60)
+    d = env.block_numbers()
+    print(d)
+    log.info("测试删除数据库")
+    env.clean_db_all()
+    log.info("删除数据库成功")
+    time.sleep(60)
+    env.cfg.init_chain = True
+    env.start_all()
+    time.sleep(30)
+    d = env.block_numbers()
+    print(d)
+    log.info("测试删除所有数据")
+    env.clean_all()
+    log.info("删除数据成功")
+    log.info("重新部署")
+    env.deploy_all()
+    d = env.block_numbers()
+    print(d)
+    time.sleep(60)
+    d = env.block_numbers()
+    print(d)
     env.shutdown()

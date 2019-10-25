@@ -3,11 +3,6 @@ from conf.settings import BASE_DIR
 
 
 class StakingConfig:
-    external_id = None
-    node_name = None
-    website = None
-    details = None
-
     def __init__(self, external_id, node_name, website, details):
         self.external_id = external_id
         self.node_name = node_name

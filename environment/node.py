@@ -14,6 +14,10 @@ from environment.config import TestConfig
 from common.log import log
 
 
+failed_msg = "Node-{} do {} failed:{}"
+success_msg = "Node-{} do {} success"
+
+
 class Node:
     def __init__(self, node_conf, cfg: TestConfig):
         self.cfg = cfg
@@ -104,22 +108,35 @@ class Node:
     def enode(self):
         return r"enode://" + self.node_id + "@" + self.host + ":" + self.p2p_port
 
+    def try_do(self, func):
+        try:
+            func()
+        except Exception as e:
+            raise Exception(failed_msg.format(self.node_mark, func.__name__, e))
+
+    def try_do_resturn(self, func):
+        try:
+            func()
+        except Exception as e:
+            return False, failed_msg.format(self.node_mark, func.__name__, e)
+        return True, success_msg.format(self.node_mark, func.__name__)
+
     def init(self):
         """
         初始化
         :return:
         """
-        try:
+        def __init():
             cmd = '{} --datadir {} init {}'.format(self.remote_bin_file, self.remote_data_dir, self.remote_genesis_file)
             result = self.run_ssh(cmd)
             # todo ：fix init complete
             # 这里加个查询，只能缓解没有初始化完成就开始部署的问题
             self.run_ssh("ls {}".format(self.remote_data_dir))
-        except Exception as e:
-            raise Exception("{}-init failed:{}".format(self.node_mark, e))
-        if len(result) > 0:
-            log.error("{}-init failed:{}".format(self.node_mark, result[0]))
-            raise Exception("{}-init failed:{}".format(self.node_mark, result[0]))
+            if len(result) > 0:
+                log.error(failed_msg.format(self.node_mark, "init", result[0]))
+                raise Exception(failed_msg.format(self.node_mark, "init", result[0]))
+            log.info("node-{} init success".format(self.node_mark))
+        self.try_do(__init)
 
     def run_ssh(self, cmd, need_password=False):
         if need_password:
@@ -131,61 +148,55 @@ class Node:
         清空节点数据
         :return:
         """
-        try:
+        def __clean():
             self.stop()
             self.run_ssh("sudo -S -p '' rm -rf {};mkdir -p {}".format(self.remote_node_path, self.remote_node_path),
                          True)
-        except Exception as e:
-            return False, "{}-clean failed:{}".format(self.node_mark, e)
-        return True, "{}-clean success".format(self.node_mark)
+        return self.try_do_resturn(__clean)
 
     def clean_db(self):
         """
         清空节点数据库
         :return:
         """
-        try:
+        def __clean_db():
             self.stop()
             self.run_ssh("sudo -S -p '' rm -rf {}".format(self.remote_db_dir), True)
-        except Exception as e:
-            return False, "{}-clean db failed:{}".format(self.node_mark, e)
-        return True, "{}-clean db success".format(self.node_mark)
+        return self.try_do_resturn(__clean_db)
 
     def clean_log(self):
         """
         清空节点日志
         :return:
         """
-        try:
+        def __clean_log():
             self.stop()
             self.run_ssh("rm -rf {}".format(self.remote_log_dir))
             self.append_log_file()
-        except Exception as e:
-            raise Exception("{}-clean log failed:{}".format(self.node_mark, e))
+        self.try_do(__clean_log)
 
     def append_log_file(self):
         """
         追加日志标识
         :return:
         """
-        try:
-            self.run_ssh("mkdir -p {};echo {} >> {}/platon.log".format(self.remote_log_dir, self.cfg.env_id, self.remote_log_dir))
-        except Exception as e:
-            raise Exception("{}-clean log failed:{}".format(self.node_mark, e))
+        def __append_log_file():
+            self.run_ssh("mkdir -p {};echo {} >> {}/platon.log".format(self.remote_log_dir, self.cfg.env_id,
+                                                                       self.remote_log_dir))
+        self.try_do(__append_log_file)
 
     def stop(self):
         """
         关闭节点
         :return:
         """
-        try:
+        def __stop():
             self.__is_connected = False
+            self.__is_ws_connected = False
             if not self.running:
                 return True, "{}-node is not running".format(self.node_mark)
             self.run_ssh("sudo -S -p '' supervisorctl stop {}".format(self.node_name), True)
-        except Exception as e:
-            return False, "{}-close node failed:{}".format(self.node_mark, e)
-        return True, "{}-stop node success".format(self.node_mark)
+        return self.try_do_resturn(__stop)
 
     def start(self, is_init=False) -> tuple:
         """
@@ -193,7 +204,7 @@ class Node:
         :param is_init:
         :return:
         """
-        try:
+        def __start():
             self.stop()
             if is_init:
                 self.init()
@@ -202,37 +213,31 @@ class Node:
             for r in result:
                 if "ERROR" in r:
                     raise Exception("{}-start failed:{}".format(self.node_mark, r.strip("\n")))
-        except Exception as e:
-            return False, "{}-start failed:{}".format(self.node_mark, e)
-        return True, "{}-start success".format(self.node_mark)
+        return self.try_do_resturn(__start)
 
     def restart(self) -> tuple:
         """
         重启节点
         :return:
         """
-        try:
+        def __restart():
             self.append_log_file()
             result = self.run_ssh("sudo -S -p '' supervisorctl restart " + self.node_name, True)
             for r in result:
                 if "ERROR" in r:
                     raise Exception("{}-restart failed:{}".format(self.node_mark, r.strip("\n")))
-        except Exception as e:
-            return False, "{}-restart failed:{}".format(self.node_mark, e)
-        return True, "{}-restart success".format(self.node_mark)
+        return self.try_do_resturn(__restart)
 
     def update(self) -> tuple:
         """
         更新节点
         :return:
         """
-        try:
+        def __update():
             self.stop()
             self.put_bin()
             self.start()
-        except Exception as e:
-            return False, "{}-update failed:{}".format(self.node_mark, e)
-        return True, "{}-update success".format(self.node_mark)
+        return self.try_do_resturn(__update)
 
     def close(self):
         """
@@ -256,40 +261,37 @@ class Node:
         上传二进制包
         :return:
         """
-        try:
+        def __put_bin():
             self.run_ssh("rm -rf {}".format(self.remote_bin_file))
             self.sftp.put(self.cfg.platon_bin_file, self.remote_node_path)
             self.run_ssh('chmod +x {}'.format(self.remote_bin_file))
-        except Exception as e:
-            raise Exception("{}-upload platon failed:{}".format(self.node_mark, e))
+        self.try_do(__put_bin)
 
     def put_nodekey(self):
         """
         上传nodekey
         :return:
         """
-        try:
+        def __put_nodekey():
             nodekey_file = os.path.join(self.local_node_tmp, "nodekey")
             with open(nodekey_file, 'w', encoding="utf-8") as f:
                 f.write(self.nodekey)
             self.run_ssh('mkdir -p {}'.format(self.remote_data_dir))
             self.sftp.put(nodekey_file, self.remote_nodekey_file)
-        except Exception as e:
-            raise "{}-upload nodekey failed:{}".format(self.node_mark, e)
+        self.try_do(__put_nodekey)
 
     def put_blskey(self):
         """
         上传blskey
         :return:
         """
-        try:
+        def __put_blskey():
             blskey_file = os.path.join(self.local_node_tmp, "blskey")
             with open(blskey_file, 'w', encoding="utf-8") as f:
                 f.write(self.blsprikey)
             self.run_ssh('mkdir -p {}'.format(self.remote_data_dir))
             self.sftp.put(blskey_file, self.remote_blskey_file)
-        except Exception as e:
-            raise Exception("{}-upload blskey failed:{}".format(self.node_mark, e))
+        self.try_do(__put_blskey)
 
     def create_keystore(self, password="88888888"):
         """
@@ -297,13 +299,12 @@ class Node:
         :param password:
         :return:
         """
-        try:
+        def __create_keystore():
             cmd = "{} account new --datadir {}".format(self.remote_bin_file, self.remote_data_dir)
             stdin, stdout, _ = self.ssh.exec_command("source /etc/profile;%s" % cmd)
             stdin.write(str(password) + "\n")
             stdin.write(str(password) + "\n")
-        except Exception as e:
-            raise Exception("{}-create keystore failed:{}".format(self.node_mark, e))
+        self.try_do(__create_keystore)
 
     def put_genesis(self, genesis_file):
         """
@@ -311,39 +312,36 @@ class Node:
         :param genesis_file:
         :return:
         """
-        try:
+        def __put_genesis():
             self.run_ssh("rm -rf {}".format(self.remote_genesis_file))
             self.sftp.put(genesis_file, self.remote_genesis_file)
-        except Exception as e:
-            raise Exception("{}-upload genesis failed:{}".format(self.node_mark, e))
+        self.try_do(__put_genesis)
 
     def put_config(self):
         """
         上传config
         :return:
         """
-        try:
+        def __put_config():
             self.run_ssh("rm -rf {}".format(self.remote_config_file))
             self.sftp.put(self.cfg.config_json_tmp, self.remote_config_file)
-        except Exception as e:
-            raise Exception("{}-upload config failed:{}".format(self.node_mark, e))
+        self.try_do(__put_config)
 
     def put_static(self):
         """
         上传static
         :return:
         """
-        try:
+        def __put_static():
             self.sftp.put(self.cfg.static_node_tmp, self.remote_static_nodes_file)
-        except Exception as e:
-            raise Exception("{}-upload static nodes json failed:{}".format(self.node_mark, e))
+        self.try_do(__put_static)
 
     def put_deploy_conf(self):
         """
         上传节点部署的supervisor配置
         :return:
         """
-        try:
+        def __put_deploy_conf():
             log.debug("{}-generate supervisor deploy conf...".format(self.node_mark))
             supervisor_tmp_file = os.path.join(self.local_node_tmp, "{}.conf".format(self.node_name))
             self.__gen_deploy_conf(supervisor_tmp_file)
@@ -352,14 +350,13 @@ class Node:
             self.run_ssh("mkdir -p {}".format(self.cfg.remote_supervisor_tmp))
             self.sftp.put(supervisor_tmp_file, self.remote_supervisor_node_file)
             self.run_ssh("sudo -S -p '' cp {} /etc/supervisor/conf.d".format(self.remote_supervisor_node_file), True)
-        except Exception as e:
-            raise Exception("{}-upload deploy conf failed:{}".format(self.node_mark, e))
+        self.try_do(__put_deploy_conf)
 
-    def upload_file(self, localFile, remoteFile):
-        if localFile and os.path.exists(localFile):
-            self.sftp.put(localFile, remoteFile)
+    def upload_file(self, local_file, remote_file):
+        if local_file and os.path.exists(local_file):
+            self.sftp.put(local_file, remote_file)
         else:
-            log.info("file: {} not found".format(localFile))
+            log.info("file: {} not found".format(local_file))
 
     def __gen_deploy_conf(self, sup_tmp_file):
         """
@@ -367,20 +364,11 @@ class Node:
         :param sup_tmp_file:
         :return:
         """
-        # pwd_list = self.run_ssh("pwd")
-        # pwd = pwd_list[0].strip("\r\n")
         with open(sup_tmp_file, "w") as fp:
             fp.write("[program:" + self.node_name + "]\n")
             go_fail_point = ""
             if self.fail_point:
                 go_fail_point = " GO_FAILPOINTS='{}' ".format(self.fail_point)
-            # if not os.path.isabs(self.cfg.deploy_path):
-            #     cmd = "{}/{} --identity platon --datadir".format(pwd, self.remote_bin_file)
-            #     cmd = cmd + " {}/{} --port ".format(pwd, self.remote_data_dir) + self.p2p_port
-            #     cmd = cmd + " --gcmode archive --nodekey {}/{}".format(pwd, self.remote_nodekey_file)
-            #     cmd = cmd + " --cbft.blskey {}/{}".format(pwd, self.remote_blskey_file)
-            #     cmd = cmd + " --config {}/{}".format(pwd, self.remote_config_file)
-            # else:
             cmd = "{} --identity platon --datadir".format(self.remote_bin_file)
             cmd = cmd + " {} --port ".format(self.remote_data_dir) + self.p2p_port
             cmd = cmd + " --gcmode archive --nodekey " + self.remote_nodekey_file
@@ -406,10 +394,7 @@ class Node:
                                       "stopwaitsecs=10\n" + "redirect_stderr=true\n" + \
                                       "stdout_logfile_maxbytes=200MB\n" + "stdout_logfile_backups=20\n"
             fp.write(supervisor_default_conf)
-            # if os.path.isabs(self.cfg.deploy_path):
             fp.write("stdout_logfile={}/platon.log\n".format(self.remote_log_dir))
-            # else:
-            #     fp.write("stdout_logfile={}/{}/platon.log\n".format(pwd, self.remote_log_dir))
 
     def deploy_me(self, genesis_file) -> tuple:
         """
@@ -423,12 +408,24 @@ class Node:
         :param genesis_file:
         :return:
         """
-        try:
+        def __deploy():
+            self.stop()
             log.debug("{}-clean node path...".format(self.node_mark))
             is_success, msg = self.clean()
             if not is_success:
                 return is_success, msg
             self.clean_log()
+            self.put_all_file(genesis_file)
+            return self.start(self.cfg.init_chain)
+        return self.try_do_resturn(__deploy)
+
+    def put_all_file(self, genesis_file):
+        """
+        上传或拷贝基础文件
+        :param genesis_file:
+        :return:
+        """
+        def __pre_env():
             ls = self.run_ssh("cd {};ls".format(self.cfg.remote_compression_tmp_path))
             if self.cfg.env_id and (self.cfg.env_id + ".tar.gz\n") in ls:
                 log.debug("{}-copy bin...".format(self.remote_node_path))
@@ -451,26 +448,20 @@ class Node:
             log.debug("{}-upload nodekey...".format(self.node_mark))
             self.put_nodekey()
             self.put_deploy_conf()
-            log.debug("{}-use supervisor start node...".format(self.node_mark))
-            log.debug("{}".format(self.run_ssh("cd {};ls".format(self.remote_log_dir))))
             self.run_ssh("sudo -S -p '' supervisorctl update " + self.node_name, True)
-            return self.start(self.cfg.init_chain)
-        except Exception as e:
-            return False, "{}-deploy failed:{}".format(self.node_mark, e)
+        return self.try_do_resturn(__pre_env)
 
     def backup_log(self):
         """
         下载日志
         :return:
         """
-        try:
+        def __backup_log():
             self.run_ssh("cd {};tar zcvf log.tar.gz ./log".format(self.remote_node_path))
             self.sftp.get("{}/log.tar.gz".format(self.remote_node_path),
                           "{}/{}_{}.tar.gz".format(self.cfg.tmp_log, self.host, self.p2p_port))
             self.run_ssh("cd {};rm -rf ./log.tar.gz".format(self.remote_node_path))
-        except Exception as e:
-            return False, "{}-backup log failed:{}".format(self.node_mark, e)
-        return True, "{}-backup log success".format(self.node_mark)
+        return self.try_do_resturn(__backup_log)
 
     @property
     def running(self) -> bool:
