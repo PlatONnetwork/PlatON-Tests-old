@@ -61,9 +61,9 @@ def test_initial_economic(global_test_env):
         assert info['Gov']['CancelProposal_SupportRate'] == economic_info['Gov']['CancelProposal_SupportRate']
         assert info['Reward']['NewBlockRate'] == economic_info['Reward']['NewBlockRate']
         assert info['Reward']['PlatONFoundationYear'] == economic_info['Reward']['PlatONFoundationYear']
-        assert info['InnerAcc']['PlatONFundAccount'] == economic_info['InnerAcc']['PlatONFundAccount']
+        assert w3.toChecksumAddress(info['InnerAcc']['PlatONFundAccount']) == w3.toChecksumAddress(economic_info['InnerAcc']['PlatONFundAccount'])
         assert info['InnerAcc']['PlatONFundBalance'] == economic_info['InnerAcc']['PlatONFundBalance']
-        assert info['InnerAcc']['CDFAccount'] == economic_info['InnerAcc']['CDFAccount']
+        assert w3.toChecksumAddress(info['InnerAcc']['CDFAccount']) == w3.toChecksumAddress(economic_info['InnerAcc']['CDFAccount'])
         assert info['InnerAcc']['CDFBalance'] == economic_info['InnerAcc']['CDFBalance']
         
    

@@ -16,6 +16,20 @@ class Staking:
 
     def create_staking(self, typ, benifit_address, from_address, node_id=None, amount=None, program_version=None,
                        program_version_sign=None, bls_pubkey=None, bls_proof=None, transaction_cfg=None):
+        """
+        创建质押
+        :param typ: 
+        :param benifit_address: 
+        :param from_address: 
+        :param node_id: 
+        :param amount: 
+        :param program_version: 
+        :param program_version_sign: 
+        :param bls_pubkey: 
+        :param bls_proof: 
+        :param transaction_cfg: 
+        :return: 
+        """
         if node_id is None:
             node_id = self.node.node_id
         if amount is None:
@@ -34,6 +48,9 @@ class Staking:
                                        bls_pubkey, bls_proof, pri_key, transaction_cfg=transaction_cfg)
 
     def edit_candidate(self, from_address, benifit_address, node_id=None, transaction_cfg=None):
+        """
+        编辑
+        """
         if node_id is None:
             node_id = self.node.node_id
         pri_key = self.economic.account.find_pri_key(from_address)
@@ -41,6 +58,9 @@ class Staking:
                                        pri_key, transaction_cfg=transaction_cfg)
 
     def increase_staking(self, typ, from_address, node_id=None, amount=None, transaction_cfg=None):
+        """
+        增持
+        """
         if node_id is None:
             node_id = self.node.node_id
         if amount is None:
@@ -49,6 +69,16 @@ class Staking:
         return self.ppos.increaseStaking(typ, node_id, amount, pri_key, transaction_cfg=transaction_cfg)
 
     def withdrew_staking(self, from_address, node_id=None, transaction_cfg=None):
+        """
+        解除质押
+        transaction_cfg: 交易配置 
+         type: dict
+              example:cfg = {
+                  "gas":100000000,
+                  "gasPrice":2000000000000,
+                  "nonce":1,
+              }
+        """
         if node_id is None:
             node_id = self.node.node_id
         pri_key = self.economic.account.find_pri_key(from_address)

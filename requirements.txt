@@ -1,3 +1,4 @@
+dacite
 hexbytes==0.1.0
 pytest==5.2.0
 pytest-forked==0.2
