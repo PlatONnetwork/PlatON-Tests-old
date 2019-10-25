@@ -65,6 +65,9 @@ class Node:
         self.__is_connected = False
         self.__rpc = None
 
+        self.__is_ws_connected = False
+        self.__ws_rpc = None
+
         # 远程目录：
         self.make_remote_dir()
 
@@ -392,7 +395,7 @@ class Node:
                 cmd = cmd + " --wsapi platon,debug,personal,admin,net,web3"
             cmd = cmd + " --rpc --rpcaddr 0.0.0.0 --rpcport " + str(self.rpc_port)
             cmd = cmd + " --rpcapi platon,debug,personal,admin,net,web3"
-            cmd = cmd + " --txpool.nolocals --nodiscover"
+            cmd = cmd + " --txpool.nolocals"
             if self.cfg.append_cmd:
                 cmd = cmd + " " + self.cfg.append_cmd
             fp.write("command=" + cmd + "\n")
@@ -481,6 +484,13 @@ class Node:
         if not self.__is_connected:
             self.__rpc = wait_connect_web3(self.url, self.__chain_id)
             self.__is_connected = True
+        return self.__rpc
+
+    @property
+    def ws_web3(self) -> Web3:
+        if not self.__is_ws_connected:
+            self.__ws_rpc = wait_connect_web3(self.wsurl, self.__chain_id)
+            self.__is_ws_connected = True
         return self.__rpc
 
     @property

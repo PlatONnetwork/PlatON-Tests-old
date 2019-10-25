@@ -2,6 +2,7 @@ collusion:
 - host: 192.168.112.30
   port: 16789
   rpcport: 6789
+  wsport: 6790
   username: lvxiaoyi
   password: lvxiaoyi
   blsprikey: a7fb6bbd4ca92bb21f0538f765866fc16b1c5d1c54effe061f3718c13791103b
@@ -11,9 +12,11 @@ collusion:
   syncmode: full
   rpctype: ws
   url: http://192.168.112.30:6789
+  wsurl: ws://192.168.112.30:6790
 - host: 192.168.112.31
   port: 16789
   rpcport: 6789
+  wsport: 6790
   username: lvxiaoyi
   password: lvxiaoyi
   blsprikey: c0d87381e8b52d810b80b6f65fc560d6af3b274d8681222f470df2d2891dec2d
@@ -23,9 +26,11 @@ collusion:
   syncmode: full
   rpctype: ws
   url: http://192.168.112.31:6789
+  wsurl: ws://192.168.112.31:6790
 - host: 192.168.112.32
   port: 16789
   rpcport: 6789
+  wsport: 6790
   username: lvxiaoyi
   password: lvxiaoyi
   blsprikey: 90e9ca47bd95493298bb2116eddc9a2b2f162530b77e3538b0b4b89fcb5c3458
@@ -35,9 +40,11 @@ collusion:
   syncmode: full
   rpctype: ws
   url: http://192.168.112.32:6789
+  wsurl: ws://192.168.112.32:6790
 - host: 192.168.112.33
   port: 16789
   rpcport: 6789
+  wsport: 6790
   username: lvxiaoyi
   password: lvxiaoyi
   blsprikey: fd14479df44e1f82bf345af6a02cbbf61da4749bb9c83fa58d1af16d73d4460d
@@ -47,10 +54,12 @@ collusion:
   syncmode: full
   rpctype: ws
   url: http://192.168.112.33:6789
+  wsurl: ws://192.168.112.33:6790
 nocollusion:
 - host: 192.168.112.34
   port: 16789
   rpcport: 6789
+  wsport: 6790
   username: lvxiaoyi
   password: lvxiaoyi
   blsprikey: 64ba386e5212e30ca348ab32918e745821f514155e0cd0b584ea54301c26fc63
@@ -60,3 +69,4 @@ nocollusion:
   syncmode: full
   rpctype: ws
   url: http://192.168.112.34:6789
+  wsurl: ws://192.168.112.34:6790
