@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from dacite import from_dict
-
+from typing import Optional
+import json
 
 @dataclass
 class Cbft:
@@ -39,7 +40,7 @@ class Staking:
 
 @dataclass
 class Slashing:
-    PackAmountAbnormal: int
+    PackAmountAbnormal: Optional[int]
     DuplicateSignHighSlashing: int
     NumberOfBlockRewardForSlashing: int
     EvidenceValidEpoch: int
@@ -115,12 +116,13 @@ class Genesis:
 
 
 if __name__ == "__main__":
-    from common.load_file import LoadFile
-    from conf.settings import GENESIS_FILE
-    import json
-    genesis_data = LoadFile(GENESIS_FILE).get_data()
-    genesis = from_dict(data_class=Genesis, data=genesis_data)
-    genesis.config.chainId = 1
-    # print(genesis_to_dict(genesis))
-    print(genesis.to_dict())
+    # from common.load_file import LoadFile
+    # from conf.settings import GENESIS_FILE
+    # import json
+    # genesis_data = LoadFile(GENESIS_FILE).get_data()
+    # genesis = from_dict(data_class=Genesis, data=genesis_data)
+    # genesis.config.chainId = 1
+    # # print(genesis_to_dict(genesis))
+    # print(genesis.to_dict())
 
+    pass

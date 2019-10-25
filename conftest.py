@@ -35,7 +35,7 @@ def global_test_env(request):
         download.download_platon(plant_url)
     env = create_env(tmp_dir, node_file, account_file, init_chain, install_dependency, install_supervisor)
 
-    env.deploy_all()
+    # env.deploy_all()
     yield env
 
     # todo
@@ -52,6 +52,6 @@ def pytest_runtest_makereport(item, call):
         # download log in here
         try:
             if 'global_test_env' in item.fixturenames:
-                log.info(item.funcargs["global_test_env"].backup_all_logs(item.name))
+                item.funcargs["global_test_env"].backup_all_logs(item.name)
         except Exception as e:
             log.info("这个失败没有生成日志:{}".format(e))
