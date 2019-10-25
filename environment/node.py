@@ -112,6 +112,8 @@ class Node:
         try:
             cmd = '{} --datadir {} init {}'.format(self.remote_bin_file, self.remote_data_dir, self.remote_genesis_file)
             result = self.run_ssh(cmd)
+            # todo ：fix init complete
+            # 这里加个查询，只能缓解没有初始化完成就开始部署的问题
             self.run_ssh("ls {}".format(self.remote_data_dir))
         except Exception as e:
             raise Exception("{}-init failed:{}".format(self.node_mark, e))

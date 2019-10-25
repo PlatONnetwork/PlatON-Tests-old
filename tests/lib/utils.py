@@ -1,19 +1,55 @@
 # -*- coding: utf-8 -*-
 import time
-from common.load_file import LoadFile
-import json
+import random
+import string
+from hexbytes import HexBytes
+from environment.node import Node
 
 
-def stop_node_by_node_id(node_list, nodeid):
+def proposal_list_effective(proposal_list, block_number):
+    for proposal in proposal_list:
+        if proposal_effective(proposal, block_number):
+            return True
+    return False
+
+
+def proposal_effective(proposal, block_number):
+    if proposal["EndVotingBlock"] > block_number:
+        return True
+    return False
+
+
+def upload_platon(node: Node, platon_bin):
+    node.run_ssh("rm -rf {}".format(node.remote_bin_file))
+    node.upload_file(platon_bin, node.remote_bin_file)
+    node.run_ssh("chmod +x {}".format(node.remote_bin_file))
+
+
+def get_blockhash(node, blocknumber=None):
     """
-    根据节点id停止节点进程
-    :param node_list: 节点列表
-    :param nodeid:
+    根据块高获取块hash
+    :param node:
+    :param blocknumber:
     :return:
     """
-    for node in node_list:
-        if node.node_id == nodeid:
-            node.stop()
+    if not blocknumber:
+        blocknumber = node.blockNumber
+    blockinfo = node.eth.getBlock(blocknumber)
+    blockhash = blockinfo.get('hash')
+    blockhash = HexBytes(blockhash).hex()
+    return blockhash
+
+
+def int_to_bytes(value):
+    return int(value).to_bytes(length=4, byteorder='big', signed=False)
+
+
+def int16_to_bytes(value):
+    return int(value).to_bytes(length=1, byteorder='big', signed=False)
+
+
+def bytes_to_int(value):
+    return int.from_bytes(value, byteorder='big', signed=False)
 
 
 def compare_two_dict(dict1, dict2, key_list=None):
@@ -43,19 +79,6 @@ def compare_two_dict(dict1, dict2, key_list=None):
     return flag
 
 
-def get_nodeinfo_by_id(node_config_list, nodeid):
-    """
-    根据节点ID查询节点信息
-    :param node_config_list:
-    :param nodeid:
-    :return:
-    """
-    for node_config in node_config_list:
-        if node_config["id"] == nodeid:
-            return node_config
-    return
-
-
 def get_no_pledge_info(node_list):
     """
     获取未被质押的节点ID
@@ -68,7 +91,12 @@ def get_no_pledge_info(node_list):
     return
 
 
-def get_pledgelist(func):
+def get_pledge_list(func):
+    """
+    查看指定节点ID列表
+    :param func: 查询方法，1、当前质押节点列表 2、当前共识节点列表 3、实时验证人列表
+    :return:
+    """
     validator_info = func().get('Data')
     validator_list = []
     for info in validator_info:
@@ -76,9 +104,9 @@ def get_pledgelist(func):
     return validator_list
 
 
-def get_node_in_pledgelist(nodeid, func):
+def check_node_in_list(nodeid, func):
     """
-    查看节点是否在列表中
+    查看节点是否在指定列表中
     :param nodeid: 节点id
     :param func: 查询方法，1、当前质押节点列表 2、当前共识节点列表 3、实时验证人列表
     :return:
@@ -88,17 +116,6 @@ def get_node_in_pledgelist(nodeid, func):
         if data["NodeId"] == nodeid:
             return True
     return False
-
-
-def get_param_by_file(*args, filename):
-    """
-    根据配置文件查询参数值
-    :param args: 键
-    :param filename: 配置文件路径
-    :return:
-    """
-    dict_data = LoadFile(filename).get_data()
-    return get_param_by_dict(dict_data, *args)
 
 
 def get_param_by_dict(data, *args):
@@ -120,26 +137,6 @@ def get_param_by_dict(data, *args):
     raise Exception("数据格式错误")
 
 
-def update_param_by_file(key1, key2, key3, value, filename, newfilename):
-    """
-    修改config配置参数
-    :param key1:
-    :param key2:
-    :param key3:
-    :param value:
-    :param filename:
-    :param newfilename:
-    :return:
-    """
-    data = LoadFile(filename).get_data()
-    if key3 is None:
-        data[key1][key2] = value
-    else:
-        data[key1][key2][key3] = value
-    with open(newfilename, "w") as f:
-        f.write(json.dumps(data, indent=4))
-
-
 def update_param_by_dict(data, key1, key2, key3, value):
     """
     修改json参数
@@ -159,23 +156,6 @@ def update_param_by_dict(data, key1, key2, key3, value):
     return
 
 
-def update_validator(genesis, node_num):
-    """
-    配置共识验证人数量和当前结算周期验证人数量
-    :return:
-    """
-    tmp_data = update_param_by_dict(genesis, 'EconomicModel', 'Common', 'ValidatorCount', node_num)
-    return update_param_by_dict(tmp_data, 'EconomicModel', 'Staking', 'EpochValidatorNum', node_num + 1)
-
-
-def update_genesis(genesis):
-    # 修改ppos参数
-    tmp_data = update_param_by_dict(genesis, 'EconomicModel', 'Staking', 'StakeThreshold', 5000000000000000000000000)
-    tmp_data = update_param_by_dict(tmp_data, 'EconomicModel', 'Slashing', 'PackAmountAbnormal', 2)
-    tmp_data = update_param_by_dict(tmp_data, 'EconomicModel', 'Staking', 'UnStakeFreezeRatio', 1)
-    return update_param_by_dict(tmp_data, 'EconomicModel', 'Slashing', 'EvidenceValidEpoch', 27)
-
-
 def wait_block_number(node, block, interval=1):
     current_block = node.block_number
     timeout = int((block - current_block) * interval * 1.5) + int(time.time())
@@ -185,18 +165,63 @@ def wait_block_number(node, block, interval=1):
         time.sleep(1)
     raise Exception("无法正常出块")
 
-# # ppos
-# def view_available_nodes(link):
-#     """
-#     比对两个节点list
-#     :return:
-#     """
-#     node_info = get_node_info(node_yml_path)
-#     rpc_list, enode_list, nodeid_list, ip_list, port_list = node_info.get('nocollusion')
-#     candidateinfo = link.getCandidateList()
-#     candidateinfo = candidateinfo.get('Data')
-#     candidate_list = []
-#     for nodeid in candidateinfo:
-#         candidate_list.append(nodeid.get('NodeId'))
-#     if set(nodeid_list) <= set(candidate_list):
-#         start_init()
+
+def get_validator_term(node):
+    """
+    获取任期最大的nodeID
+    """
+    msg = node.ppos.getValidatorList()
+    term = []
+    nodeid = []
+    for i in msg["Data"]:
+        term.append(i["ValidatorTerm"])
+        nodeid.append(i["NodeId"])
+    max_term = (max(term))
+    term_nodeid_dict = dict(zip(term, nodeid))
+    return term_nodeid_dict[max_term]
+
+
+def get_max_staking_tx_index(node):
+    """
+    获取最大的交易索引的nodeID
+    """
+    msg = node.ppos.getValidatorList()
+    staking_tx_index_list = []
+    nodeid = []
+    for i in msg["Data"]:
+        staking_tx_index_list.append(i["StakingTxIndex"])
+        nodeid.append(i["NodeId"])
+    max_staking_tx_index = (max(staking_tx_index_list))
+    term_nodeid_dict = dict(zip(staking_tx_index_list, nodeid))
+    return term_nodeid_dict[max_staking_tx_index]
+
+
+def gen_random_string(length):
+    '''
+    获取指定生成位数的随机数包含字母和数字
+    :param length:
+    :return: string
+    '''
+    len = length
+    # 随机产生指定个数的字符
+    num_of_numeric = random.randint(1, len - 1)
+
+    # 剩下的都是字母
+    num_of_letter = len - num_of_numeric
+
+    # 随机生成数字
+    numerics = [random.choice(string.digits) for i in range(num_of_numeric)]
+
+    # 随机生成字母
+    letters = [random.choice(string.ascii_letters) for i in range(num_of_letter)]
+
+    # 结合两者
+    all_chars = numerics + letters
+
+    # 对序列随机排序
+    random.shuffle(all_chars)
+
+    # 生成最终字符串
+    result = ''.join([i for i in all_chars]).lower()
+
+    return result
