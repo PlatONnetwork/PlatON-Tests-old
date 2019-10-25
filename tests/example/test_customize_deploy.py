@@ -48,4 +48,5 @@ def test_use_genesis(global_test_env):
     genesis.EconomicModel.Staking.StakeThreshold = 500000000000000000000000
     new_env.genesis_config = genesis.to_dict()
     new_file = global_test_env.cfg.env_tmp + "/genesis.json"
+    genesis.to_file(new_file)
     global_test_env.deploy_all(new_file)
