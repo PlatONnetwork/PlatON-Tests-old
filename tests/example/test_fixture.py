@@ -3,9 +3,7 @@ import time
 
 
 @pytest.fixture
-def step_1():
-    print("sleep")
-    time.sleep(5)
+def step_1(global_test_env):
     return 1
 
 

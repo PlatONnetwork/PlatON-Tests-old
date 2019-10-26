@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from dacite import from_dict
 from .utils import wait_block_number
 from environment.node import Node
@@ -62,20 +64,22 @@ class Economic:
                 count = count + 1
         return count
 
-    def get_current_year_reward(self, node: Node):
+    def get_current_year_reward(self, node: Node, verifier_num=None):
         """
-        获取首年奖励
+        获取首年出块奖励，质押奖励
         :return:
         """
+        new_block_rate = self.genesis.EconomicModel.Reward.NewBlockRate
         annualcycle, annual_size, current_end_block = self.get_annual_switchpoint(node)
-        verifier_list = node.ppos.getVerifierList()
-        count = len(verifier_list['Data'])
-        block_reward = node.web3.fromWei(self.cfg.init_token_info[self.cfg.INCENTIVEPOOL_ADDRESS],
-                                         'ether') / 2 / annual_size
-        block_reward = node.web3.toWei(block_reward, 'ether')
-        staking_reward = node.web3.fromWei(self.cfg.init_token_info[self.cfg.INCENTIVEPOOL_ADDRESS],
-                                           'ether') / 2 / annualcycle / count
-        staking_reward = node.web3.toWei(staking_reward, 'ether')
+        if verifier_num is None:
+            verifier_list = node.ppos.getVerifierList()
+            verifier_num = len(verifier_list['Data'])
+        amount = node.eth.getBalance(self.cfg.INCENTIVEPOOL_ADDRESS, 0)
+        block_proportion = str(new_block_rate / 100)
+        staking_proportion = str(1 - new_block_rate / 100)
+        block_reward = int(Decimal(str(amount)) * Decimal(str(block_proportion)) / Decimal(str(annualcycle)))
+        staking_reward = int(
+            Decimal(str(amount)) * Decimal(str(staking_proportion)) / Decimal(str(annualcycle)) / Decimal(str(verifier_num)))
         return block_reward, staking_reward
 
     def get_settlement_switchpoint(self, node: Node, number=0):

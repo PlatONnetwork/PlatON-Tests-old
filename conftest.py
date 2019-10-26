@@ -1,4 +1,5 @@
 import pytest
+import allure
 from common import download
 from environment.env import create_env
 from common.log import log
@@ -36,9 +37,10 @@ def global_test_env(request):
     env = create_env(tmp_dir, node_file, account_file, init_chain, install_dependency, install_supervisor)
 
     env.deploy_all()
+
     yield env
 
-    # todo
+    # delete env and close env
     env.shutdown()
 
 
@@ -55,3 +57,6 @@ def pytest_runtest_makereport(item, call):
                 item.funcargs["global_test_env"].backup_all_logs(item.name)
         except Exception as e:
             log.info("这个失败没有生成日志:{}".format(e))
+        # todo
+        # allure.attach('http://www.implement.me.com', 'Node log', allure.attachment_type.URI_LIST)
+

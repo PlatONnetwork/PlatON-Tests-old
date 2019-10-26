@@ -23,10 +23,7 @@ py.test test_start.py -s -m "SYNC" --nodeFile "deploy/4_node.yml" --accountFile 
 # py.test 命令行参数
 --nodeFile "deploy/4_node.yml":  指定节点配置文件
 --accountFile "deploy/accounts.yml": 指定测试用的账号文件
-
 --initChain：出现此选项，表示要初始化链数据；如果没有此选项，表示不初始化链数据
---startAll：表示要启动所有节点；如果没有此选项，表示只部署节点，不启动节点
---httpRpc：表示用HTTP PRC接口；如果没有此选项，则使用WS RPC
 --installDependency：表示节点需要安装必需的依赖，一般第一次部署时使用；如果没有此选项，则不再安装
 --installSuperVisor：表示节点是否安装supervisor服务，一般第一次部署时使用；如果没有此选项，则不再安装
 
@@ -35,7 +32,7 @@ py.test test_start.py -s -m "SYNC" --nodeFile "deploy/4_node.yml" --accountFile 
 # 注意事项
 目前仅支持Ubuntu环境部署
 文件存放要求：
-    platon二进制文件、node.yml配置文件、accounts.yml文件，放入deploy目录
+    accounts.yml文件，放入deploy目录，platon二进制文件放入deploy/bin，nodeFile放入到deploy/node
     其它文件，放入deploy/template模板目录
 
 用例书写：
