@@ -236,32 +236,16 @@ def get_max_staking_tx_index(node):
     return term_nodeid_dict[max_staking_tx_index]
 
 
-def gen_random_string(length):
-    '''
-    获取指定生成位数的随机数包含字母和数字
+def random_string(length=10):
+    """
+    随机生成指定长度的字母与数字的字符串
     :param length:
-    :return: string
-    '''
-    len = length
-    # 随机产生指定个数的字符
-    num_of_numeric = random.randint(1, len - 1)
-
-    # 剩下的都是字母
-    num_of_letter = len - num_of_numeric
-
-    # 随机生成数字
-    numerics = [random.choice(string.digits) for i in range(num_of_numeric)]
-
-    # 随机生成字母
-    letters = [random.choice(string.ascii_letters) for i in range(num_of_letter)]
-
-    # 结合两者
-    all_chars = numerics + letters
-
-    # 对序列随机排序
-    random.shuffle(all_chars)
-
-    # 生成最终字符串
-    result = ''.join([i for i in all_chars]).lower()
-
-    return result
+    :return:
+    """
+    return ''.join(
+        random.choice(
+            string.ascii_lowercase +
+            string.ascii_uppercase +
+            string.digits
+        ) for _ in range(length)
+    )

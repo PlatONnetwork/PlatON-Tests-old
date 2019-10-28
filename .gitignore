@@ -17,6 +17,7 @@ deploy/rely/bin/platon
 deploy/temp/
 deploy/bin/platon
 deploy/platon
+allure-report
 
 # VE
 venv

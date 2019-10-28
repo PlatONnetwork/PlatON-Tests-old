@@ -44,7 +44,7 @@ def test_copy_env(global_test_env):
 
 
 def test_use_genesis(global_test_env):
-    genesis = from_dict(data_class=Genesis, data=new_env.genesis_config)
+    genesis = from_dict(data_class=Genesis, data=global_test_env.genesis_config)
     genesis.EconomicModel.Staking.StakeThreshold = 500000000000000000000000
     new_env.genesis_config = genesis.to_dict()
     new_file = global_test_env.cfg.env_tmp + "/genesis.json"
