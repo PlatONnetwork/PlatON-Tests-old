@@ -1,25 +1,50 @@
 # PlatON-Tests
-This project is an automated test project of the PaltON-Go. see: https://github.com/PlatONnetwork/PlatON-Go
+This is an automated test project of the PaltON-Go.
 
-### Run test:
-windows环境变量,需要先把./utils/ethkey和./utils/pubkey目录分别添加至环境变量中。
 
-在项目目录中执行以下命令
-```js
-python run.py --node='./deploy/node/4_node.yml' --case='all'
+## dependency
 
-```
-查看使用方式
-```js
-python run.py -h
+Install the python 3.7+, and execute the following command:
+
+```shell
+pip install -r requirements.txt
 ```
 
+some libs rely on C++ 14, Please install them frist.
 
-### Dir introduce:
-- [case](docs/case_example.md)
-- common：主要包含一些公共使用的方法
-- conf：用于全局测试配置
-- data：一些必要的测试依赖文件，或者是数据驱动用例的数据
-- [deploy](docs/deploy.md)
-- docs：一些文档
-- utils：基础库
+## Usage
+
+1. Add 'tool/[win or linux]', 'tool/win/bls_win/lib' to the environment variable
+2. only windows, Add 'tool/win/bls_win/lib' to the environment variable
+
+### run all cases
+
+```shell
+pytest "tests" --nodeFile "node.yml"
+```
+
+### run at multi environment
+
+```shell
+pytest "tests" --nodeFile "node_1.yml,node_2.yml" -n 2
+```
+
+### Custom CLI
+
+--nodeFile: Node configurat file, refer [[deploy.md](docs/deploy.md)].
+
+--accountFile: Account file，refer [[accounts.yml](deploy/accounts.yml)].
+
+--platonUrl: Automatically download the platon.
+
+--installDependency：Install the required dependencies for use during the first deployment.
+
+--installSuperVisor：Install the supervisor during the first deployment.
+
+--tmpDir: Specify cache dir, default in deploy/tmp.
+
+--initChain: Whether to initialize the nodes, default ture.
+
+--job: Use only when using CI.
+
+ps: Refer to pytest for other commands

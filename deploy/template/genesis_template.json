@@ -1,0 +1,76 @@
+{
+    "config": {
+        "chainId": 100,
+        "eip155Block": 3,
+        "cbft": {
+            "initialNodes": [
+                ],
+            "amount": 10,
+            "period": 10000,
+            "validatorMode": "ppos"
+        },
+        "genesisVersion": 65536,
+        "addressHRP": "lat"
+    },
+    "economicModel": {
+        "common": {
+            "maxEpochMinutes": 3,
+            "maxConsensusVals": 4,
+            "additionalCycleTime": 28
+        },
+        "staking": {
+            "stakeThreshold": 100000000000000000000000,
+            "operatingThreshold": 10000000000000000000,
+            "maxValidators": 5,
+            "unStakeFreezeDuration": 2,
+            "rewardPerMaxChangeRange": 500,
+            "rewardPerChangeInterval": 2
+        },
+        "slashing": {
+            "slashFractionDuplicateSign": 100,
+            "duplicateSignReportReward": 50,
+            "slashBlocksReward": 5,
+            "maxEvidenceAge": 1,
+            "zeroProduceCumulativeTime": 1,
+            "zeroProduceNumberThreshold": 1,
+            "zeroProduceFreezeDuration":1
+        },
+        "gov": {
+            "versionProposalVoteDurationSeconds": 1600,
+            "versionProposalSupportRate": 6670,
+            "textProposalVoteDurationSeconds": 160,
+            "textProposalVoteRate": 5000,
+            "textProposalSupportRate": 6670,
+            "cancelProposalVoteRate": 5000,
+            "cancelProposalSupportRate": 6670,
+            "paramProposalVoteDurationSeconds": 160,
+            "paramProposalVoteRate": 5000,
+            "paramProposalSupportRate": 6670
+        },
+        "reward": {
+            "newBlockRate": 50,
+            "platONFoundationYear": 10,
+            "increaseIssuanceRatio": 250,
+            "theNumberOfDelegationsReward": 2
+        },
+        "restricting": {
+            "minimumRelease": 100000000000000000000
+        },
+        "innerAcc": {
+            "platonFundAccount": "lat1drz94my95tskswnrcnkdvnwq43n8jt6dmzf8h8",
+            "platonFundBalance": 0,
+            "cdfAccount": "lat1kvurep20767ahvrkraglgd9t34w0w2g059pmlx",
+            "cdfBalance": 421411981000000000000000000
+        }
+    },
+    "nonce": "0x0376e56dffd12ab53bb149bda4e0cbce2b6aabe4cccc0df0b5a39e12977a2fcd23",
+    "timestamp": "0x175301efa90",
+    "extraData": "0x974c69752058696e67206973207468652072696368657374",
+    "gasLimit": "9424776",
+    "alloc": {
+
+    },
+    "number": "0x0",
+    "gasUsed": "0x0",
+    "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000"
+}
