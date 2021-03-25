@@ -69,7 +69,7 @@ pytest-rerunfailures==7.0
 pytest-watch==4.2.0
 pytest-xdist==1.24.0
 pywin32==227
-PyYAML==4.2b4
+PyYAML==5.4
 qrcode==6.1
 requests==2.20.0
 rlp==1.1.0
