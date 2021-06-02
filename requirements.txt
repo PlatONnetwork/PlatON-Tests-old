@@ -80,7 +80,7 @@ setuptools-markdown==0.4.1
 six==1.14.0
 toolz==0.10.0
 typed-ast==1.4.1
-urllib3==1.24.3
+urllib3==1.26.5
 watchdog==0.10.2
 wcwidth==0.1.8
 websockets==6.0
