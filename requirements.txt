@@ -39,7 +39,7 @@ lru-dict==1.1.6
 mccabe==0.6.1
 more-itertools==8.2.0
 packaging==20.3
-paramiko==2.4.2
+paramiko==2.10.1
 parsimonious==0.8.1
 pathtools==0.1.2
 platon-account==0.1.2
