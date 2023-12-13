@@ -1,7 +1,12 @@
 {
     "config": {
-        "chainId": 100,
-        "eip155Block": 3,
+        "chainId": 210426,
+        "pip7ChainId": 210426,
+        "eip155Block": 1,
+		"copernicusBlock": 1,
+		"newtonBlock": 1,
+		"einsteinBlock": 1,
+		"hubbleBlock": 1,
         "cbft": {
             "initialNodes": [
                 ],
@@ -9,7 +14,7 @@
             "period": 10000,
             "validatorMode": "ppos"
         },
-        "genesisVersion": 65536,
+        "genesisVersion": 66562,
         "addressHRP": "lat"
     },
     "economicModel": {
@@ -24,7 +29,8 @@
             "maxValidators": 5,
             "unStakeFreezeDuration": 2,
             "rewardPerMaxChangeRange": 500,
-            "rewardPerChangeInterval": 2
+            "rewardPerChangeInterval": 2,
+            "unDelegateFreezeDuration": 1
         },
         "slashing": {
             "slashFractionDuplicateSign": 100,
@@ -64,8 +70,8 @@
         }
     },
     "nonce": "0x0376e56dffd12ab53bb149bda4e0cbce2b6aabe4cccc0df0b5a39e12977a2fcd23",
-    "timestamp": "0x175301efa90",
-    "extraData": "0x974c69752058696e67206973207468652072696368657374",
+    "timestamp": "0x17ac1d727c8",
+    "extraData": "0x83616263",
     "gasLimit": "9424776",
     "alloc": {
 

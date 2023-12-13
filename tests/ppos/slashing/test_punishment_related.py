@@ -1155,7 +1155,7 @@ def test_VP_PVF_009(client_new_node, reset_environment):
             # To view the entrusted account balance
             report_balance1 = node.eth.getBalance(report_address)
             log.info("report address balance: {}".format(report_balance1))
-            assert report_balance + economic.delegate_limit - report_balance1 < node.web3.toWei(1,
+            assert report_balance - report_balance1 < node.web3.toWei(1,
                                                                                                 'ether'), "ErrMsg:Ireport balance {}".format(
                 report_balance1)
             break

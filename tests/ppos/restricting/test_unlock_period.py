@@ -202,8 +202,7 @@ def test_UP_FV_006(client_new_node):
     result = client.restricting.createRestrictingPlan(address1, plan, address1)
     assert_code(result, 0)
     # create staking
-    staking_amount = economic.create_staking_limit
-    result = client.staking.create_staking(1, address1, address1, amount=staking_amount)
+    result = client.staking.create_staking(1, address1, address1, amount=amount1)
     assert_code(result, 0)
     # view restricting plan
     restricting_info = client.ppos.getRestrictingInfo(address1)
@@ -777,7 +776,7 @@ def test_UP_FV_018(client_new_node):
     restricting_info = client.ppos.getRestrictingInfo(address2)
     log.info("restricting plan informtion: {}".format(restricting_info))
     info = restricting_info['Ret']
-    assert info['debt'] == von_amount(economic.delegate_limit, 50), 'ErrMsg: restricting debt amount {}'.format(info['debt'])
+    assert info['debt'] == von_amount(economic.delegate_limit, 100), 'ErrMsg: restricting debt amount {}'.format(info['debt'])
 
 
 @pytest.mark.P1

@@ -13,6 +13,7 @@
 deploy/tmp
 deploy/node
 deploy/bin
+deploy/node_file.yml
 
 # OTHER
 **/*.py[cod]

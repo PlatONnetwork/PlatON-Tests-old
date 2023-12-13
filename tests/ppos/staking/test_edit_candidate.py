@@ -555,7 +555,7 @@ def test_MPI_022(client_new_node):
     result = client.staking.edit_candidate(address, address, reward_per=70)
     assert_code(result, 301008)
 
-#
+
 # @pytest.mark.P1
 # def test_MPI_021(clients_noconsensus):
 #     """

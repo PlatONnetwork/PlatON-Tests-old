@@ -61,10 +61,12 @@ class Staking:
             bls_proof = self.node.schnorr_NIZK_prove
         pri_key = self.economic.account.find_pri_key(from_address)
         return self.ppos.createStaking(typ, benifit_address, node_id, self.cfg.external_id, self.cfg.node_name,
-                                       self.cfg.website, self.cfg.details, amount, program_version, program_version_sign,
+                                       self.cfg.website, self.cfg.details, amount, program_version,
+                                       program_version_sign,
                                        bls_pubkey, bls_proof, pri_key, reward_per, transaction_cfg=transaction_cfg)
 
-    def edit_candidate(self, from_address, benifit_address=None, node_id=None, reward_per=None, external_id=None, node_name=None, website=None, details=None, transaction_cfg=None):
+    def edit_candidate(self, from_address, benifit_address=None, node_id=None, reward_per=None, external_id=None,
+                       node_name=None, website=None, details=None, transaction_cfg=None):
         """
         Modify staking information
         :param benifit_address: Income account for accepting block rewards and staking rewards
@@ -189,7 +191,6 @@ class Staking:
             return nextrewardper
         else:
             return rewardper
-
 
     def get_version(self, node=None):
         """

@@ -16,7 +16,7 @@ CONFIG_JSON_FILE = os.path.abspath(os.path.join(BASE_DIR, "deploy/template/confi
 STATIC_NODE_FILE = os.path.abspath(os.path.join(BASE_DIR, 'deploy/template/static-nodes.json'))
 SUPERVISOR_FILE = os.path.abspath(os.path.join(BASE_DIR, "deploy/template/supervisor_template.conf"))
 ADDRESS_FILE = os.path.abspath(
-    os.path.join(BASE_DIR, 'deploy/keystore/lat1785psd0qs0g8p79j54mnewh0ndwcvqq680rcfc'))
+    os.path.join(BASE_DIR, 'deploy/keystore/lat1rzw6lukpltqn9rk5k59apjrf5vmt2ncv8uvfn7'))
 ACCOUNT_FILE = os.path.abspath(os.path.join(BASE_DIR, "deploy/accounts.yml"))
 LOG_FILE = os.path.abspath(os.path.join(BASE_DIR, "deploy/tmp/platon.log"))
 
@@ -46,4 +46,4 @@ class ConfTmpDir:
 # directory cache configuration
 DEFAULT_CONF_TMP_DIR = ConfTmpDir("global")
 
-NODE_FILE = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/ppos_4_4_wyq1.yml"))
+NODE_FILE = os.path.abspath(os.path.join(BASE_DIR, "deploy/node/pengzhe_4_4.yml"))

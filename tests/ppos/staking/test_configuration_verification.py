@@ -9,7 +9,7 @@ from environment.node import Node
 def assert_error_deploy(env: Node, genesis_file, msg="Error config"):
     env.clean_db()
     is_success, err_msg = env.deploy_me(genesis_file)
-    print(is_success)
+    print(is_success, err_msg)
     assert not is_success, "{}-{}".format(msg, err_msg)
 
 

@@ -323,7 +323,7 @@ def test_POP_012(client_consensus, client_new_node):
     assert_code(result, 0)
 
     parameters_amount = client_consensus.economic.delegate_limit + \
-        client_consensus.node.web3.toWei(10, "ether")
+                        client_consensus.node.web3.toWei(10, "ether")
     block = param_governance_verify_before_endblock(client_consensus, "staking", "operatingThreshold",
                                                     str(parameters_amount))
     wait_block_number(client_new_node.node, block)
@@ -340,21 +340,34 @@ def test_POP_012(client_consensus, client_new_node):
 
     msg = client_new_node.ppos.getCandidateInfo(client_new_node.node.node_id)
     staking_blocknum = msg["Ret"]["StakingBlockNum"]
+
+    del_info = client_new_node.ppos.getDelegateInfo(staking_blocknum, address_delegate, client_new_node.node.node_id)
+    print("del_info", del_info)
+
     withdrew_delegate = delegate_amount * 2 - parameters_amount + \
-        client_consensus.node.web3.toWei(1, "ether")
+                        client_consensus.node.web3.toWei(1, "ether")
     result = client_new_node.delegate.withdrew_delegate(staking_blocknum, address_delegate,
                                                         amount=withdrew_delegate)
     assert_code(result, 0)
+
+    del_info1 = client_new_node.ppos.getDelegateInfo(staking_blocknum, address_delegate, client_new_node.node.node_id)
+    print("del_info1", del_info1)
+
+    def_resinfo = client_new_node.ppos.getRestrictingInfo(address_delegate)
+    print("del_resinfo", def_resinfo)
+
+    amount1 = client_new_node.node.eth.getBalance(address_delegate)
+    log.info("The wallet1 balance:{}".format(amount1))
+
     amount1_after = client_new_node.node.eth.getBalance(address_delegate)
     log.info("The wallet balance:{}".format(amount1_after))
-    amount_dill = amount1_after - amount_before
-    assert delegate_amount - amount_dill < client_new_node.node.web3.toWei(1, "ether")
-    client_new_node.economic.wait_settlement(client_new_node.node)
+    assert amount1_after - amount_before < client_new_node.node.web3.toWei(1, "ether")
+    client_new_node.economic.wait_settlement(client_new_node.node, 1)
 
     amount1_last = client_new_node.node.eth.getBalance(address_delegate)
     log.info("The wallet balance:{}".format(amount1_last))
     assert amount1_last - amount1_after == delegate_amount
-    assert delegate_amount * 2 - (amount1_last - amount_before) < client_new_node.node.web3.toWei(1, "ether")
+    assert delegate_amount - (amount1_last - amount_before) < client_new_node.node.web3.toWei(1, "ether")
 
 
 @pytest.mark.P2
@@ -410,23 +423,28 @@ def test_POP_014(client_consensus, client_new_node):
                                                                               10 ** 18 * 10000000)
     result = client_new_node.staking.create_staking(0, address1, address1)
     assert_code(result, 0)
+
     delegate_amount = client_consensus.economic.delegate_limit + client_consensus.node.web3.toWei(20, "ether")
     log.info("Amount entrusted{}".format(delegate_amount))
 
     result = client_new_node.delegate.delegate(0, address_delegate_1, amount=delegate_amount)
     assert_code(result, 0)
+
     amount1_before = client_new_node.node.eth.getBalance(address_delegate_1)
     log.info("The wallet balance:{}".format(amount1_before))
+
     param_amount = client_consensus.economic.delegate_limit + client_consensus.node.web3.toWei(10, "ether")
 
     block = param_governance_verify_before_endblock(client_consensus, "staking", "operatingThreshold",
                                                     str(param_amount), effectiveflag=False)
     wait_block_number(client_new_node.node, block)
     log.info("The delegate is initiated after the parameter takes effect")
+
     address_delegate_2, _ = client_new_node.economic.account.generate_account(client_new_node.node.web3,
                                                                               10 ** 18 * 10000000)
     result = client_new_node.delegate.delegate(0, address_delegate_2, amount=delegate_amount)
     assert_code(result, 0)
+
     amount2_before = client_new_node.node.eth.getBalance(address_delegate_1)
     log.info("The wallet balance:{}".format(amount2_before))
 
@@ -436,18 +454,18 @@ def test_POP_014(client_consensus, client_new_node):
     result = client_new_node.delegate.withdrew_delegate(staking_blocknum, address_delegate_1,
                                                         amount=withdrew_delegate)
     assert_code(result, 0)
+
     amount1_after = client_new_node.node.eth.getBalance(address_delegate_1)
     log.info("The wallet balance:{}".format(amount1_after))
-    amount1_dill = amount1_after - amount1_before
-    assert withdrew_delegate - amount1_dill < client_new_node.node.web3.toWei(1, "ether")
+    assert amount1_before - amount1_after == 36336000000000
 
     result = client_new_node.delegate.withdrew_delegate(staking_blocknum, address_delegate_2,
                                                         amount=withdrew_delegate)
     assert_code(result, 0)
+
     amount2_after = client_new_node.node.eth.getBalance(address_delegate_2)
     log.info("The wallet balance:{}".format(amount2_after))
-    amount1_dill = amount2_after - amount2_before
-    assert withdrew_delegate - amount1_dill < client_new_node.node.web3.toWei(1, "ether")
+    assert amount2_before - (amount2_after - withdrew_delegate) == 36336000000000
 
 
 @pytest.mark.P2

@@ -15,6 +15,7 @@ class Cbft:
 @dataclass
 class Config:
     chainId: int
+    pip7ChainId: int
     eip155Block: int
     cbft: Cbft
     genesisVersion: int
@@ -36,6 +37,7 @@ class Staking:
     unStakeFreezeDuration: int
     rewardPerMaxChangeRange: int
     rewardPerChangeInterval: int
+    unDelegateFreezeDuration: int
 
 
 @dataclass

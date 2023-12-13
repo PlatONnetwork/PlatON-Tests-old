@@ -111,12 +111,16 @@ class Economic:
         return count
 
     def calculate_delegate_reward(self, node, block_reward, staking_reward, reward=None):
+        """ 获取节点的总委托奖励
+        """
         block_number = self.get_number_blocks_in_interval(node)
         if reward is None:
             reward = node.ppos.getCandidateInfo(node.node_id)["Ret"]["RewardPer"]
         return int(Decimal(str(staking_reward))*Decimal(str(reward))/Decimal(str(10000)) + Decimal(str(int(Decimal(str(block_reward))*Decimal(str(reward))/Decimal(str(10000))))) * Decimal(str(block_number)))
 
     def delegate_cumulative_income(self, node, block_reward, staking_reward, delegate_total_amount, delegate_amount, reward=None):
+        """
+        """
         entrusted_income = self.calculate_delegate_reward(node, block_reward, staking_reward, reward)
         print("entrusted_income: ", entrusted_income)
         # unit_commission_award = math.floor(Decimal(str(entrusted_income)) / int((Decimal(str(delegate_total_amount)) / (10 ** 9))))
@@ -128,6 +132,8 @@ class Economic:
         return current_commission_award
 
     def delegate_dividend_income(self, delegate_reward_total, delegate_total_amount, delegate_amount):
+        """ 根据委托占总委托数的比例计算奖励金额
+        """
         # unit_commission_award = math.floor(Decimal(str(delegate_reward_total)) / int((Decimal(str(delegate_total_amount)) / (10 ** 9))))
         # print("unit_commission_award: ", unit_commission_award)
         # current_commission_award = int((Decimal(str(delegate_amount)) / (10 ** 9)) * Decimal(str(unit_commission_award)))

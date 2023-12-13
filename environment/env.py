@@ -66,7 +66,7 @@ class TestEnvironment:
         self.__parse_node()
 
         # accounts
-        self.account = Account(self.cfg.account_file, self.genesis_config["config"]["chainId"])
+        self.account = Account(self.cfg.account_file, self.genesis_config["config"]["pip7ChainId"])
 
         self.rewrite_genesis_file()
 
@@ -80,7 +80,7 @@ class TestEnvironment:
 
     @property
     def chain_id(self):
-        return self.genesis_config["config"]["chainId"]
+        return self.genesis_config["config"]["pip7ChainId"]
 
     @property
     def amount(self):

@@ -14,9 +14,6 @@ some libs rely on C++ 14, Please install them frist.
 
 ## Usage
 
-1. Add 'tool/[win or linux]', 'tool/win/bls_win/lib' to the environment variable
-2. only windows, Add 'tool/win/bls_win/lib' to the environment variable
-
 ### run all cases
 
 ```shell
@@ -33,7 +30,7 @@ pytest "tests" --nodeFile "node_1.yml,node_2.yml" -n 2
 
 --nodeFile: Node configurat file, refer [[deploy.md](docs/deploy.md)].
 
---accountFile: Account file，refer [[accounts.yml](deploy/accounts.yml)].
+--accountFile: Account file，refer [[deploy.md](deploy/accounts.yml)].
 
 --platonUrl: Automatically download the platon.
 

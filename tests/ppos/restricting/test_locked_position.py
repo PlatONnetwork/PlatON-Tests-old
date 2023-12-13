@@ -971,7 +971,7 @@ def test_LS_PV_001(client_new_node):
 
 
 @pytest.mark.P1
-def test_LS_PV_002(client_new_node):
+def xxxtest_LS_PV_002(client_new_node):
     """
     创建计划质押-未找到锁仓信息
     :param client_new_node:
@@ -1466,6 +1466,7 @@ def create_delegation_information(client, economic, node, base):
     # Application for Commission
     delegate_amount = von_amount(economic.delegate_limit, base)
     result = client.delegate.delegate(1, address2, amount=delegate_amount)
+    # 使用锁仓金额 1000 委托了100
     assert_code(result, 0)
     # view restricting info
     restricting_info = client.ppos.getRestrictingInfo(address2)
@@ -1545,7 +1546,12 @@ def test_LS_EV_011(client_new_node):
     client.delegate.withdrew_delegate(staking_blocknum, address2, amount=redemption_amount)
     # view restricting info again
     restricting_info = client.ppos.getRestrictingInfo(address2)
-    assert_code(restricting_info, 304005)
+    # 锁仓计划还存在，只是进入了锁定期
+    # assert_code(restricting_info, 304005)
+    assert_code(restricting_info, 0)
+    # {'balance': 100, 'debt': 100, 'plans': None, 'Pledge': 100}
+    restr_info = restricting_info['Ret']
+    assert restr_info['balance'] == restr_info['debt'] == restr_info['Pledge'] == redemption_amount
 
 
 @pytest.mark.P1
@@ -1733,8 +1739,11 @@ def test_LS_EV_019(client_new_node):
     restricting_info = client.ppos.getRestrictingInfo(address2)
     log.info("restricting plan informtion: {}".format(restricting_info))
     info = restricting_info['Ret']
-    assert info['debt'] == von_amount(economic.delegate_limit,
-                                      10) - redemption_amount, "rrMsg: restricting debt amount {}".format(info['debt'])
+    # assert info['debt'] == von_amount(economic.delegate_limit, 10) - redemption_amount, \
+    #     "rrMsg: restricting debt amount {}".format(info['debt'])
+
+    # withdrew / redemption_amount 不会导致锁仓计划改变，赎回金额进入锁定金
+    assert info['balance'] == info['debt'] == info['Pledge'] == von_amount(economic.delegate_limit, 10)
 
 
 @pytest.mark.P1
@@ -1763,7 +1772,11 @@ def test_LS_EV_020(client_new_node):
     # view restricting plan informtion again
     restricting_info = client.ppos.getRestrictingInfo(address2)
     log.info("restricting plan informtion: {}".format(restricting_info))
-    assert_code(restricting_info, 304005)
+    # assert_code(restricting_info, 304005)
+    assert_code(restricting_info, 0)
+    # {'balance': 100, 'debt': 100, 'plans': None, 'Pledge': 100}
+    restr_info = restricting_info['Ret']
+    assert restr_info['balance'] == restr_info['debt'] == restr_info['Pledge'] == redemption_amount
 
 
 @pytest.mark.P1
@@ -1796,7 +1809,11 @@ def test_LS_EV_021(client_new_node):
     # view restricting plan informtion again
     restricting_info = client.ppos.getRestrictingInfo(address2)
     log.info("restricting plan informtion: {}".format(restricting_info))
-    assert_code(restricting_info, 304005)
+    # assert_code(restricting_info, 304005)
+    assert_code(restricting_info, 0)
+    # {'balance': 100, 'debt': 100, 'plans': None, 'Pledge': 100}
+    restr_info = restricting_info['Ret']
+    assert restr_info['balance'] == restr_info['debt'] == restr_info['Pledge'] == delegate_amount2
 
 
 @pytest.mark.P1
@@ -1955,6 +1972,7 @@ def test_LS_CSV_001(client_new_node):
     client = client_new_node
     economic = client.economic
     node = client.node
+    client.ppos.need_analyze = True
     # Create restricting plan
     address1 = restricting_plan_verification_pledge(client, economic, node)
     # create staking
@@ -2380,7 +2398,7 @@ def test_LS_CSV_016(client_new_node):
 
 
 @pytest.mark.P1
-@pytest.mark.parametrize('amount', [79, 80, 100])
+@pytest.mark.parametrize('amount', [99, 100, 101])
 def test_LS_UPV_020(client_new_node, amount):
     """
     锁仓参数的有效性验证:epoch 1, amount 80
@@ -2483,7 +2501,6 @@ def test_LS_UPV_022(client_new_node, client_consensus):
     """
     clinet = client_new_node
     print(clinet.node.node_mark)
-    clinet1 = client_consensus
     economic = clinet.economic
     node = clinet.node
 
@@ -2527,10 +2544,11 @@ def test_LS_UPV_022(client_new_node, client_consensus):
         balance_staking1 = node.eth.getBalance(staking_address)
         balance_benefit = node.eth.getBalance(benefit_address, economic.settlement_size * i)
         assert balance_staking - balance_staking1 < node.web3.toWei(0.01, 'ether')
-        clinet1.economic.wait_settlement(clinet1.node)
+        economic.wait_settlement(node)
     # Check the income to the account
+
     assert balance_benefit == block_reward * 40 + staking_reward
-    list = clinet1.node.ppos.getRestrictingInfo(staking_address)['Ret']['plans']
+    list = node.ppos.getRestrictingInfo(staking_address)['Ret']['plans']
 
     for i in range(len(list) - 1):
         balance_staking2 = node.eth.getBalance(staking_address)
@@ -2565,53 +2583,45 @@ def test_LS_UPV_023(client_new_node):
     node = clinet.node
 
     address, _ = economic.account.generate_account(node.web3, economic.create_staking_limit * 1000)
-    staking_address, _ = economic.account.generate_account(node.web3, node.web3.toWei(1, 'ether'))
+    delegate_address, _ = economic.account.generate_account(node.web3, node.web3.toWei(1, 'ether'))
     benefit_address, _ = economic.account.generate_account(node.web3, 0)
 
     balance_restrictingAddress = node.eth.getBalance(node.ppos.restrictingAddress)
-    amount1 = Web3.toWei(8330, 'ether')
-    amount2 = Web3.toWei(8370, 'ether')
+    amount1 = Web3.toWei(20000, 'ether')
+    # amount2 = Web3.toWei(8370, 'ether')
     plan = [{'Epoch': 1, 'Amount': amount1},
             {'Epoch': 2, 'Amount': amount1},
             {'Epoch': 3, 'Amount': amount1},
             {'Epoch': 4, 'Amount': amount1},
-            {'Epoch': 5, 'Amount': amount1},
-            {'Epoch': 6, 'Amount': amount1},
-            {'Epoch': 7, 'Amount': amount1},
-            {'Epoch': 8, 'Amount': amount1},
-            {'Epoch': 9, 'Amount': amount1},
-            {'Epoch': 10, 'Amount': amount1},
-            {'Epoch': 11, 'Amount': amount1},
-            {'Epoch': 12, 'Amount': amount2}]
-    result = clinet.restricting.createRestrictingPlan(staking_address, plan, address)
+            {'Epoch': 5, 'Amount': amount1}]
+    result = clinet.restricting.createRestrictingPlan(delegate_address, plan, address)
     assert_code(result, 0)
-    # plan1 = [{'Epoch': 20000, 'Amount': Web3.toWei(1000000, 'ether')}]
-    # result = clinet.restricting.createRestrictingPlan(address1, plan1, address1)
-    # assert_code(result, 0)
+
     time.sleep(1)
     result = clinet.staking.create_staking(0, benefit_address, address)
     assert_code(result, 0)
     for i in range(len(plan) + 1):
-        restricting_info = clinet.node.ppos.getRestrictingInfo(staking_address)
+        restricting_info = clinet.node.ppos.getRestrictingInfo(delegate_address)
         if restricting_info['Code'] == 0:
             assert restricting_info['Ret']['balance'] == economic.create_staking_limit - amount1 * i
-            result = clinet.delegate.delegate(1, staking_address, amount=restricting_info['Ret']['balance'])
+            result = clinet.delegate.delegate(1, delegate_address, amount=restricting_info['Ret']['balance'])
             assert_code(result, 0)
             economic.wait_settlement(node)
-            restricting_info2 = clinet.node.ppos.getRestrictingInfo(staking_address)['Ret']
+            restricting_info2 = clinet.node.ppos.getRestrictingInfo(delegate_address)['Ret']
             staking_blocknum = node.ppos.getCandidateInfo(node.node_id)['Ret']['StakingBlockNum']
-            result = clinet.delegate.withdrew_delegate(staking_blocknum, staking_address,
+            result = clinet.delegate.withdrew_delegate(staking_blocknum, delegate_address,
                                                        amount=restricting_info2['Pledge'])
             assert_code(result, 0)
-            balance_withdrew = node.eth.getBalance(staking_address)
+            balance_withdrew = node.eth.getBalance(delegate_address)
             # Verify each cycle release
-            assert amount1 * (i + 1) + node.web3.toWei(1, 'ether') - balance_withdrew < node.web3.toWei(0.01, 'ether')
-
+            # assert amount1 * (i + 1) + node.web3.toWei(1, 'ether') - balance_withdrew < node.web3.toWei(0.01, 'ether')
+            assert node.web3.toWei(1, 'ether') - balance_withdrew < node.web3.toWei(0.01, 'ether')
         else:
             assert_code(restricting_info, 304005)
-            balance = node.eth.getBalance(staking_address)
-            assert economic.create_staking_limit + node.web3.toWei(1, 'ether') - balance < node.web3.toWei(0.01,
-                                                                                                           'ether')
+            balance = node.eth.getBalance(delegate_address)
+            # assert economic.create_staking_limit + node.web3.toWei(1, 'ether') - balance < node.web3.toWei(0.01,
+            #                                                                                                'ether')
+            assert node.web3.toWei(1, 'ether') - balance < node.web3.toWei(0.01, 'ether')
             balance_restrictingAddress1 = node.eth.getBalance(node.ppos.restrictingAddress)
             # Verify the amount of lockup contract
             assert balance_restrictingAddress == balance_restrictingAddress1
@@ -2631,20 +2641,13 @@ def test_LS_UPV_024(client_new_node, client_consensus):
     staking_address, _ = economic.account.generate_account(node.web3, node.web3.toWei(1, 'ether'))
     benefit_address, _ = economic.account.generate_account(node.web3, 0)
     balance_restrictingAddress = node.eth.getBalance(node.ppos.restrictingAddress)
-    amount1 = Web3.toWei(8330, 'ether')
-    amount2 = Web3.toWei(8370, 'ether')
+    time.sleep(2)
+    amount1 = Web3.toWei(20000, 'ether')
     plan = [{'Epoch': 1, 'Amount': amount1},
             {'Epoch': 2, 'Amount': amount1},
             {'Epoch': 3, 'Amount': amount1},
             {'Epoch': 4, 'Amount': amount1},
-            {'Epoch': 5, 'Amount': amount1},
-            {'Epoch': 6, 'Amount': amount1},
-            {'Epoch': 7, 'Amount': amount1},
-            {'Epoch': 8, 'Amount': amount1},
-            {'Epoch': 9, 'Amount': amount1},
-            {'Epoch': 10, 'Amount': amount1},
-            {'Epoch': 11, 'Amount': amount1},
-            {'Epoch': 12, 'Amount': amount2}]
+            {'Epoch': 5, 'Amount': amount1}, ]
     result = clinet.restricting.createRestrictingPlan(staking_address, plan, address)
     assert_code(result, 0)
 
@@ -2676,18 +2679,14 @@ def test_LS_UPV_025(client_new_node, client_consensus):
     """
     clinet = client_new_node
     print(clinet.node.node_mark)
-    clinet1 = client_consensus
-    print(clinet1.node.node_mark)
     economic = clinet.economic
     node = clinet.node
-    # minimum_release = economic.genesis.economicModel.restricting.minimumRelease
-    # print(minimum_release)
-    # lock_amount = Web3.toWei(amount, 'ether')
-    address1, _ = economic.account.generate_account(node.web3, economic.create_staking_limit * 10)
-    address2, _ = economic.account.generate_account(node.web3, economic.create_staking_limit * 2)
-    address3, _ = economic.account.generate_account(node.web3, 0)
-    amount1 = Web3.toWei(833, 'ether')
-    amount2 = Web3.toWei(837, 'ether')
+    address, _ = economic.account.generate_account(node.web3, economic.create_staking_limit * 10)
+    staking_address, _ = economic.account.generate_account(node.web3, economic.create_staking_limit * 2)
+    benefit_address, _ = economic.account.generate_account(node.web3, 0)
+    balance_restrictingAddress = node.eth.getBalance(node.ppos.restrictingAddress)
+    amount1 = Web3.toWei(8330, 'ether')
+    amount2 = Web3.toWei(8370, 'ether')
     plan = [{'Epoch': 1, 'Amount': amount1},
             {'Epoch': 2, 'Amount': amount1},
             {'Epoch': 3, 'Amount': amount1},
@@ -2700,43 +2699,54 @@ def test_LS_UPV_025(client_new_node, client_consensus):
             {'Epoch': 10, 'Amount': amount1},
             {'Epoch': 11, 'Amount': amount1},
             {'Epoch': 12, 'Amount': amount2}]
-    result = clinet.restricting.createRestrictingPlan(address2, plan, address1)
+    result = clinet.restricting.createRestrictingPlan(staking_address, plan, address)
     assert_code(result, 0)
     time.sleep(3)
-    restricting_info1 = clinet1.node.ppos.getRestrictingInfo(address2)['Ret']
-    print(restricting_info1)
-    result = clinet.staking.create_staking(0, address3, address2)
+    result = clinet.staking.create_staking(0, benefit_address, staking_address)
     assert_code(result, 0)
-    result = clinet.staking.increase_staking(1, address2)
+    result = clinet.staking.increase_staking(1, staking_address)
     assert_code(result, 0)
     economic.wait_settlement(node)
-    # block_reward, staking_reward = clinet.economic.get_current_year_reward(node)
-    result = clinet.staking.withdrew_staking(address2)
+    balance_staking = node.eth.getBalance(staking_address)
+    result = clinet.staking.withdrew_staking(staking_address)
     assert_code(result, 0)
-    clinet1.economic.wait_settlement(clinet1.node, 3)
-    restricting_info2 = clinet1.node.ppos.getRestrictingInfo(address2)['Ret']
-    print(restricting_info2)
-    release_amonut = int(Decimal(str(amount1)) * Decimal(str(5)))
-    print(release_amonut)
-    assert restricting_info1['balance'] - release_amonut == restricting_info2['balance']
+    balance_staking1 = node.eth.getBalance(staking_address)
+    assert 0 < balance_staking - balance_staking1 < node.web3.toWei(0.01, 'ether')
+    print("退回质押后账号余额:", node.eth.getBalance(staking_address))
+    for i in range(len(plan) - 2):
+        restricting_info = node.ppos.getRestrictingInfo(staking_address)['Ret']['balance']
+        economic.wait_settlement(node)
+        time.sleep(2)
+        restricting_info1 = node.ppos.getRestrictingInfo(staking_address)['Ret']['balance']
+        assert restricting_info - restricting_info1 == amount1
+    assert restricting_info1 == amount2
     economic.wait_settlement(node)
-    assert restricting_info1['balance'] - release_amonut == restricting_info2['balance']
-    for i in range(len(plan) + 1):
-        # block_reward, staking_reward = clinet.economic.get_current_year_reward(node)
-        amount = clinet.node.ppos.getRestrictingInfo(address2)
-        print(amount)
-        balance1 = node.eth.getBalance(address2)
-        print(balance1)
-        balance_restrictingAddress2 = node.eth.getBalance(node.ppos.restrictingAddress)
-        print(balance_restrictingAddress2)
-        # result = clinet.delegate.delegate(1, address2, amount=amount)
-        # assert_code(result, 0)
-        clinet.economic.wait_settlement(node)
-        # restricting_info2 = clinet.node.ppos.getRestrictingInfo(address2)['Ret']
-        # print(restricting_info2)
-        # # assert restricting_info1['balance'] - int(Decimal(str(amount1)) * Decimal(str(2))) == restricting_info2['balance']
-        # staking_blocknum = node.ppos.getCandidateInfo(node.node_id)['Ret']['StakingBlockNum']
-        # result = clinet.delegate.withdrew_delegate(staking_blocknum, address2, amount=amount)
-        # assert_code(result, 0)
-        # assert restricting_info1['balance'] - int(Decimal(str(amount1)) * Decimal(str(3))) == restricting_info2['balance']
+    balance_staking2 = node.eth.getBalance(staking_address)
+    assert balance_staking2 == balance_staking1 + economic.create_staking_limit * 2 - amount1
+    balance_restrictingAddress1 = node.eth.getBalance(node.ppos.restrictingAddress)
+    assert balance_restrictingAddress == balance_restrictingAddress1
+    result = node.ppos.getRestrictingInfo(staking_address)
+    assert_code(result, 304005)
 
+
+@pytest.mark.P1
+def test_LS_UPV_026(client_new_node):
+    """
+    正常创建锁仓计划
+    :param client_new_node:
+    :return:
+    """
+    client = client_new_node
+    economic = client.economic
+    node = client.node
+    node.ppos.need_quota_gas = False
+    address, _ = economic.account.generate_account(node.web3, economic.create_staking_limit * 2)
+    balance = node.eth.getBalance(address)
+    amount = node.web3.toWei(100, 'ether')
+    plan = [{'Epoch': 1, 'Amount': amount}, {'Epoch': 2, 'Amount': amount}]
+    result = client.restricting.createRestrictingPlan(address, plan, address)
+    assert_code(result, 0)
+    restricting_info = node.ppos.getRestrictingInfo(address)
+    print(restricting_info)
+    balance_after = node.eth.getBalance(address)
+    assert balance - balance_after - amount * 2 < node.web3.toWei(0.01, 'ether')

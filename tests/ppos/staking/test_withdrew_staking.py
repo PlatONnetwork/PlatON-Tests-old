@@ -567,10 +567,20 @@ def test_RV_019(staking_client):
 
     log.info("Enter the second billing cycle")
     economic.wait_settlement(node)
-
+    # print('getCandidateList', 0, client.ppos.getCandidateList())
+    # print('getVerifierList', 0, client.ppos.getVerifierList())
+    # print('getValidatorList', 0, client.ppos.getValidatorList())
     block_reward, staking_reward = economic.get_current_year_reward(node)
     msg = client.staking.withdrew_staking(staking_address)
     assert_code(msg, 0)
+    # print('getCandidateList', client.ppos.getCandidateList())
+    # print('getVerifierList', client.ppos.getVerifierList())
+    # print('getValidatorList', client.ppos.getValidatorList())
+    # for i in range(6):
+    #     print('getCandidateList', i+1, client.ppos.getCandidateList())
+    #     print('getVerifierList', i+1, client.ppos.getVerifierList())
+    #     print('getValidatorList', i+1, client.ppos.getValidatorList())
+    #     economic.wait_consensus(node)
     balance_before = node.eth.getBalance(ben_address)
     log.info("Exit the new wallet balance after pledge:{}".format(balance_before))
     log.info("Enter the third billing cycle")
@@ -582,6 +592,7 @@ def test_RV_019(staking_client):
     """Compute Block Reward + Pledge Reward"""
     log.info("The following is the number of blocks to get the node")
     block_number = get_block_count_number(node, economic.settlement_size * 3)
+    print(block_number)
     sum_block_reward = calculate(block_reward, block_number)
     reward_sum = sum_block_reward + staking_reward
     log.info("Total amount of reward {}".format(reward_sum))
@@ -733,27 +744,27 @@ def test_RV_024(staking_client):
     msg = client.delegate.delegate(0, client.delegate_address)
     assert_code(msg, 301103)
 
-
-
-def test_dsda(client_new_node):
-    """
-
-    """
-    client = client_new_node
-    node = client.node
-    economic = client.economic
-    staking_address, _ = economic.account.generate_account(node.web3, economic.create_staking_limit * 2)
-    staking_address1, _ = economic.account.generate_account(node.web3, economic.create_staking_limit * 2)
-    staking_address2, _ = economic.account.generate_account(node.web3, economic.create_staking_limit * 2)
-    result = client.staking.create_staking(0, staking_address, staking_address)
-    assert_code(result, 0)
-    print(client.node.ppos.getCandidateInfo(node.node_id))
-    print("1---------------")
-    result = client.staking.edit_candidate(staking_address, staking_address1)
-    assert_code(result, 0)
-    print(client.node.ppos.getCandidateInfo(node.node_id))
-    print("2---------------")
-    result = client.staking.edit_candidate(staking_address, staking_address2)
-    assert_code(result, 0)
-    print(client.node.ppos.getCandidateInfo(node.node_id))
-    print("3---------------")
+#
+#
+# def test_dsda(client_new_node):
+#     """
+#
+#     """
+#     client = client_new_node
+#     node = client.node
+#     economic = client.economic
+#     staking_address, _ = economic.account.generate_account(node.web3, economic.create_staking_limit * 2)
+#     staking_address1, _ = economic.account.generate_account(node.web3, economic.create_staking_limit * 2)
+#     staking_address2, _ = economic.account.generate_account(node.web3, economic.create_staking_limit * 2)
+#     result = client.staking.create_staking(0, staking_address, staking_address)
+#     assert_code(result, 0)
+#     print(client.node.ppos.getCandidateInfo(node.node_id))
+#     print("1---------------")
+#     result = client.staking.edit_candidate(staking_address, staking_address1)
+#     assert_code(result, 0)
+#     print(client.node.ppos.getCandidateInfo(node.node_id))
+#     print("2---------------")
+#     result = client.staking.edit_candidate(staking_address, staking_address2)
+#     assert_code(result, 0)
+#     print(client.node.ppos.getCandidateInfo(node.node_id))
+#     print("3---------------")

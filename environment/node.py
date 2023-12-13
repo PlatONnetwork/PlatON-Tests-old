@@ -20,6 +20,8 @@ success_msg = "Node-{} do {} success"
 
 
 class Node:
+    remote_static_nodes_file: str
+
     def __init__(self, node_conf, cfg: TestConfig, chain_id):
         self.cfg = cfg
         # node identity parameter
@@ -400,7 +402,7 @@ class Node:
             cmd = cmd + " --db.nogc"
             cmd = cmd + " --nodekey " + self.remote_nodekey_file
             cmd = cmd + " --cbft.blskey " + self.remote_blskey_file
-            cmd = cmd + " --config " + self.remote_config_file
+            # cmd = cmd + " --config " + self.remote_config_file
             cmd = cmd + " --syncmode '{}'".format(self.cfg.syncmode)
             cmd = cmd + " --debug --verbosity {}".format(self.cfg.log_level)
             if self.pprofport:
@@ -408,9 +410,14 @@ class Node:
             if self.wsport:
                 cmd = cmd + " --ws --wsorigins '*' --wsaddr 0.0.0.0 --wsport " + str(self.wsport)
                 cmd = cmd + " --wsapi platon,debug,personal,admin,net,web3"
+            cmd = cmd + " --rpc.txfeecap 0"
             cmd = cmd + " --rpc --rpcaddr 0.0.0.0 --rpcport " + str(self.rpc_port)
             cmd = cmd + " --rpcapi platon,debug,personal,admin,net,web3,txpool"
+            # cmd = cmd + " --http.ethcompatible"
             cmd = cmd + " --txpool.nolocals"
+            cmd = cmd + " --allow-insecure-unlock"
+            cmd = cmd + " --db.validators_history"
+            cmd = cmd + " --rpc.allow-unprotected-txs"
             if self.cfg.append_cmd:
                 cmd = cmd + " " + self.cfg.append_cmd
             fp.write("command=" + cmd + "\n")

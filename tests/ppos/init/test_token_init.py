@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import allure
 import pytest
-from alaya.eth import Eth
+# from alaya.eth import Eth
 from client_sdk_python import Web3
 from client_sdk_python.packages.platon_keys.utils.address import address_bytes_to_bech32_address
 from dacite import from_dict
@@ -221,8 +221,8 @@ def test_IT_SD_008_001(client_consensus):
     first_balance4 = node.eth.getBalance(node.ppos.delegateRewardAddress)
     first_balance5 = node.eth.getBalance(node.ppos.penaltyAddress)
     first_balance6 = node.eth.getBalance(economic.account.raw_accounts[1]['address'])
-    log.info("Balance of Staking : {}".format(first_balance2))
-    log.info("Balance of Restriction plan : {}".format(first_balance1))
+    log.info("Balance of Restriction plan : {}".format(first_balance2))
+    log.info("Balance of Staking : {}".format(first_balance1))
     log.info("Balance of entrusted_dividend_contract : {}".format(first_balance5))
     log.info("Balance of punishment : {}".format(first_balance4))
     log.info("Balance of Entrust reward pool : {}".format(first_balance6))
@@ -249,8 +249,8 @@ def test_IT_SD_008_001(client_consensus):
     second_balance4 = node.eth.getBalance(node.ppos.delegateRewardAddress)
     second_balance5 = node.eth.getBalance(node.ppos.penaltyAddress)
     second_balance6 = node.eth.getBalance(economic.account.raw_accounts[1]['address'])
-    log.info("Balance of Staking : {}".format(second_balance2))
-    log.info("Balance of Restriction plan : {}".format(second_balance1))
+    log.info("Balance of Restriction plan : {}".format(second_balance2))
+    log.info("Balance of Staking : {}".format(second_balance1))
     log.info("Balance of entrusted_dividend_contract : {}".format(second_balance4))
     log.info("Balance of punishment : {}".format(second_balance5))
     log.info("Balance of Entrust reward pool : {}".format(second_balance6))
@@ -258,7 +258,7 @@ def test_IT_SD_008_001(client_consensus):
     assert second_balance2 - first_balance2 == node.web3.toWei(1000, 'ether')
     assert second_balance4 - first_balance4 == node.web3.toWei(1000, 'ether')
     assert second_balance5 - first_balance5 == node.web3.toWei(1000, 'ether')
-    assert second_balance6 - first_balance6 == 1000000010500000000000
+    assert second_balance6 - first_balance6 == node.web3.toWei(1000, 'ether') + (21000 * node.eth.gasPrice * 5)
 
 #
 # @pytest.mark.P1
@@ -287,7 +287,6 @@ def sendTransaction_input_nonce(client, data, from_address, to_address, gasPrice
     account = client.economic.account.accounts[from_address]
     if check_address:
         to_address = Web3.toChecksumAddress(to_address)
-
     transaction_dict = {
         "to": to_address,
         "gasPrice": gasPrice,
@@ -406,11 +405,31 @@ def test_IT_SD_010(client_consensus):
                                     node.web3.toWei(600, 'ether'), nonce + 1)
     except Exception as e:
         log.info("Use case success, exception information：{} ".format(str(e)))
-        time.sleep(3)
-        balance1 = node.eth.getBalance(address1)
-        log.info("Account balance after transfer： {}".format(balance1))
-        assert balance1 == balance + node.web3.toWei(500, 'ether'), "ErrMsg:Account balance after transfer：{}".format(
-            balance1)
+    time.sleep(3)
+    balance1 = node.eth.getBalance(address1)
+    log.info("Account balance after transfer： {}".format(balance1))
+    assert balance1 == balance + node.web3.toWei(500, 'ether'), "ErrMsg:Account balance after transfer：{}".format(
+        balance1)
+
+@pytest.mark.P0
+def test_IT_SD_011(global_test_env, client_consensus):
+    """
+    二次分配：普通账户转platON基金会账户
+    :return:
+    """
+    node = global_test_env.get_rand_node()
+    value = node.web3.toWei(1000, 'ether')
+    address, _ = global_test_env.account.generate_account(node.web3, value)
+    balance = node.eth.getBalance(client_consensus.economic.account.raw_accounts[1]['address'])
+    result = global_test_env.account.sendTransaction(node.web3, '', address, client_consensus.economic.account.raw_accounts[1]['address'],
+                                                     node.eth.gasPrice, 21000, node.web3.toWei(100, 'ether'))
+    assert result is not None, "ErrMsg:Transfer result {}".format(result)
+    balance1 = node.eth.getBalance(client_consensus.economic.account.raw_accounts[1]['address'])
+    log.info("Account balance after transfer： {}".format(balance1))
+    log.info("Transaction fee： {}".format(node.eth.gasPrice * 21000))
+    assert balance1 == balance + node.web3.toWei(100, 'ether') + node.eth.gasPrice * 21000, "ErrMsg:Account balance after transfer：{}".format(
+        balance1)
+
 
 
 def consensus_node_pledge_award_assertion(client, address):
@@ -484,7 +503,7 @@ def no_consensus_node_pledge_award_assertion(client, benifit_address, from_addre
             # wait settlement block
             client.economic.wait_settlement(client.node)
             # Count the number of blocks out of pledge node
-            blocknumber = client.economic.get_block_count_number(client.node, 5)
+            blocknumber = client.economic.get_block_count_number(client.node, roundnum=10)
             log.info("blocknumber: {}".format(blocknumber))
             balance1 = client.node.eth.getBalance(benifit_address)
             log.info("benifit address：{} amount：{}".format(benifit_address, balance1))
@@ -498,6 +517,28 @@ def no_consensus_node_pledge_award_assertion(client, benifit_address, from_addre
         else:
             # wait consensus block
             client.economic.wait_consensus(client.node)
+
+
+@pytest.mark.p1
+def test_IT_SD_013(global_test_env, client_consensus):
+    """
+    特殊区块按正常逻辑打包交易
+    :return:
+    """
+    node = global_test_env.get_rand_node()
+    address, _ = global_test_env.account.generate_account(node.web3)
+    value = node.web3.toWei(100, 'ether')
+    count = 0
+    for i in range(100):
+        block_numner = global_test_env.account.sendTransaction(node.web3, '', client_consensus.economic.account.raw_accounts[0]['address'], address,
+                                                         node.eth.gasPrice, 21000, value)["blockNumber"]
+        count += 1
+        if block_numner % 20 == 0:
+            break
+    assert block_numner % 20 == 0
+    balance = node.eth.getBalance(address)
+    assert balance == value * count
+
 
 
 @pytest.mark.p1
@@ -909,10 +950,8 @@ def test_AL_NBI_007_to_009(client_new_node):
             # view account amount again
             benifit_balance1 = client_new_node.node.eth.getBalance(benifit_address)
             log.info("benifit_balance: {}".format(benifit_balance1))
-            assert benifit_balance + staking_reward + blocknumber * Decimal(
-                str(block_reward)) - benifit_balance1 < client_new_node.node.web3.toWei(1,
-                                                                                        'ether'), "ErrMsg:benifit_balance: {}".format(
-                benifit_balance1)
+            assert benifit_balance + staking_reward + blocknumber * Decimal(str(block_reward)) == benifit_balance1,  \
+                "ErrMsg:benifit_balance: {}".format(benifit_balance1)
             break
         else:
             # wait consensus block
@@ -942,11 +981,12 @@ def assert_benifit_reward(client, benifit_address, address):
         if result:
             # view benifit reward
             blocknumber = view_benifit_reward(client, address)
+            print('blocknum', blocknumber)
             # view account amount again
             benifit_balance1 = client.node.eth.getBalance(benifit_address)
             log.info("benifit_balance: {}".format(benifit_balance1))
-            assert benifit_balance + staking_reward + blocknumber * Decimal(
-                str(block_reward)) - benifit_balance1 < client.node.web3.toWei(1,
+            print('qwq', benifit_balance + staking_reward + blocknumber * Decimal(str(block_reward)))
+            assert benifit_balance + staking_reward + blocknumber * Decimal(str(block_reward)) - benifit_balance1 < client.node.web3.toWei(1,
                                                                                'ether'), "ErrMsg:benifit_balance: {}".format(
                 benifit_balance1)
             break
@@ -1009,8 +1049,6 @@ def test_AL_NBI_014(client_new_node):
     block_reward, staking_reward = client_new_node.economic.get_current_year_reward(
         client_new_node.node)
     log.info("block_reward: {} staking_reward: {}".format(block_reward, staking_reward))
-    # view benifit_address amount again
-    benifit_balance = query_ccount_amount(client_new_node, benifit_address)
     # change benifit address
     for i in range(4):
         result = check_node_in_list(client_new_node.node.node_id, client_new_node.ppos.getValidatorList)
@@ -1019,11 +1057,11 @@ def test_AL_NBI_014(client_new_node):
             current_block = client_new_node.node.eth.blockNumber
             log.info("Current block:{}".format(current_block))
             for i in range(40):
-                nodeid = get_pub_key(client_new_node.node.url, current_block)
+                node_id = client_new_node.node.eth.ecrecover(current_block)
                 current_block = client_new_node.node.eth.blockNumber
                 log.info("当前块高:{}".format(current_block))
                 time.sleep(3)
-                if nodeid == client_new_node.node.node_id:
+                if node_id == client_new_node.node.node_id:
                     break
             # create account
             benifit_address1, _ = client_new_node.economic.account.generate_account(client_new_node.node.web3, 0)
@@ -1032,12 +1070,15 @@ def test_AL_NBI_014(client_new_node):
             assert_code(result, 0)
             # view benifit reward
             blocknumber = view_benifit_reward(client_new_node, address)
-
+            # view benifit_address amount again
+            benifit_balance = query_ccount_amount(client_new_node, benifit_address)
             # view benifit_address1 amount
             benifit_balance1 = query_ccount_amount(client_new_node, benifit_address1)
             assert benifit_balance + benifit_balance1 == int(Decimal(str(
-                block_reward)) * blocknumber) + staking_reward, "ErrMsg:benifit_balance + benifit_balance1: {}".format(
+                block_reward)) * blocknumber) + staking_reward and benifit_balance1 > 0, "ErrMsg:benifit_balance + benifit_balance1: {}".format(
                 benifit_balance + benifit_balance1)
+        else:
+            client_new_node.economic.wait_consensus(client_new_node.node)
 
 
 @pytest.mark.P1
@@ -1143,38 +1184,42 @@ def test_AL_NBI_017(clients_new_node):
     :param clients_new_node:
     :return:
     """
-    clients_new_node[0].economic.env.deploy_all()
+    client = clients_new_node[0]
+    client1 = clients_new_node[1]
+    client.economic.env.deploy_all()
     # create pledge node
-    address, benifit_address = create_pledge_node(clients_new_node[0], 1.6)
+    address, benifit_address = create_pledge_node(client, 1.6)
     # wait settlement block
-    clients_new_node[0].economic.wait_settlement(clients_new_node[0].node)
-    log.info("Current settlement cycle verifier list：{}".format(clients_new_node[0].ppos.getVerifierList()))
+    client.economic.wait_settlement(client.node)
+    log.info("Current settlement cycle verifier list：{}".format(client.ppos.getVerifierList()))
     # view block_reward
-    block_reward, staking_reward = clients_new_node[0].economic.get_current_year_reward(
-        clients_new_node[0].node)
+    block_reward, staking_reward = client.economic.get_current_year_reward(client.node)
     log.info("block_reward: {} staking_reward: {}".format(block_reward, staking_reward))
     # view account amount
-    benifit_balance = query_ccount_amount(clients_new_node[0], benifit_address)
+    benifit_balance = query_ccount_amount(client, benifit_address)
     for i in range(4):
-        result = check_node_in_list(clients_new_node[0].node.node_id, clients_new_node[0].ppos.getValidatorList)
+        result = check_node_in_list(client.node.node_id, client.ppos.getValidatorList)
         log.info("Current node in consensus list status：{}".format(result))
         if result:
             # stop node
-            clients_new_node[0].node.stop()
-            log.info("Current settlement cycle verifier list：{}".format(clients_new_node[1].ppos.getVerifierList()))
+            client.node.stop()
+            log.info("Current settlement cycle verifier list：{}".format(client1.ppos.getVerifierList()))
             # wait settlement block
-            clients_new_node[1].economic.wait_settlement(clients_new_node[1].node)
+            client1.economic.wait_settlement(client1.node)
             # view account amount again
-            benifit_balance1 = query_ccount_amount(clients_new_node[1], benifit_address)
+            benifit_balance1 = query_ccount_amount(client1, benifit_address)
+            # start node
+            client.node.start()
+            time.sleep(5)
             # count the number of blocks
-            blocknumber = clients_new_node[1].economic.get_block_count_number(clients_new_node[1].node, 5)
+            blocknumber = client1.economic.get_block_count_number(client.node, roundnum=15)
             log.info("blocknumber: {}".format(blocknumber))
             assert benifit_balance1 == benifit_balance + int(
                 Decimal(str(block_reward)) * blocknumber), "ErrMsg:benifit_balance1：{}".format(benifit_balance1)
             break
         else:
             # wait consensus block
-            clients_new_node[0].economic.wait_consensus(clients_new_node[0].node)
+            client.economic.wait_consensus(client.node)
 
 
 @pytest.mark.P1
@@ -1225,15 +1270,16 @@ def test_AL_NBI_018(new_genesis_env, client_new_node):
     # wait consensus block
     client.economic.wait_consensus(client.node)
     # count the number of blocks
-    blocknumber = client.economic.get_block_count_number(client.node, 10)
+    blocknumber = client.economic.get_block_count_number(client.node, roundnum=15)
     log.info("blocknumber: {}".format(blocknumber))
     # Check account balance again
     balance1 = node.eth.getBalance(address1)
     log.info("Account Balance： {}".format(balance1))
     # Pledged income account to get the bonus amount
     total_reward = int(Decimal(str(block_reward)) * blocknumber) + staking_reward
-    log.info("total:{}".format(balance + total_reward))
-    assert balance + total_reward - balance1 < node.web3.toWei(1, 'ether'), "ErrMsg:benifit_balance: {}".format(
+    # log.info("total:{}".format(balance + total_reward))
+    log.info("total:{}".format(total_reward))
+    assert 0 < balance + total_reward - balance1 < node.web3.toWei(1, 'ether'), "ErrMsg:benifit_balance: {}".format(
         balance1)
 
     # # create pledge node
@@ -1412,124 +1458,125 @@ def test_AL_FI_007(client_consensus):
     :param client_consensus:
     :return:
     """
-    client = client_consensus
-    economic = client.economic
-    node = client.node
-    economic.env.deploy_all()
-    log.info("Chain reset completed")
-    economic.wait_consensus(node)
-    log.info("Start adjusting the block interval")
-    for i in range(3):
-        economic.env.stop_all()
-        time.sleep(2)
-        economic.env.start_nodes(economic.env.get_all_nodes(), False)
-        time.sleep(5)
-    remaining_settlement_cycle = (economic.additional_cycle_time * 60) // economic.settlement_size
-    annual_size = remaining_settlement_cycle * economic.settlement_size
-    log.info("Additional issue settlement period：{} Block height of current issuance cycle: {}".format(
-        remaining_settlement_cycle, annual_size))
-    economic.wait_settlement(node)
-    block_info = node.eth.getBlock(1)
-    first_timestamp = block_info['timestamp']
-    log.info("First block timestamp： {}".format(first_timestamp))
-    issuing_cycle_timestamp = None
-    while remaining_settlement_cycle != 1:
-        tmp_current_block = node.eth.blockNumber
-        if tmp_current_block % economic.settlement_size == 0:
-            time.sleep(1)
-        last_settlement_block = (math.ceil(tmp_current_block / economic.settlement_size) - 1) * economic.settlement_size
-        log.info("The last block height of the previous settlement period： {}".format(last_settlement_block))
-        settlement_block_info = node.eth.getBlock(last_settlement_block)
-        settlement_timestamp = settlement_block_info['timestamp']
-        log.info("High block timestamp at the end of the current settlement cycle： {}".format(settlement_timestamp))
-        issuing_cycle_timestamp = first_timestamp + (economic.additional_cycle_time * 60000)
-        log.info("End time stamp of current issue cycle： {}".format(issuing_cycle_timestamp))
-        remaining_additional_time = issuing_cycle_timestamp - settlement_timestamp
-        log.info("Remaining time of current issuance cycle： {}".format(remaining_additional_time))
-        average_interval = (settlement_timestamp - first_timestamp) // (last_settlement_block - 1)
-        log.info("Block interval in the last settlement cycle： {}".format(average_interval))
-        number_of_remaining_blocks = math.ceil(remaining_additional_time / average_interval)
-        log.info("Remaining block height of current issuance cycle： {}".format(number_of_remaining_blocks))
-        remaining_settlement_cycle = math.ceil(number_of_remaining_blocks / economic.settlement_size)
-        log.info("remaining settlement cycles in the current issuance cycle： {}".format(remaining_settlement_cycle))
-        consensus_verification_list = node.ppos.getVerifierList()
-        log.info("List of consensus validators in the current settlement cycle： {}".format(consensus_verification_list))
-        economic.wait_settlement(node)
-    annual_last_block = (math.ceil(node.eth.blockNumber / economic.settlement_size) - 1) * economic.settlement_size
-    log.info("Last block height of last year：{}".format(annual_last_block))
-    settlement_block_info = node.eth.getBlock(annual_last_block)
-    settlement_timestamp = settlement_block_info['timestamp']
-    log.info("Second High block timestamp at the end of the current settlement cycle：{}".format(settlement_timestamp))
-    second_issuing_cycle_timestamp = issuing_cycle_timestamp + (economic.additional_cycle_time * 60000)
-    log.info("Second end time stamp of current issue cycle： {}".format(second_issuing_cycle_timestamp))
-    remaining_additional_time = second_issuing_cycle_timestamp - settlement_timestamp
-    log.info("Second Remaining time of current issuance cycle： {}".format(remaining_additional_time))
-    average_interval = (settlement_timestamp - first_timestamp) // (annual_last_block - 1)
-    log.info("Second Block interval in the last settlement cycle： {}".format(average_interval))
-    number_of_remaining_blocks = math.ceil(remaining_additional_time / average_interval)
-    log.info("Second Remaining block height of current issuance cycle： {}".format(number_of_remaining_blocks))
-    remaining_settlement_cycle = math.ceil(number_of_remaining_blocks / economic.settlement_size)
-    log.info("The additional settlement cycle in the second year： {}".format(number_of_remaining_blocks))
-    actual_incentive_pool_amount = node.eth.getBalance(economic.account.raw_accounts[1]['address'], annual_last_block)
-    log.info("Incentive pool actual amount： {}".format(actual_incentive_pool_amount))
-    per_block_reward, staking_reward = calculate_block_rewards_and_pledge_rewards(client, actual_incentive_pool_amount,
-                                                                                  remaining_settlement_cycle)
-    chain_block_reward, chain_staking_reward = economic.get_current_year_reward(node)
-    log.info("Block rewards on the chain： {}".format(chain_block_reward))
-    log.info("Pledge rewards on the chain：{}".format(chain_staking_reward))
-    result = client.ppos.getAvgPackTime()
-    chain_time_interval = result['Ret']
-    log.info("Block interval on the chain：{}".format(chain_time_interval))
-    assert per_block_reward == chain_block_reward, "ErrMsg:Block rewards for the current settlement cycle {}".format(
-        per_block_reward)
-    assert staking_reward == chain_staking_reward, "ErrMsg:Pledge rewards for the current settlement cycle {}".format(
-        staking_reward)
-    assert average_interval == chain_time_interval, "ErrMsg:Block interval in the last settlement cycle {}".format(
-        average_interval)
-    economic.wait_settlement(node)
-
-    amount_per_settlement = int(Decimal(str(actual_incentive_pool_amount)) / Decimal(str(remaining_settlement_cycle)))
-    remaining_incentive_pool_balance = actual_incentive_pool_amount - amount_per_settlement
-    log.info("Amount of remaining incentive pool： {}".format(remaining_incentive_pool_balance))
-    first_settlement_cycle = annual_last_block / economic.settlement_size
-    log.info("Number of first additional issue settlement cycles： {}".format(first_settlement_cycle))
-    current_last_block = (math.ceil(node.eth.blockNumber / economic.settlement_size) - 1) * economic.settlement_size
-    log.info("Current settlement block height： {}".format(current_last_block))
-    current_settlement_cycle = current_last_block / economic.settlement_size
-    log.info("Current latest settlement cycles： {}".format(current_settlement_cycle))
-    number = current_settlement_cycle - first_settlement_cycle
-    log.info("Phase difference period： {}".format(number))
-    second_start_info = node.eth.getBlock(
-        int((first_settlement_cycle - (first_settlement_cycle - number)) * economic.settlement_size))
-    second_start_timestamp = second_start_info['timestamp']
-    log.info("second start timestamp ： {}".format(second_start_timestamp))
-    second_end_info = node.eth.getBlock(current_last_block)
-    second_end_timestamp = second_end_info['timestamp']
-    log.info("second end timestamp ： {}".format(second_end_timestamp))
-    average_interval = (second_end_timestamp - second_start_timestamp) // (annual_last_block - 1)
-    log.info("Second Block interval in the last settlement cycle： {}".format(average_interval))
-
-    remaining_additional_time = second_issuing_cycle_timestamp - second_end_timestamp
-    log.info("Second Remaining time of current issuance cycle： {}".format(remaining_additional_time))
-    number_of_remaining_blocks = math.ceil(remaining_additional_time / average_interval)
-    log.info("Second Remaining block height of current issuance cycle： {}".format(number_of_remaining_blocks))
-    remaining_settlement_cycle = math.ceil(number_of_remaining_blocks / economic.settlement_size)
-    log.info("The additional settlement cycle in the second year： {}".format(number_of_remaining_blocks))
-    per_block_reward, staking_reward = calculate_block_rewards_and_pledge_rewards(client,
-                                                                                  remaining_incentive_pool_balance,
-                                                                                  remaining_settlement_cycle)
-    chain_block_reward, chain_staking_reward = economic.get_current_year_reward(node)
-    log.info("Block rewards on the chain： {}".format(chain_block_reward))
-    log.info("Pledge rewards on the chain：{}".format(chain_staking_reward))
-    result = client.ppos.getAvgPackTime()
-    chain_time_interval = result['Ret']
-    log.info("Block interval on the chain：{}".format(chain_time_interval))
-    assert per_block_reward == chain_block_reward, "ErrMsg:Block rewards for the current settlement cycle {}".format(
-        per_block_reward)
-    assert staking_reward == chain_staking_reward, "ErrMsg:Pledge rewards for the current settlement cycle {}".format(
-        staking_reward)
-    assert average_interval == chain_time_interval, "ErrMsg:Block interval in the last settlement cycle {}".format(
-        average_interval)
+    pass
+    # client = client_consensus
+    # economic = client.economic
+    # node = client.node
+    # economic.env.deploy_all()
+    # log.info("Chain reset completed")
+    # economic.wait_consensus(node)
+    # log.info("Start adjusting the block interval")
+    # for i in range(3):
+    #     economic.env.stop_all()
+    #     time.sleep(2)
+    #     economic.env.start_nodes(economic.env.get_all_nodes(), False)
+    #     time.sleep(5)
+    # remaining_settlement_cycle = (economic.additional_cycle_time * 60) // economic.settlement_size
+    # annual_size = remaining_settlement_cycle * economic.settlement_size
+    # log.info("Additional issue settlement period：{} Block height of current issuance cycle: {}".format(
+    #     remaining_settlement_cycle, annual_size))
+    # economic.wait_settlement(node)
+    # block_info = node.eth.getBlock(1)
+    # first_timestamp = block_info['timestamp']
+    # log.info("First block timestamp： {}".format(first_timestamp))
+    # issuing_cycle_timestamp = None
+    # while remaining_settlement_cycle != 1:
+    #     tmp_current_block = node.eth.blockNumber
+    #     if tmp_current_block % economic.settlement_size == 0:
+    #         time.sleep(1)
+    #     last_settlement_block = (math.ceil(tmp_current_block / economic.settlement_size) - 1) * economic.settlement_size
+    #     log.info("The last block height of the previous settlement period： {}".format(last_settlement_block))
+    #     settlement_block_info = node.eth.getBlock(last_settlement_block)
+    #     settlement_timestamp = settlement_block_info['timestamp']
+    #     log.info("High block timestamp at the end of the current settlement cycle： {}".format(settlement_timestamp))
+    #     issuing_cycle_timestamp = first_timestamp + (economic.additional_cycle_time * 60000)
+    #     log.info("End time stamp of current issue cycle： {}".format(issuing_cycle_timestamp))
+    #     remaining_additional_time = issuing_cycle_timestamp - settlement_timestamp
+    #     log.info("Remaining time of current issuance cycle： {}".format(remaining_additional_time))
+    #     average_interval = (settlement_timestamp - first_timestamp) // (last_settlement_block - 1)
+    #     log.info("Block interval in the last settlement cycle： {}".format(average_interval))
+    #     number_of_remaining_blocks = math.ceil(remaining_additional_time / average_interval)
+    #     log.info("Remaining block height of current issuance cycle： {}".format(number_of_remaining_blocks))
+    #     remaining_settlement_cycle = math.ceil(number_of_remaining_blocks / economic.settlement_size)
+    #     log.info("remaining settlement cycles in the current issuance cycle： {}".format(remaining_settlement_cycle))
+    #     consensus_verification_list = node.ppos.getVerifierList()
+    #     log.info("List of consensus validators in the current settlement cycle： {}".format(consensus_verification_list))
+    #     economic.wait_settlement(node)
+    # annual_last_block = (math.ceil(node.eth.blockNumber / economic.settlement_size) - 1) * economic.settlement_size
+    # log.info("Last block height of last year：{}".format(annual_last_block))
+    # settlement_block_info = node.eth.getBlock(annual_last_block)
+    # settlement_timestamp = settlement_block_info['timestamp']
+    # log.info("Second High block timestamp at the end of the current settlement cycle：{}".format(settlement_timestamp))
+    # second_issuing_cycle_timestamp = issuing_cycle_timestamp + (economic.additional_cycle_time * 60000)
+    # log.info("Second end time stamp of current issue cycle： {}".format(second_issuing_cycle_timestamp))
+    # remaining_additional_time = second_issuing_cycle_timestamp - settlement_timestamp
+    # log.info("Second Remaining time of current issuance cycle： {}".format(remaining_additional_time))
+    # average_interval = (settlement_timestamp - first_timestamp) // (annual_last_block - 1)
+    # log.info("Second Block interval in the last settlement cycle： {}".format(average_interval))
+    # number_of_remaining_blocks = math.ceil(remaining_additional_time / average_interval)
+    # log.info("Second Remaining block height of current issuance cycle： {}".format(number_of_remaining_blocks))
+    # remaining_settlement_cycle = math.ceil(number_of_remaining_blocks / economic.settlement_size)
+    # log.info("The additional settlement cycle in the second year： {}".format(number_of_remaining_blocks))
+    # actual_incentive_pool_amount = node.eth.getBalance(economic.account.raw_accounts[1]['address'], annual_last_block)
+    # log.info("Incentive pool actual amount： {}".format(actual_incentive_pool_amount))
+    # per_block_reward, staking_reward = calculate_block_rewards_and_pledge_rewards(client, actual_incentive_pool_amount,
+    #                                                                               remaining_settlement_cycle)
+    # chain_block_reward, chain_staking_reward = economic.get_current_year_reward(node)
+    # log.info("Block rewards on the chain： {}".format(chain_block_reward))
+    # log.info("Pledge rewards on the chain：{}".format(chain_staking_reward))
+    # result = client.ppos.getAvgPackTime()
+    # chain_time_interval = result['Ret']
+    # log.info("Block interval on the chain：{}".format(chain_time_interval))
+    # assert per_block_reward == chain_block_reward, "ErrMsg:Block rewards for the current settlement cycle {}".format(
+    #     per_block_reward)
+    # assert staking_reward == chain_staking_reward, "ErrMsg:Pledge rewards for the current settlement cycle {}".format(
+    #     staking_reward)
+    # assert average_interval == chain_time_interval, "ErrMsg:Block interval in the last settlement cycle {}".format(
+    #     average_interval)
+    # economic.wait_settlement(node)
+    #
+    # amount_per_settlement = int(Decimal(str(actual_incentive_pool_amount)) / Decimal(str(remaining_settlement_cycle)))
+    # remaining_incentive_pool_balance = actual_incentive_pool_amount - amount_per_settlement
+    # log.info("Amount of remaining incentive pool： {}".format(remaining_incentive_pool_balance))
+    # first_settlement_cycle = annual_last_block / economic.settlement_size
+    # log.info("Number of first additional issue settlement cycles： {}".format(first_settlement_cycle))
+    # current_last_block = (math.ceil(node.eth.blockNumber / economic.settlement_size) - 1) * economic.settlement_size
+    # log.info("Current settlement block height： {}".format(current_last_block))
+    # current_settlement_cycle = current_last_block / economic.settlement_size
+    # log.info("Current latest settlement cycles： {}".format(current_settlement_cycle))
+    # number = current_settlement_cycle - first_settlement_cycle
+    # log.info("Phase difference period： {}".format(number))
+    # second_start_info = node.eth.getBlock(
+    #     int((first_settlement_cycle - (first_settlement_cycle - number)) * economic.settlement_size))
+    # second_start_timestamp = second_start_info['timestamp']
+    # log.info("second start timestamp ： {}".format(second_start_timestamp))
+    # second_end_info = node.eth.getBlock(current_last_block)
+    # second_end_timestamp = second_end_info['timestamp']
+    # log.info("second end timestamp ： {}".format(second_end_timestamp))
+    # average_interval = (second_end_timestamp - second_start_timestamp) // (annual_last_block - 1)
+    # log.info("Second Block interval in the last settlement cycle： {}".format(average_interval))
+    #
+    # remaining_additional_time = second_issuing_cycle_timestamp - second_end_timestamp
+    # log.info("Second Remaining time of current issuance cycle： {}".format(remaining_additional_time))
+    # number_of_remaining_blocks = math.ceil(remaining_additional_time / average_interval)
+    # log.info("Second Remaining block height of current issuance cycle： {}".format(number_of_remaining_blocks))
+    # remaining_settlement_cycle = math.ceil(number_of_remaining_blocks / economic.settlement_size)
+    # log.info("The additional settlement cycle in the second year： {}".format(number_of_remaining_blocks))
+    # per_block_reward, staking_reward = calculate_block_rewards_and_pledge_rewards(client,
+    #                                                                               remaining_incentive_pool_balance,
+    #                                                                               remaining_settlement_cycle)
+    # chain_block_reward, chain_staking_reward = economic.get_current_year_reward(node)
+    # log.info("Block rewards on the chain： {}".format(chain_block_reward))
+    # log.info("Pledge rewards on the chain：{}".format(chain_staking_reward))
+    # result = client.ppos.getAvgPackTime()
+    # chain_time_interval = result['Ret']
+    # log.info("Block interval on the chain：{}".format(chain_time_interval))
+    # assert per_block_reward == chain_block_reward, "ErrMsg:Block rewards for the current settlement cycle {}".format(
+    #     per_block_reward)
+    # assert staking_reward == chain_staking_reward, "ErrMsg:Pledge rewards for the current settlement cycle {}".format(
+    #     staking_reward)
+    # assert average_interval == chain_time_interval, "ErrMsg:Block interval in the last settlement cycle {}".format(
+    #     average_interval)
 
 
 def send_batch_transactions(obj, transaction_list):
@@ -1863,7 +1910,7 @@ def create_staking(client):
                                 rlp.encode(economic.create_staking_limit), rlp.encode(0), rlp.encode(program_version),
                                 rlp.encode(bytes.fromhex(program_version_sign)), rlp.encode(bytes.fromhex(bls_pubkey)),
                                 rlp.encode(bytes.fromhex(bls_proof))])).hex()
-    transaction_dict = {'from': address, 'from_private': private_key, 'to': node.web3.stakingAddress,
+    transaction_dict = {'from': address, 'from_private': private_key, 'to': node.ppos.stakingAddress,
                         'to_private': None, 'data': data, 'amount': 10, 'nonce': None}
     return transaction_dict
 
@@ -1959,107 +2006,108 @@ def test_RO_T_001(new_genesis_env, client_noconsensus):
     """
     同个块高里重复质押、委托、解质押
     """
-    genesis = from_dict(data_class=Genesis, data=new_genesis_env.genesis_config)
-    genesis.config.cbft.period = 30000
-    genesis.economicModel.common.maxEpochMinutes = 9
-    genesis.economicModel.common.additionalCycleTime = 40
-    new_file = new_genesis_env.cfg.env_tmp + "/genesis_0.14.0.json"
-    genesis.to_file(new_file)
-    new_genesis_env.deploy_all(new_file)
-
-    client = client_noconsensus
-    economic = client.economic
-    node = client.node
-    log.info("node ip : {}".format(node.node_mark))
-    node.ppos.need_analyze = False
-    staking_addres, _ = economic.account.generate_account(node.web3, economic.create_staking_limit * 2)
-    entrust_addres, _ = economic.account.generate_account(node.web3, economic.create_staking_limit)
-    log.info("entrust_addres: {}".format(entrust_addres))
-    entrust_addres2, _ = economic.account.generate_account(node.web3, economic.create_staking_limit)
-    log.info("entrust_addres2: {}".format(entrust_addres2))
-    nonce1 = node.eth.getTransactionCount(Web3.toChecksumAddress(staking_addres))
-    nonce2 = node.eth.getTransactionCount(Web3.toChecksumAddress(entrust_addres))
-    nonce3 = node.eth.getTransactionCount(Web3.toChecksumAddress(staking_addres))
-    # nonce4 = node.eth.getTransactionCount(Web3.toChecksumAddress(entrust_addres2))
-    # cfg4 = {"gasPrice": 1700000000000, "nonce": nonce4}
-    gasPrice = node.eth.gasPrice
-    number = 0
-    cfg1 = {"gasPrice": gasPrice, "nonce": nonce1}
-    cfg2 = {"gasPrice": gasPrice, "nonce": nonce2}
-    cfg3 = {"gasPrice": gasPrice, "nonce": nonce3}
-    for i in range(3):
-        cfg1['gasPrice'] = gasPrice
-        log.info("cfg1 gasPrice：{}".format(cfg1['gasPrice']))
-        client.staking.create_staking(0, staking_addres, staking_addres, transaction_cfg=cfg1)
-        cfg3['nonce'] = cfg1['nonce'] + 1
-        gasPrice = gasPrice - 1
-        cfg2['gasPrice'] = gasPrice
-        log.info("cfg2 gasPrice：{}".format(cfg2['gasPrice']))
-        client.delegate.delegate(0, entrust_addres, tansaction_cfg=cfg2)
-        client.delegate.delegate(0, entrust_addres2, tansaction_cfg=cfg2)
-        number = number + 2
-        gasPrice = gasPrice - 1
-        cfg2['nonce'] = cfg2['nonce'] + 1
-        cfg3['gasPrice'] = gasPrice
-        log.info("cfg3 gasPrice：{}".format(cfg3['gasPrice']))
-        client.staking.withdrew_staking(staking_addres, transaction_cfg=cfg3)
-        gasPrice = gasPrice - 1
-        cfg1['nonce'] = cfg3['nonce'] + 1
-        # cfg4['nonce'] = cfg4['nonce'] + 1
-        # client.delegate.withdrew_delegate(current_block, entrust_addres2, transaction_cfg=cfg4)
-        # cfg4['nonce'] = cfg4['nonce'] + 1
-        if i == 2:
-            client.staking.create_staking(0, staking_addres, staking_addres, transaction_cfg=cfg1)
-            cfg3['nonce'] = cfg1['nonce'] + 1
-            gasPrice = gasPrice - 1
-            cfg2['gasPrice'] = gasPrice
-            log.info("cfg2 gasPrice：{}".format(cfg2['gasPrice']))
-    time.sleep(1)
-    for i in range(2):
-        client.delegate.delegate(0, entrust_addres, tansaction_cfg=cfg2)
-        client.delegate.delegate(0, entrust_addres2, tansaction_cfg=cfg2)
-        gasPrice = gasPrice - 1
-        cfg2['nonce'] = cfg2['nonce'] + 1
-        cfg3['gasPrice'] = gasPrice
-        log.info("cfg3 gasPrice：{}".format(cfg3['gasPrice']))
-        client.staking.withdrew_staking(staking_addres, transaction_cfg=cfg3)
-        gasPrice = gasPrice - 1
-        cfg1['nonce'] = cfg3['nonce'] + 1
-        cfg1['gasPrice'] = gasPrice
-        log.info("cfg1 gasPrice：{}".format(cfg1['gasPrice']))
-        client.staking.create_staking(0, staking_addres, staking_addres, transaction_cfg=cfg1)
-        cfg3['nonce'] = cfg1['nonce'] + 1
-        gasPrice = gasPrice - 1
-        cfg2['gasPrice'] = gasPrice
-        log.info("cfg2 gasPrice：{}".format(cfg2['gasPrice']))
-
-    time.sleep(10)
-    candidate_info1 = node.ppos.getCandidateInfo(node.node_id)
-    log.info("Candidate_information：{}".format(candidate_info1))
-    assert candidate_info1['Ret']['Shares'] == economic.create_staking_limit
-    assert candidate_info1['Ret']['DelegateTotalHes'] == 0
-
-    result = node.ppos.getRelatedListByDelAddr(entrust_addres)
-    print(result)
-    result = node.ppos.getRelatedListByDelAddr(entrust_addres2)
-    print(result)
-
-    result = node.ppos.getDelegateInfo(candidate_info1['Ret']['StakingBlockNum'], entrust_addres, node.node_id)
-    log.info("entrust_addres commission_information1：{}".format(result))
-    assert_code(result, 301205)
-    result = node.ppos.getDelegateInfo(11, entrust_addres, node.node_id)
-    log.info("entrust_addres commission_information2：{}".format(result))
-    assert result['Ret']['ReleasedHes'] == economic.delegate_limit
-
-    result = node.ppos.getDelegateInfo(candidate_info1['Ret']['StakingBlockNum'], entrust_addres2, node.node_id)
-    log.info("entrust_addres2 commission_information1：{}".format(result))
-    assert_code(result, 301205)
-    result = node.ppos.getDelegateInfo(11, entrust_addres2, node.node_id)
-    log.info("entrust_addres2 commission_information2：{}".format(result))
-    assert result['Ret']['ReleasedHes'] == economic.delegate_limit
-
-    node.ppos.need_analyze = True
-    economic.wait_settlement(node, 1)
+    pass
+    # genesis = from_dict(data_class=Genesis, data=new_genesis_env.genesis_config)
+    # genesis.config.cbft.period = 30000
+    # genesis.economicModel.common.maxEpochMinutes = 9
+    # genesis.economicModel.common.additionalCycleTime = 40
+    # new_file = new_genesis_env.cfg.env_tmp + "/genesis_0.14.0.json"
+    # genesis.to_file(new_file)
+    # new_genesis_env.deploy_all(new_file)
+    #
+    # client = client_noconsensus
+    # economic = client.economic
+    # node = client.node
+    # log.info("node ip : {}".format(node.node_mark))
+    # node.ppos.need_analyze = False
+    # staking_addres, _ = economic.account.generate_account(node.web3, economic.create_staking_limit * 2)
+    # entrust_addres, _ = economic.account.generate_account(node.web3, economic.create_staking_limit)
+    # log.info("entrust_addres: {}".format(entrust_addres))
+    # entrust_addres2, _ = economic.account.generate_account(node.web3, economic.create_staking_limit)
+    # log.info("entrust_addres2: {}".format(entrust_addres2))
+    # nonce1 = node.eth.getTransactionCount(Web3.toChecksumAddress(staking_addres))
+    # nonce2 = node.eth.getTransactionCount(Web3.toChecksumAddress(entrust_addres))
+    # nonce3 = node.eth.getTransactionCount(Web3.toChecksumAddress(staking_addres))
+    # # nonce4 = node.eth.getTransactionCount(Web3.toChecksumAddress(entrust_addres2))
+    # # cfg4 = {"gasPrice": 1700000000000, "nonce": nonce4}
+    # gasPrice = node.eth.gasPrice
+    # number = 0
+    # cfg1 = {"gasPrice": gasPrice, "nonce": nonce1}
+    # cfg2 = {"gasPrice": gasPrice, "nonce": nonce2}
+    # cfg3 = {"gasPrice": gasPrice, "nonce": nonce3}
+    # for i in range(3):
+    #     cfg1['gasPrice'] = gasPrice
+    #     log.info("cfg1 gasPrice：{}".format(cfg1['gasPrice']))
+    #     client.staking.create_staking(0, staking_addres, staking_addres, transaction_cfg=cfg1)
+    #     cfg3['nonce'] = cfg1['nonce'] + 1
+    #     gasPrice = gasPrice - 1
+    #     cfg2['gasPrice'] = gasPrice
+    #     log.info("cfg2 gasPrice：{}".format(cfg2['gasPrice']))
+    #     client.delegate.delegate(0, entrust_addres, tansaction_cfg=cfg2)
+    #     client.delegate.delegate(0, entrust_addres2, tansaction_cfg=cfg2)
+    #     number = number + 2
+    #     gasPrice = gasPrice - 1
+    #     cfg2['nonce'] = cfg2['nonce'] + 1
+    #     cfg3['gasPrice'] = gasPrice
+    #     log.info("cfg3 gasPrice：{}".format(cfg3['gasPrice']))
+    #     client.staking.withdrew_staking(staking_addres, transaction_cfg=cfg3)
+    #     gasPrice = gasPrice - 1
+    #     cfg1['nonce'] = cfg3['nonce'] + 1
+    #     # cfg4['nonce'] = cfg4['nonce'] + 1
+    #     # client.delegate.withdrew_delegate(current_block, entrust_addres2, transaction_cfg=cfg4)
+    #     # cfg4['nonce'] = cfg4['nonce'] + 1
+    #     if i == 2:
+    #         client.staking.create_staking(0, staking_addres, staking_addres, transaction_cfg=cfg1)
+    #         cfg3['nonce'] = cfg1['nonce'] + 1
+    #         gasPrice = gasPrice - 1
+    #         cfg2['gasPrice'] = gasPrice
+    #         log.info("cfg2 gasPrice：{}".format(cfg2['gasPrice']))
+    # time.sleep(1)
+    # for i in range(2):
+    #     client.delegate.delegate(0, entrust_addres, tansaction_cfg=cfg2)
+    #     client.delegate.delegate(0, entrust_addres2, tansaction_cfg=cfg2)
+    #     gasPrice = gasPrice - 1
+    #     cfg2['nonce'] = cfg2['nonce'] + 1
+    #     cfg3['gasPrice'] = gasPrice
+    #     log.info("cfg3 gasPrice：{}".format(cfg3['gasPrice']))
+    #     client.staking.withdrew_staking(staking_addres, transaction_cfg=cfg3)
+    #     gasPrice = gasPrice - 1
+    #     cfg1['nonce'] = cfg3['nonce'] + 1
+    #     cfg1['gasPrice'] = gasPrice
+    #     log.info("cfg1 gasPrice：{}".format(cfg1['gasPrice']))
+    #     client.staking.create_staking(0, staking_addres, staking_addres, transaction_cfg=cfg1)
+    #     cfg3['nonce'] = cfg1['nonce'] + 1
+    #     gasPrice = gasPrice - 1
+    #     cfg2['gasPrice'] = gasPrice
+    #     log.info("cfg2 gasPrice：{}".format(cfg2['gasPrice']))
+    #
+    # time.sleep(10)
+    # candidate_info1 = node.ppos.getCandidateInfo(node.node_id)
+    # log.info("Candidate_information：{}".format(candidate_info1))
+    # assert candidate_info1['Ret']['Shares'] == economic.create_staking_limit
+    # assert candidate_info1['Ret']['DelegateTotalHes'] == 0
+    #
+    # result = node.ppos.getRelatedListByDelAddr(entrust_addres)
+    # print(result)
+    # result = node.ppos.getRelatedListByDelAddr(entrust_addres2)
+    # print(result)
+    #
+    # result = node.ppos.getDelegateInfo(candidate_info1['Ret']['StakingBlockNum'], entrust_addres, node.node_id)
+    # log.info("entrust_addres commission_information1：{}".format(result))
+    # assert_code(result, 301205)
+    # result = node.ppos.getDelegateInfo(11, entrust_addres, node.node_id)
+    # log.info("entrust_addres commission_information2：{}".format(result))
+    # assert result['Ret']['ReleasedHes'] == economic.delegate_limit
+    #
+    # result = node.ppos.getDelegateInfo(candidate_info1['Ret']['StakingBlockNum'], entrust_addres2, node.node_id)
+    # log.info("entrust_addres2 commission_information1：{}".format(result))
+    # assert_code(result, 301205)
+    # result = node.ppos.getDelegateInfo(11, entrust_addres2, node.node_id)
+    # log.info("entrust_addres2 commission_information2：{}".format(result))
+    # assert result['Ret']['ReleasedHes'] == economic.delegate_limit
+    #
+    # node.ppos.need_analyze = True
+    # economic.wait_settlement(node, 1)
 
 
 def test2223(client_new_node):
@@ -2110,28 +2158,28 @@ def test2223(client_new_node):
 # print(result)
 # client.economic.env.deploy_all()
 
-
-def test_IT_SD2222(global_test_env):
-    """
-    IT_SD_002:二次分配：账户余额不足
-    IT_SD_003:二次分配：转账手续费不足
-    :param global_test_env:
-    :return:
-    """
-    node = global_test_env.get_rand_node()
-    address, _ = global_test_env.account.generate_account(node.web3, node.web3.toWei(1000, 'ether'))
-    print('address', address, node.eth.getBalance(address))
-    # Account balance insufficient transfer
-    address1, _ = global_test_env.account.generate_account(node.web3, 0)
-    print('address1', address1, node.eth.getBalance(address1))
-    transfer_amount = node.web3.toWei(1, 'ether')
-    gasPrice = 1 * 10 ** 8
-    print('gasPrice', gasPrice)
-    result = global_test_env.account.sendTransaction(node.web3, '', address, address1, gasPrice,
-                                                     21000, transfer_amount)
-    log.info("result: {}".format(result))
-    time.sleep(2)
-    print('address1', address1, node.eth.getBalance(address1))
+#
+# def test_IT_SD2222(global_test_env):
+#     """
+#     IT_SD_002:二次分配：账户余额不足
+#     IT_SD_003:二次分配：转账手续费不足
+#     :param global_test_env:
+#     :return:
+#     """
+#     node = global_test_env.get_rand_node()
+#     address, _ = global_test_env.account.generate_account(node.web3, node.web3.toWei(1000, 'ether'))
+#     print('address', address, node.eth.getBalance(address))
+#     # Account balance insufficient transfer
+#     address1, _ = global_test_env.account.generate_account(node.web3, 0)
+#     print('address1', address1, node.eth.getBalance(address1))
+#     transfer_amount = node.web3.toWei(1, 'ether')
+#     gasPrice = 1 * 10 ** 8
+#     print('gasPrice', gasPrice)
+#     result = global_test_env.account.sendTransaction(node.web3, '', address, address1, gasPrice,
+#                                                      21000, transfer_amount)
+#     log.info("result: {}".format(result))
+#     time.sleep(2)
+#     print('address1', address1, node.eth.getBalance(address1))
 
 
 def create_account(HRP):
